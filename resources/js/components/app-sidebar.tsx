@@ -1,20 +1,26 @@
-import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
-import { NavUser } from '@/components/nav-user';
 import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
     SidebarHeader,
     SidebarMenu,
-    SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-react';
+import {
+    Activity,
+    Feather,
+    LayoutGrid,
+    List,
+    PenBox,
+    Shield,
+    User,
+} from 'lucide-react';
 import AppLogo from './app-logo';
+import { NavUser } from './nav-user';
 
 const mainNavItems: NavItem[] = [
     {
@@ -22,32 +28,55 @@ const mainNavItems: NavItem[] = [
         href: dashboard(),
         icon: LayoutGrid,
     },
+    {
+        title: 'Users',
+        href: '#',
+        icon: User,
+    },
+    {
+        title: 'Roles',
+        href: '#',
+        icon: Shield,
+    },
+    {
+        title: 'Categories',
+        href: '#',
+        icon: List,
+    },
+    {
+        title: 'Famous Writers',
+        href: '#',
+        icon: Feather,
+    },
+    {
+        title: 'Posts',
+        href: '#',
+        icon: PenBox,
+    },
+    {
+        title: 'Activities',
+        href: '#',
+        icon: Activity,
+    },
 ];
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },
-];
+// const footerNavItems: NavItem[] = [
+//     {
+//         title: 'Settings',
+//         href: '#',
+//         icon: Settings,
+//     },
+// ];
 
 export function AppSidebar() {
     return (
-        <Sidebar collapsible="icon" variant="inset">
+        <Sidebar collapsible="offcanvas">
             <SidebarHeader>
                 <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
-                                <AppLogo />
-                            </Link>
-                        </SidebarMenuButton>
+                    <SidebarMenuItem className="flex justify-center">
+                        <Link href={dashboard()} prefetch>
+                            <AppLogo />
+                        </Link>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
@@ -57,7 +86,7 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
+                {/* <NavFooter items={footerNavItems} className="mt-auto" /> */}
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

@@ -51,7 +51,16 @@ export function initializeTheme() {
 }
 
 export function useAppearance() {
-    const [appearance, setAppearance] = useState<Appearance>('system');
+    // Get initial appearance from localStorage, avoiding synchronous setState in effect
+    const getInitialAppearance = (): Appearance => {
+        if (typeof window === 'undefined') {
+            return 'system';
+        }
+        return (localStorage.getItem('appearance') as Appearance) || 'system';
+    };
+
+    const [appearance, setAppearance] =
+        useState<Appearance>(getInitialAppearance);
 
     const updateAppearance = useCallback((mode: Appearance) => {
         setAppearance(mode);
@@ -63,22 +72,51 @@ export function useAppearance() {
         setCookie('appearance', mode);
 
         applyTheme(mode);
+
+        // Dispatch custom event for same-page communication
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+                new CustomEvent('appearance-change', { detail: mode }),
+            );
+        }
     }, []);
 
     useEffect(() => {
-        const savedAppearance = localStorage.getItem(
-            'appearance',
-        ) as Appearance | null;
+        // Apply theme on mount (don't set state here)
+        applyTheme(appearance);
 
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        updateAppearance(savedAppearance || 'system');
+        // Listen for storage changes from other tabs/components
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'appearance' && e.newValue) {
+                setAppearance(e.newValue as Appearance);
+                applyTheme(e.newValue as Appearance);
+            }
+        };
 
-        return () =>
+        // Listen for custom events from same page
+        const handleAppearanceChange = (e: CustomEvent) => {
+            setAppearance(e.detail as Appearance);
+            applyTheme(e.detail as Appearance);
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener(
+            'appearance-change',
+            handleAppearanceChange as EventListener,
+        );
+
+        return () => {
             mediaQuery()?.removeEventListener(
                 'change',
                 handleSystemThemeChange,
             );
-    }, [updateAppearance]);
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener(
+                'appearance-change',
+                handleAppearanceChange as EventListener,
+            );
+        };
+    }, [appearance]); // Only re-run when appearance changes
 
     return { appearance, updateAppearance } as const;
 }

@@ -1,16 +1,22 @@
-import AppLogoIcon from './app-logo-icon';
+import { useAppearance } from '@/hooks/use-appearance';
 
 export default function AppLogo() {
-    return (
-        <>
-            <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
-                <AppLogoIcon className="size-5 fill-current text-white dark:text-black" />
-            </div>
-            <div className="ml-1 grid flex-1 text-left text-sm">
-                <span className="mb-0.5 truncate leading-tight font-semibold">
-                    Laravel Starter Kit
-                </span>
-            </div>
-        </>
-    );
+    const { appearance } = useAppearance();
+
+    // Compute the actual theme (resolves 'system' to 'light'/'dark')
+    const computedTheme =
+        appearance === 'system'
+            ? typeof window !== 'undefined' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+            : appearance;
+
+    // Select logo based on computed theme
+    const logo =
+        computedTheme === 'dark'
+            ? '/images/white-logo.png'
+            : '/images/logo.png';
+
+    return <img src={logo} alt="Sahittyacanvas" key={computedTheme} />;
 }
