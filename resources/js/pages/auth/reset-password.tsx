@@ -5,7 +5,6 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/auth-layout';
 
 interface ResetPasswordProps {
@@ -82,8 +81,8 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                             className="mt-4 w-full"
                             disabled={processing}
                             data-test="reset-password-button"
+                            isLoading={processing}
                         >
-                            {processing && <Spinner />}
                             Reset password
                         </Button>
                     </div>
