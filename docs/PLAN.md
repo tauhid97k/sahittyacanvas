@@ -82,7 +82,35 @@ This plan is split into multiple focused documents:
 
 - Multiple content types: Poetry, Story, Literature, Multi-page Novel
 - Author attribution (user-written vs famous writer)
-- Rich text/MDX editor with multi-page support
+- Rich text/MDX editor with multi-page support using order-based system:
+    - **Order-based page management**: Uses `order` field instead of sequential page numbers
+    - **Soft deletes**: Pages are soft deleted, maintaining stable references
+    - **Dynamic page numbering**: Frontend calculates page numbers from sorted order
+    - **Fractional ordering**: Insert pages between existing ones without cascading updates
+    - **Background rebalancing**: Periodic cleanup of order gaps via queue jobs
+- **Advanced multi-page authoring interface**:
+    - **Page timeline navigation**: Horizontal timeline showing all chapters with current page indicator
+    - **Click-to-navigate**: Click any timeline dot to jump between pages with auto-save
+    - **Save & Add New Page**: Seamless workflow for continuous writing
+    - **Visual page status indicators**: Draft (🔴), Ready (🟡), Published (✅), Announced (⏰)
+    - **Drag-drop reordering**: Default feature for easy chapter organization
+    - **Auto-save functionality**: Prevents data loss during page switching
+    - **Keyboard shortcuts**: Ctrl+S (save), Ctrl+→/← (navigate), Ctrl+N (new page)
+- **Two-level publishing system**:
+    - **Page-level publishing**: Authors can publish individual chapters in any order
+    - **Post-level validation**: Full post publishing requires sequential pages without gaps
+    - **Smart publishing options**: Publish first N chapters, publish all ready, or publish entire post
+    - **Gap detection**: Clear warnings about missing chapters before full publication
+- **Announced status and reminder system**:
+    - **Scheduled publishing**: Announce chapters with future release dates/times
+    - **Reader reminders**: Users can set notifications for upcoming chapters
+    - **Multi-channel notifications**: In-app push + email reminders (15 mins before + at publish)
+    - **Countdown timers**: Real-time countdown displays for announced chapters
+    - **Author analytics**: Track reminder counts, engagement metrics, and reader anticipation
+    - **Conversion tracking**: Monitor reminder-to-read conversion rates
+- **Preview modes**:
+    - **Edit view**: Author interface with timeline and all management features
+    - **Reader preview**: Shows exactly what readers will see with current page order
 - Scheduled publishing with queue jobs
 - Draft, pending, published states
 
