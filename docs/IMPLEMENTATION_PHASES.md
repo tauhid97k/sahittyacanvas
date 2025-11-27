@@ -20,7 +20,8 @@ composer require pusher/pusher-php-server
 # Frontend packages
 npm install laravel-echo pusher-js
 npm install @tiptap/react @tiptap/starter-kit @tiptap/extension-image
-npm install react-hook-form zod @hookform/resolvers
+# Inertia.js v2 includes built-in form handling via useForm hook and <Form> component
+# No need for react-hook-form or zod - validation is handled server-side by Laravel
 npm install lucide-react
 ```
 
@@ -322,7 +323,81 @@ export default function RichTextEditor({ content, onChange }) {
 }
 ```
 
-### 3.5 Multi-page Post Editor
+### 3.5 Form Handling with Inertia.js v2
+
+Inertia.js v2 provides built-in form handling via `useForm` hook and `<Form>` component. No need for react-hook-form or zod - validation is handled server-side by Laravel.
+
+**Using useForm hook (React)**:
+
+```tsx
+import { useForm } from '@inertiajs/react';
+
+export default function CreatePost() {
+    const { data, setData, post, processing, errors, reset } = useForm({
+        title: '',
+        content: '',
+        category_id: '',
+        status: 'draft',
+    });
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        post('/posts', {
+            preserveScroll: true,
+            onSuccess: () => reset(),
+        });
+    };
+
+    return (
+        <form onSubmit={handleSubmit}>
+            <input
+                type="text"
+                value={data.title}
+                onChange={(e) => setData('title', e.target.value)}
+            />
+            {errors.title && <div className="text-red-500">{errors.title}</div>}
+
+            <button type="submit" disabled={processing}>
+                {processing ? 'Saving...' : 'Create Post'}
+            </button>
+        </form>
+    );
+}
+```
+
+**Using Form component (declarative)**:
+
+```tsx
+import { Form } from '@inertiajs/react';
+
+export default function CreatePost() {
+    return (
+        <Form action="/posts" method="post">
+            {({ errors, processing }) => (
+                <>
+                    <input type="text" name="title" />
+                    {errors.title && <div>{errors.title}</div>}
+                    <button type="submit" disabled={processing}>
+                        Create
+                    </button>
+                </>
+            )}
+        </Form>
+    );
+}
+```
+
+**Key features**:
+
+- `processing` - Boolean indicating if form is submitting
+- `errors` - Object containing validation errors from Laravel
+- `reset()` - Reset form to initial values
+- `setData()` - Update form field values
+- `transform()` - Transform data before submission
+- `isDirty` - Track if form has unsaved changes
+- `wasSuccessful` / `recentlySuccessful` - Success state tracking
+
+### 3.6 Multi-page Post Editor
 
 **Create PostPageEditor component**:
 
@@ -333,7 +408,7 @@ export default function RichTextEditor({ content, onChange }) {
 // Auto-save functionality
 ```
 
-### 3.6 Scheduled Publishing
+### 3.7 Scheduled Publishing
 
 **Create job**:
 

@@ -10,10 +10,10 @@
         "herd": {
             "command": "php",
             "args": [
-                "C:/Users/WayWise/.config/herd/bin/herd-mcp.phar"
+                "C:/Users/Tauhid/.config/herd/bin/herd-mcp.phar"
             ],
             "env": {
-                "SITE_PATH": "C:\\Users\\WayWise\\Desktop\\Workspace\\others\\sahittyacanvas"
+                "SITE_PATH": "C:\\Users\\Tauhid\\Desktop\\Workspace\\Client_Projects\\sahittyacanvas"
             }
         }
     }

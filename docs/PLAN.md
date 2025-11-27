@@ -55,7 +55,7 @@ This plan is split into multiple focused documents:
 - **Components**: shadcn/ui
 - **Icons**: Lucide React
 - **Rich Editor**: Novel.sh or Tiptap (MDX support)
-- **Forms**: React Hook Form + Zod
+- **Forms**: Inertia.js useForm / Form component (built-in)
 
 ## Core Features Summary
 
