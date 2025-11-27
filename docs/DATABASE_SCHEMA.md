@@ -2,599 +2,640 @@
 
 ## Overview
 
-This document outlines the complete database schema for the Sahittyacanvas blogging platform, including new tables to be created and modifications to existing tables.
+This document outlines the complete database schema for the Sahittyacanvas blogging platform. The schema is designed for a Bengali literature platform with multi-page post support, social features, and content moderation.
 
-## Existing Tables (Already Implemented)
+---
 
-### ✅ users
+## Existing Tables (From Laravel Starter Kit)
 
-- `id`, `name`, `username`, `email`, `bio`, `banner`
-- `email_verified_at`, `password`, `two_factor_*`
-- `created_at`, `updated_at`
+### ✅ users (base)
 
-### ✅ categories
+- `id`, `name`, `email`, `email_verified_at`, `password`
+- `two_factor_secret`, `two_factor_recovery_codes`, `two_factor_confirmed_at`
+- `remember_token`, `created_at`, `updated_at`
 
-- `id`, `name_bn`, `name_en`, `slug`, `description`
-- `parent_id` (self-referencing for nesting)
-- `icon`, `is_active`
-- `created_at`, `updated_at`
+### ✅ roles & permissions (Spatie Laravel Permission)
 
-### ✅ posts
-
-- `id`, `user_id`, `category_id`, `title`, `slug`, `excerpt`
-- `content`, `featured_image`, `status`, `published_at`
-- `views_count`, `likes_count`, `comments_count`
-- `created_at`, `updated_at`, `deleted_at`
-
-### ✅ comments
-
-- `id`, `post_id`, `user_id`, `parent_id`, `content`
-- `approved`, `created_at`, `updated_at`, `deleted_at`
-
-### ✅ likes
-
-- `id`, `user_id`, `post_id`
-- `created_at`, `updated_at`
-
-### ✅ bookmarks
-
-- `id`, `user_id`, `post_id`
-- `created_at`, `updated_at`
-
-### ✅ views
-
-- `id`, `post_id`, `user_id`, `ip_address`, `user_agent`
-- `created_at`, `updated_at`
-
-### ✅ roles & permissions (Spatie)
-
+- [GitHub](https://github.com/spatie/laravel-permission)
 - `roles`, `permissions`, `role_has_permissions`, `model_has_roles`, `model_has_permissions`
 
-## New Tables to Create
+### ✅ media (Spatie Media Library)
 
-### 1. authors (Famous Writers)
+- [GitHub](https://github.com/spatie/laravel-medialibrary)
+- Polymorphic media attachments for all models
 
-```sql
-CREATE TABLE authors (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name_bn VARCHAR(255) NOT NULL,
-    name_en VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) UNIQUE NOT NULL,
-    bio TEXT,
-    birth_date DATE,
-    death_date DATE,
-    nationality VARCHAR(100),
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
+### ✅ activity_log (Spatie Laravel Activitylog)
 
-    INDEX idx_slug (slug),
-    INDEX idx_is_active (is_active)
-);
-```
+- [GitHub](https://github.com/spatie/laravel-activitylog)
+- Audit trail for all model changes and user actions
+- Tracks causer, subject, properties (old/new values)
+- **Migrated**: `activity_log` table with `event` and `batch_uuid` columns
 
-**Purpose**: Store famous writers like Rabindranath Tagore for attribution.
+### ✅ laravisit_visits (Laravisit)
 
----
+- [GitHub](https://github.com/coderflexx/laravisit)
+- Visit tracking with IP, user, session, custom data
+- Popular timeframe queries (today, week, month, year)
+- Configurable intervals (hourly, daily, weekly, monthly)
+- **Usage**: Add `HasVisits` trait + `CanVisit` interface to Post model
 
-### 2. post_types
+### ✅ seo (Laravel SEO)
 
-```sql
-CREATE TABLE post_types (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    slug VARCHAR(100) UNIQUE NOT NULL,
-    description TEXT,
-    icon VARCHAR(50),
-    supports_multi_page BOOLEAN DEFAULT FALSE,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
-
-    INDEX idx_slug (slug)
-);
-```
-
-**Purpose**: Define content types (poetry, story, literature, novel, etc.)
-
-**Seed Data**:
-
-- Poetry (কবিতা)
-- Short Story (ছোট গল্প)
-- Novel (উপন্যাস) - multi-page
-- Literature (সাহিত্য)
-- Essay (প্রবন্ধ)
+- [GitHub](https://github.com/ralphjsmit/laravel-seo)
+- Polymorphic SEO for any model (Post, Category, Author, etc.)
+- Auto-generates: title, meta description, OpenGraph, Twitter Cards
+- JSON-LD structured data (Article, BreadcrumbList, FAQPage)
+- **Usage**: Add `HasSEO` trait + `getDynamicSEOData()` method to models
 
 ---
 
-### 3. post_pages (Multi-page Support)
+## New Tables
 
-```sql
-CREATE TABLE post_pages (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    post_id BIGINT UNSIGNED NOT NULL,
-    title VARCHAR(255),
-    content LONGTEXT NOT NULL,
-    page_number INT UNSIGNED NOT NULL,
-    is_published BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
+### 1. post_types
 
-    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
-    INDEX idx_post_page (post_id, page_number),
-    UNIQUE KEY unique_post_page (post_id, page_number)
-);
-```
+Content type classification for posts.
 
-**Purpose**: Support multi-page stories/novels with individual page content.
+| Column      | Type            | Constraints        | Description             |
+| ----------- | --------------- | ------------------ | ----------------------- |
+| id          | BIGINT UNSIGNED | PK, AUTO_INCREMENT |                         |
+| name        | VARCHAR(100)    | NOT NULL           | Display name            |
+| slug        | VARCHAR(100)    | UNIQUE, NOT NULL   | URL-friendly identifier |
+| description | TEXT            | NULLABLE           |                         |
+| icon        | VARCHAR(50)     | NULLABLE           | Icon class/name         |
+| is_active   | BOOLEAN         | DEFAULT TRUE       |                         |
+| created_at  | TIMESTAMP       | NULLABLE           |                         |
+| updated_at  | TIMESTAMP       | NULLABLE           |                         |
 
----
+**Indexes**: `slug`, `is_active`
 
-### 4. notifications
-
-```sql
-CREATE TABLE notifications (
-    id CHAR(36) PRIMARY KEY,
-    type VARCHAR(255) NOT NULL,
-    notifiable_type VARCHAR(255) NOT NULL,
-    notifiable_id BIGINT UNSIGNED NOT NULL,
-    data JSON NOT NULL,
-    read_at TIMESTAMP NULL,
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
-
-    INDEX idx_notifiable (notifiable_type, notifiable_id),
-    INDEX idx_read_at (read_at)
-);
-```
-
-**Purpose**: Laravel's default notification table for database channel.
+**Seed Data**: কবিতা (Poetry), ছোট গল্প (Short Story), উপন্যাস (Novel), সাহিত্য (Literature), প্রবন্ধ (Essay)
 
 ---
 
-### 5. notification_settings
+### 2. authors
 
-```sql
-CREATE TABLE notification_settings (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT UNSIGNED NOT NULL,
-    notification_type VARCHAR(100) NOT NULL,
-    channels JSON NOT NULL DEFAULT ('["database"]'),
-    is_enabled BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
+Famous writers for content attribution.
 
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_user_notification (user_id, notification_type),
-    INDEX idx_user_id (user_id)
-);
-```
+| Column      | Type            | Constraints        | Description             |
+| ----------- | --------------- | ------------------ | ----------------------- |
+| id          | BIGINT UNSIGNED | PK, AUTO_INCREMENT |                         |
+| name_bn     | VARCHAR(255)    | NOT NULL           | Bengali name            |
+| name_en     | VARCHAR(255)    | NOT NULL           | English name            |
+| slug        | VARCHAR(255)    | UNIQUE, NOT NULL   | URL-friendly identifier |
+| bio         | TEXT            | NULLABLE           | Biography               |
+| birth_date  | DATE            | NULLABLE           |                         |
+| death_date  | DATE            | NULLABLE           |                         |
+| nationality | VARCHAR(100)    | NULLABLE           |                         |
+| is_active   | BOOLEAN         | DEFAULT TRUE       |                         |
+| created_at  | TIMESTAMP       | NULLABLE           |                         |
+| updated_at  | TIMESTAMP       | NULLABLE           |                         |
 
-**Purpose**: User preferences for notification types and channels.
+**Indexes**: `slug`, `is_active`
+
+---
+
+### 3. categories
+
+Nested categories with SEO support.
+
+| Column           | Type            | Constraints                  | Description                  |
+| ---------------- | --------------- | ---------------------------- | ---------------------------- |
+| id               | BIGINT UNSIGNED | PK, AUTO_INCREMENT           |                              |
+| name_bn          | VARCHAR(255)    | NOT NULL                     | Bengali name                 |
+| name_en          | VARCHAR(255)    | NOT NULL                     | English name                 |
+| slug             | VARCHAR(255)    | UNIQUE, NOT NULL             | URL-friendly identifier      |
+| description      | TEXT            | NULLABLE                     |                              |
+| meta_description | TEXT            | NULLABLE                     | SEO description              |
+| parent_id        | BIGINT UNSIGNED | FK → categories.id, NULLABLE | Self-referencing for nesting |
+| icon             | VARCHAR(50)     | NULLABLE                     |                              |
+| image            | VARCHAR(255)    | NULLABLE                     | Category banner              |
+| is_active        | BOOLEAN         | DEFAULT TRUE                 |                              |
+| position         | INT UNSIGNED    | DEFAULT 0                    | Display order                |
+| created_at       | TIMESTAMP       | NULLABLE                     |                              |
+| updated_at       | TIMESTAMP       | NULLABLE                     |                              |
+
+**Indexes**: `slug`, `parent_id`, `is_active`, `position`
+
+**Foreign Keys**: `parent_id` → `categories(id)` ON DELETE SET NULL
+
+---
+
+### 4. users (modifications)
+
+Additional profile columns for the existing users table.
+
+| Column           | Type         | Constraints      | Description           |
+| ---------------- | ------------ | ---------------- | --------------------- |
+| username         | VARCHAR(255) | UNIQUE, NULLABLE | Public username       |
+| bio              | TEXT         | NULLABLE         | User biography        |
+| avatar           | VARCHAR(255) | NULLABLE         | Profile picture path  |
+| banner           | VARCHAR(255) | NULLABLE         | Profile banner path   |
+| is_verified      | BOOLEAN      | DEFAULT FALSE    | Verified author badge |
+| reputation_score | INT          | DEFAULT 0        | Gamification score    |
+| posts_count      | INT UNSIGNED | DEFAULT 0        | Cached counter        |
+| followers_count  | INT UNSIGNED | DEFAULT 0        | Cached counter        |
+| following_count  | INT UNSIGNED | DEFAULT 0        | Cached counter        |
+
+**Indexes**: `username`, `is_verified`, `reputation_score`
+
+---
+
+### 5. posts
+
+Main content table with moderation support.
+
+| Column            | Type            | Constraints                  | Description                         |
+| ----------------- | --------------- | ---------------------------- | ----------------------------------- |
+| id                | BIGINT UNSIGNED | PK, AUTO_INCREMENT           |                                     |
+| user_id           | BIGINT UNSIGNED | FK → users.id, NOT NULL      | Post author                         |
+| author_id         | BIGINT UNSIGNED | FK → authors.id, NULLABLE    | Famous writer attribution           |
+| category_id       | BIGINT UNSIGNED | FK → categories.id, NULLABLE |                                     |
+| post_type_id      | BIGINT UNSIGNED | FK → post_types.id, NULLABLE |                                     |
+| title             | VARCHAR(255)    | NOT NULL                     |                                     |
+| slug              | VARCHAR(255)    | UNIQUE, NOT NULL             |                                     |
+| excerpt           | TEXT            | NULLABLE                     | Short description                   |
+| featured_image    | VARCHAR(255)    | NULLABLE                     |                                     |
+| status            | ENUM            | DEFAULT 'draft'              | draft, pending, published, archived |
+| published_at      | TIMESTAMP       | NULLABLE                     |                                     |
+| requires_approval | BOOLEAN         | DEFAULT FALSE                | Moderation flag                     |
+| approved_at       | TIMESTAMP       | NULLABLE                     |                                     |
+| approved_by       | BIGINT UNSIGNED | FK → users.id, NULLABLE      | Admin who approved                  |
+| likes_count       | INT UNSIGNED    | DEFAULT 0                    | Cached counter                      |
+| comments_count    | INT UNSIGNED    | DEFAULT 0                    | Cached counter                      |
+| bookmarks_count   | INT UNSIGNED    | DEFAULT 0                    | Cached counter                      |
+| created_at        | TIMESTAMP       | NULLABLE                     |                                     |
+| updated_at        | TIMESTAMP       | NULLABLE                     |                                     |
+| deleted_at        | TIMESTAMP       | NULLABLE                     | Soft delete                         |
+
+**Indexes**: `status`, `published_at`, `(status, published_at)`, `(user_id, status)`, `(category_id, status)`, `(post_type_id, status)`, `(author_id, status)`
+
+**Foreign Keys**:
+
+- `user_id` → `users(id)` ON DELETE CASCADE
+- `author_id` → `authors(id)` ON DELETE SET NULL
+- `category_id` → `categories(id)` ON DELETE SET NULL
+- `post_type_id` → `post_types(id)` ON DELETE SET NULL
+- `approved_by` → `users(id)` ON DELETE SET NULL
+
+> **Note**: `views_count` is handled dynamically by **Laravisit** package via `Post::withTotalVisitCount()`.
+
+> **Note**: SEO (title, description, OpenGraph, Twitter Cards, JSON-LD) is handled by **Laravel SEO** package via `HasSEO` trait and polymorphic `seo` table.
+
+---
+
+### 6. post_pages
+
+Multi-page content support using order-based system.
+
+| Column       | Type            | Constraints             | Description             |
+| ------------ | --------------- | ----------------------- | ----------------------- |
+| id           | BIGINT UNSIGNED | PK, AUTO_INCREMENT      |                         |
+| post_id      | BIGINT UNSIGNED | FK → posts.id, NOT NULL |                         |
+| title        | VARCHAR(255)    | NULLABLE                | Chapter/page title      |
+| content      | LONGTEXT        | NOT NULL                | Page content (MDX)      |
+| order        | INT UNSIGNED    | DEFAULT 10              | Order-based positioning |
+| status       | ENUM            | DEFAULT 'draft'         | draft, published        |
+| published_at | TIMESTAMP       | NULLABLE                |                         |
+| created_at   | TIMESTAMP       | NULLABLE                |                         |
+| updated_at   | TIMESTAMP       | NULLABLE                |                         |
+| deleted_at   | TIMESTAMP       | NULLABLE                | Soft delete             |
+
+**Indexes**: `(post_id, order)`, `(post_id, status)`
+
+**Unique Constraints**: `(post_id, order)`
+
+**Foreign Keys**: `post_id` → `posts(id)` ON DELETE CASCADE
+
+**Order System Notes**:
+
+- Pages use `order` field (10, 20, 30...) instead of sequential page numbers
+- Insert between pages: use fractional order (e.g., 15 between 10 and 20)
+- Frontend calculates display page numbers from sorted order
+- Soft deletes maintain stable references
+- Background job can rebalance order gaps periodically
+
+---
+
+### 7. comments
+
+Nested comments with moderation. Uses **Laravel Adjacency List** ([GitHub](https://github.com/staudenmeir/laravel-adjacency-list)) for efficient recursive queries.
+
+| Column        | Type            | Constraints                | Description        |
+| ------------- | --------------- | -------------------------- | ------------------ |
+| id            | BIGINT UNSIGNED | PK, AUTO_INCREMENT         |                    |
+| post_id       | BIGINT UNSIGNED | FK → posts.id, NOT NULL    |                    |
+| user_id       | BIGINT UNSIGNED | FK → users.id, NOT NULL    |                    |
+| parent_id     | BIGINT UNSIGNED | FK → comments.id, NULLABLE | For nested replies |
+| content       | TEXT            | NOT NULL                   | Supports @mentions |
+| is_approved   | BOOLEAN         | DEFAULT FALSE              | Moderation status  |
+| replies_count | INT UNSIGNED    | DEFAULT 0                  | Cached counter     |
+| created_at    | TIMESTAMP       | NULLABLE                   |                    |
+| updated_at    | TIMESTAMP       | NULLABLE                   |                    |
+| deleted_at    | TIMESTAMP       | NULLABLE                   | Soft delete        |
+
+**Indexes**: `(post_id, is_approved, created_at)`, `(user_id, created_at)`, `parent_id`
+
+**Foreign Keys**:
+
+- `post_id` → `posts(id)` ON DELETE CASCADE
+- `user_id` → `users(id)` ON DELETE CASCADE
+- `parent_id` → `comments(id)` ON DELETE CASCADE
+
+**Laravel Adjacency List Features** ✅ (Package Installed):
+
+- `HasRecursiveRelationships` trait on Comment model
+- `ancestors()` - Get all parent comments up to root
+- `descendants()` - Get all nested replies recursively
+- `siblings()` - Get sibling comments at same level
+- `depth` - Automatic depth calculation
+- `tree()` - Get entire comment tree efficiently using CTEs
+- No N+1 queries for nested comment loading
+- Also usable on `Category` model for nested categories
+
+**Mention System**: Parse `@username` in content, create notifications for mentioned users.
+
+---
+
+### 8. likes
+
+Post likes (one per user per post).
+
+| Column     | Type            | Constraints             | Description |
+| ---------- | --------------- | ----------------------- | ----------- |
+| id         | BIGINT UNSIGNED | PK, AUTO_INCREMENT      |             |
+| user_id    | BIGINT UNSIGNED | FK → users.id, NOT NULL |             |
+| post_id    | BIGINT UNSIGNED | FK → posts.id, NOT NULL |             |
+| created_at | TIMESTAMP       | NULLABLE                |             |
+| updated_at | TIMESTAMP       | NULLABLE                |             |
+
+**Unique Constraints**: `(user_id, post_id)`
+
+**Indexes**: `post_id`
+
+**Foreign Keys**:
+
+- `user_id` → `users(id)` ON DELETE CASCADE
+- `post_id` → `posts(id)` ON DELETE CASCADE
+
+---
+
+### 9. bookmarks
+
+Post bookmarks (one per user per post).
+
+| Column     | Type            | Constraints             | Description |
+| ---------- | --------------- | ----------------------- | ----------- |
+| id         | BIGINT UNSIGNED | PK, AUTO_INCREMENT      |             |
+| user_id    | BIGINT UNSIGNED | FK → users.id, NOT NULL |             |
+| post_id    | BIGINT UNSIGNED | FK → posts.id, NOT NULL |             |
+| created_at | TIMESTAMP       | NULLABLE                |             |
+| updated_at | TIMESTAMP       | NULLABLE                |             |
+
+**Unique Constraints**: `(user_id, post_id)`
+
+**Indexes**: `post_id`
+
+**Foreign Keys**:
+
+- `user_id` → `users(id)` ON DELETE CASCADE
+- `post_id` → `posts(id)` ON DELETE CASCADE
+
+---
+
+### ~~10. views~~ → REPLACED BY LARAVISIT
+
+> **Note**: This table is replaced by **Laravisit** package (`coderflexx/laravisit`).
+> The package provides its own `laravisit_visits` table with more features.
+
+**Laravisit Features**:
+
+- `HasVisits` trait on Post model
+- `$post->visit()` - Record a visit
+- `$post->visit()->withIp()->withUser()->withData(['referrer' => 'google'])`
+- Configurable intervals: `hourlyInterval()`, `dailyInterval()`, `weeklyInterval()`, `monthlyInterval()`
+- Popular queries: `Post::popularToday()`, `Post::popularThisWeek()`, `Post::popularAllTime()`
+- `Post::withTotalVisitCount()->get()` - Include visit counts
+- Unique visits per interval (prevents duplicate counting)
+
+---
+
+### 11. follows
+
+Polymorphic follows with notification preferences (Twitter-like system).
+
+| Column           | Type            | Constraints             | Description                |
+| ---------------- | --------------- | ----------------------- | -------------------------- |
+| id               | BIGINT UNSIGNED | PK, AUTO_INCREMENT      |                            |
+| follower_id      | BIGINT UNSIGNED | FK → users.id, NOT NULL | User who follows           |
+| followable_type  | VARCHAR(255)    | NOT NULL                | Model class (User, Author) |
+| followable_id    | BIGINT UNSIGNED | NOT NULL                | Model ID                   |
+| notify_new_posts | BOOLEAN         | DEFAULT TRUE            | Get notified on new posts  |
+| notify_via_email | BOOLEAN         | DEFAULT FALSE           | Email notifications        |
+| notify_via_push  | BOOLEAN         | DEFAULT TRUE            | Push notifications         |
+| created_at       | TIMESTAMP       | NULLABLE                |                            |
+| updated_at       | TIMESTAMP       | NULLABLE                |                            |
+
+**Unique Constraints**: `(follower_id, followable_type, followable_id)`
+
+**Indexes**: `(followable_type, followable_id)`
+
+**Foreign Keys**: `follower_id` → `users(id)` ON DELETE CASCADE
+
+**Followable Types**: `App\Models\User`, `App\Models\Author`
+
+---
+
+### 12. reading_lists
+
+Custom reading lists/collections.
+
+| Column      | Type            | Constraints             | Description       |
+| ----------- | --------------- | ----------------------- | ----------------- |
+| id          | BIGINT UNSIGNED | PK, AUTO_INCREMENT      |                   |
+| user_id     | BIGINT UNSIGNED | FK → users.id, NOT NULL |                   |
+| name        | VARCHAR(255)    | NOT NULL                | List name         |
+| description | TEXT            | NULLABLE                |                   |
+| is_public   | BOOLEAN         | DEFAULT FALSE           | Public visibility |
+| created_at  | TIMESTAMP       | NULLABLE                |                   |
+| updated_at  | TIMESTAMP       | NULLABLE                |                   |
+
+**Indexes**: `user_id`, `is_public`
+
+**Foreign Keys**: `user_id` → `users(id)` ON DELETE CASCADE
+
+---
+
+### 13. reading_list_items
+
+Items in reading lists with ordering.
+
+| Column          | Type            | Constraints                     | Description   |
+| --------------- | --------------- | ------------------------------- | ------------- |
+| id              | BIGINT UNSIGNED | PK, AUTO_INCREMENT              |               |
+| reading_list_id | BIGINT UNSIGNED | FK → reading_lists.id, NOT NULL |               |
+| post_id         | BIGINT UNSIGNED | FK → posts.id, NOT NULL         |               |
+| position        | INT UNSIGNED    | DEFAULT 0                       | Display order |
+| created_at      | TIMESTAMP       | NULLABLE                        |               |
+| updated_at      | TIMESTAMP       | NULLABLE                        |               |
+
+**Unique Constraints**: `(reading_list_id, post_id)`
+
+**Indexes**: `reading_list_id`
+
+**Foreign Keys**:
+
+- `reading_list_id` → `reading_lists(id)` ON DELETE CASCADE
+- `post_id` → `posts(id)` ON DELETE CASCADE
+
+---
+
+### 14. notifications
+
+Laravel's default notification table.
+
+| Column          | Type            | Constraints | Description          |
+| --------------- | --------------- | ----------- | -------------------- |
+| id              | UUID            | PK          |                      |
+| type            | VARCHAR(255)    | NOT NULL    | Notification class   |
+| notifiable_type | VARCHAR(255)    | NOT NULL    | Model class          |
+| notifiable_id   | BIGINT UNSIGNED | NOT NULL    | Model ID             |
+| data            | JSON            | NOT NULL    | Notification payload |
+| read_at         | TIMESTAMP       | NULLABLE    |                      |
+| created_at      | TIMESTAMP       | NULLABLE    |                      |
+| updated_at      | TIMESTAMP       | NULLABLE    |                      |
+
+**Indexes**: `(notifiable_type, notifiable_id)`, `read_at`
+
+---
+
+### 15. notification_settings
+
+User notification preferences.
+
+| Column            | Type            | Constraints             | Description      |
+| ----------------- | --------------- | ----------------------- | ---------------- |
+| id                | BIGINT UNSIGNED | PK, AUTO_INCREMENT      |                  |
+| user_id           | BIGINT UNSIGNED | FK → users.id, NOT NULL |                  |
+| notification_type | VARCHAR(100)    | NOT NULL                | Type identifier  |
+| channels          | JSON            | DEFAULT '["database"]'  | Enabled channels |
+| is_enabled        | BOOLEAN         | DEFAULT TRUE            | Master toggle    |
+| created_at        | TIMESTAMP       | NULLABLE                |                  |
+| updated_at        | TIMESTAMP       | NULLABLE                |                  |
+
+**Unique Constraints**: `(user_id, notification_type)`
+
+**Indexes**: `user_id`
+
+**Foreign Keys**: `user_id` → `users(id)` ON DELETE CASCADE
 
 **Notification Types**:
 
-- `new_post` - New post from followed author
+- `new_post` - New post from followed user/author
 - `new_comment` - Comment on user's post
 - `comment_reply` - Reply to user's comment
 - `post_liked` - Someone liked user's post
 - `post_bookmarked` - Someone bookmarked user's post
-- `mention` - User mentioned in comment
-- `system` - System-level notifications
+- `mention` - User mentioned in comment (@username)
+- `system` - System announcements
 - `moderation` - Content moderation updates
 
 ---
 
-### 6. reports
+### 16. reports
 
-```sql
-CREATE TABLE reports (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    reporter_id BIGINT UNSIGNED NOT NULL,
-    reportable_type VARCHAR(255) NOT NULL,
-    reportable_id BIGINT UNSIGNED NOT NULL,
-    report_type ENUM('spam', 'inappropriate', 'copyright', 'harassment', 'misinformation', 'other') NOT NULL,
-    reason TEXT NOT NULL,
-    status ENUM('pending', 'reviewing', 'resolved', 'dismissed') DEFAULT 'pending',
-    admin_notes TEXT,
-    resolved_by BIGINT UNSIGNED,
-    resolved_at TIMESTAMP NULL,
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
+Polymorphic content reporting.
 
-    FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (resolved_by) REFERENCES users(id) ON DELETE SET NULL,
-    INDEX idx_reportable (reportable_type, reportable_id),
-    INDEX idx_status (status),
-    INDEX idx_reporter (reporter_id)
-);
-```
+| Column          | Type            | Constraints             | Description                                                       |
+| --------------- | --------------- | ----------------------- | ----------------------------------------------------------------- |
+| id              | BIGINT UNSIGNED | PK, AUTO_INCREMENT      |                                                                   |
+| reporter_id     | BIGINT UNSIGNED | FK → users.id, NOT NULL |                                                                   |
+| reportable_type | VARCHAR(255)    | NOT NULL                | Model class                                                       |
+| reportable_id   | BIGINT UNSIGNED | NOT NULL                | Model ID                                                          |
+| report_type     | ENUM            | NOT NULL                | spam, inappropriate, copyright, harassment, misinformation, other |
+| reason          | TEXT            | NOT NULL                | User explanation                                                  |
+| status          | ENUM            | DEFAULT 'pending'       | pending, reviewing, resolved, dismissed                           |
+| admin_notes     | TEXT            | NULLABLE                | Admin response                                                    |
+| resolved_by     | BIGINT UNSIGNED | FK → users.id, NULLABLE |                                                                   |
+| resolved_at     | TIMESTAMP       | NULLABLE                |                                                                   |
+| created_at      | TIMESTAMP       | NULLABLE                |                                                                   |
+| updated_at      | TIMESTAMP       | NULLABLE                |                                                                   |
 
-**Purpose**: Handle reports for posts, comments, authors, and general website issues.
+**Indexes**: `(reportable_type, reportable_id)`, `status`, `reporter_id`, `(status, created_at)`
 
-**Reportable Types**:
+**Foreign Keys**:
 
-- `App\Models\Post`
-- `App\Models\Comment`
-- `App\Models\Author`
-- `App\Models\User`
-- `Website` (general issues)
+- `reporter_id` → `users(id)` ON DELETE CASCADE
+- `resolved_by` → `users(id)` ON DELETE SET NULL
+
+**Reportable Types**: `App\Models\Post`, `App\Models\Comment`, `App\Models\User`, `App\Models\Author`
 
 ---
 
-### 7. follows
+### 17. contact_submissions
 
-```sql
-CREATE TABLE follows (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    follower_id BIGINT UNSIGNED NOT NULL,
-    followable_type VARCHAR(255) NOT NULL,
-    followable_id BIGINT UNSIGNED NOT NULL,
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
+Contact form submissions.
 
-    FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_follow (follower_id, followable_type, followable_id),
-    INDEX idx_followable (followable_type, followable_id),
-    INDEX idx_follower (follower_id)
-);
-```
+| Column     | Type            | Constraints        | Description                  |
+| ---------- | --------------- | ------------------ | ---------------------------- |
+| id         | BIGINT UNSIGNED | PK, AUTO_INCREMENT |                              |
+| name       | VARCHAR(255)    | NOT NULL           |                              |
+| email      | VARCHAR(255)    | NOT NULL           |                              |
+| subject    | VARCHAR(255)    | NOT NULL           |                              |
+| message    | TEXT            | NOT NULL           |                              |
+| status     | ENUM            | DEFAULT 'new'      | new, read, replied, archived |
+| ip_address | VARCHAR(45)     | NULLABLE           |                              |
+| user_agent | TEXT            | NULLABLE           |                              |
+| created_at | TIMESTAMP       | NULLABLE           |                              |
+| updated_at | TIMESTAMP       | NULLABLE           |                              |
 
-**Purpose**: Allow users to follow other users or famous authors.
-
----
-
-### 8. reading_lists
-
-```sql
-CREATE TABLE reading_lists (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT UNSIGNED NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    is_public BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
-
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_user_id (user_id),
-    INDEX idx_is_public (is_public)
-);
-```
-
-**Purpose**: Custom reading lists/collections for users.
+**Indexes**: `status`, `created_at`
 
 ---
 
-### 9. reading_list_items
+### 18. moderation_settings
 
-```sql
-CREATE TABLE reading_list_items (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    reading_list_id BIGINT UNSIGNED NOT NULL,
-    post_id BIGINT UNSIGNED NOT NULL,
-    position INT UNSIGNED DEFAULT 0,
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
+Global moderation toggles.
 
-    FOREIGN KEY (reading_list_id) REFERENCES reading_lists(id) ON DELETE CASCADE,
-    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_list_post (reading_list_id, post_id),
-    INDEX idx_reading_list (reading_list_id)
-);
-```
-
-**Purpose**: Items in reading lists with custom ordering.
-
----
-
-### 10. static_pages
-
-```sql
-CREATE TABLE static_pages (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) UNIQUE NOT NULL,
-    content LONGTEXT NOT NULL,
-    meta_description TEXT,
-    is_published BOOLEAN DEFAULT TRUE,
-    show_in_footer BOOLEAN DEFAULT TRUE,
-    position INT UNSIGNED DEFAULT 0,
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
-
-    INDEX idx_slug (slug),
-    INDEX idx_is_published (is_published)
-);
-```
-
-**Purpose**: Manage static pages (Terms, Privacy, Contact, etc.)
-
-**Seed Data**:
-
-- Terms & Conditions
-- Privacy Policy
-- Contact Us
-- FAQ
-
----
-
-### 11. contact_submissions
-
-```sql
-CREATE TABLE contact_submissions (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    subject VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL,
-    status ENUM('new', 'read', 'replied', 'archived') DEFAULT 'new',
-    ip_address VARCHAR(45),
-    user_agent TEXT,
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
-
-    INDEX idx_status (status),
-    INDEX idx_created_at (created_at)
-);
-```
-
-**Purpose**: Store contact form submissions.
-
----
-
-### 12. moderation_settings
-
-```sql
-CREATE TABLE moderation_settings (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    setting_key VARCHAR(100) UNIQUE NOT NULL,
-    setting_value BOOLEAN NOT NULL DEFAULT FALSE,
-    description TEXT,
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL
-);
-```
-
-**Purpose**: Global moderation toggles.
+| Column        | Type            | Constraints        | Description        |
+| ------------- | --------------- | ------------------ | ------------------ |
+| id            | BIGINT UNSIGNED | PK, AUTO_INCREMENT |                    |
+| setting_key   | VARCHAR(100)    | UNIQUE, NOT NULL   | Setting identifier |
+| setting_value | BOOLEAN         | DEFAULT FALSE      |                    |
+| description   | TEXT            | NULLABLE           |                    |
+| created_at    | TIMESTAMP       | NULLABLE           |                    |
+| updated_at    | TIMESTAMP       | NULLABLE           |                    |
 
 **Settings**:
 
 - `posts_require_approval` - New posts need admin review
 - `comments_require_approval` - New comments need approval
 - `auto_approve_verified_users` - Skip approval for verified users
-- `enable_spam_detection` - Auto-detect spam content
-
----
-
-### 13. comment_reactions
-
-```sql
-CREATE TABLE comment_reactions (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    comment_id BIGINT UNSIGNED NOT NULL,
-    user_id BIGINT UNSIGNED NOT NULL,
-    reaction_type ENUM('like', 'love', 'insightful', 'funny') NOT NULL,
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
-
-    FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_comment_user_reaction (comment_id, user_id),
-    INDEX idx_comment_id (comment_id)
-);
-```
-
-**Purpose**: React to comments with different emotion types.
-
----
-
-## Modifications to Existing Tables
-
-### posts (Add columns)
-
-```sql
-ALTER TABLE posts
-ADD COLUMN post_type_id BIGINT UNSIGNED AFTER category_id,
-ADD COLUMN author_id BIGINT UNSIGNED AFTER user_id,
-ADD COLUMN is_multi_page BOOLEAN DEFAULT FALSE AFTER content,
-ADD COLUMN scheduled_at TIMESTAMP NULL AFTER published_at,
-ADD COLUMN requires_approval BOOLEAN DEFAULT FALSE,
-ADD COLUMN approved_at TIMESTAMP NULL,
-ADD COLUMN approved_by BIGINT UNSIGNED,
-ADD FOREIGN KEY (post_type_id) REFERENCES post_types(id) ON DELETE SET NULL,
-ADD FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE SET NULL,
-ADD FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL,
-ADD INDEX idx_post_type (post_type_id),
-ADD INDEX idx_author (author_id),
-ADD INDEX idx_scheduled (scheduled_at),
-ADD INDEX idx_status_published (status, published_at);
-```
-
-**New Fields**:
-
-- `post_type_id` - Link to post type (poetry, story, etc.)
-- `author_id` - Famous author attribution (nullable)
-- `is_multi_page` - Flag for multi-page content
-- `scheduled_at` - Scheduled publishing time
-- `requires_approval` - Moderation flag
-- `approved_at`, `approved_by` - Approval tracking
-
----
-
-### categories (Add columns)
-
-```sql
-ALTER TABLE categories
-ADD COLUMN image VARCHAR(255) AFTER icon,
-ADD COLUMN meta_description TEXT AFTER description,
-ADD COLUMN position INT UNSIGNED DEFAULT 0 AFTER is_active;
-```
-
-**New Fields**:
-
-- `image` - Category image/banner
-- `meta_description` - SEO description
-- `position` - Custom ordering
-
----
-
-### users (Add columns)
-
-```sql
-ALTER TABLE users
-ADD COLUMN avatar VARCHAR(255) AFTER banner,
-ADD COLUMN is_verified BOOLEAN DEFAULT FALSE AFTER email_verified_at,
-ADD COLUMN reputation_score INT DEFAULT 0,
-ADD COLUMN posts_count INT UNSIGNED DEFAULT 0,
-ADD COLUMN followers_count INT UNSIGNED DEFAULT 0,
-ADD COLUMN following_count INT UNSIGNED DEFAULT 0,
-ADD INDEX idx_is_verified (is_verified),
-ADD INDEX idx_reputation (reputation_score);
-```
-
-**New Fields**:
-
-- `avatar` - Profile picture
-- `is_verified` - Verified author badge
-- `reputation_score` - User reputation points
-- `*_count` - Cached counters
-
----
-
-### comments (Add columns)
-
-```sql
-ALTER TABLE comments
-ADD COLUMN reactions_count INT UNSIGNED DEFAULT 0 AFTER approved,
-ADD INDEX idx_approved_created (approved, created_at);
-```
-
----
-
-## Media Library Tables (Spatie)
-
-Will be created automatically when installing `spatie/laravel-medialibrary`:
-
-### media
-
-```sql
-CREATE TABLE media (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    model_type VARCHAR(255) NOT NULL,
-    model_id BIGINT UNSIGNED NOT NULL,
-    uuid CHAR(36),
-    collection_name VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    file_name VARCHAR(255) NOT NULL,
-    mime_type VARCHAR(255),
-    disk VARCHAR(255) NOT NULL,
-    conversions_disk VARCHAR(255),
-    size BIGINT UNSIGNED NOT NULL,
-    manipulations JSON NOT NULL,
-    custom_properties JSON NOT NULL,
-    generated_conversions JSON NOT NULL,
-    responsive_images JSON NOT NULL,
-    order_column INT UNSIGNED,
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
-
-    INDEX idx_model (model_type, model_id),
-    INDEX idx_uuid (uuid)
-);
-```
-
-**Collections**:
-
-- `avatar` - User avatars
-- `banner` - User/category banners
-- `featured_image` - Post featured images
-- `content_images` - Inline content images
-- `author_photo` - Famous author photos
-
----
-
-## Indexes Strategy
-
-### High-Priority Indexes (Already Applied)
-
-- Primary keys on all tables
-- Foreign keys with indexes
-- Unique constraints (email, username, slug)
-- Composite indexes for common queries
-
-### Additional Recommended Indexes
-
-```sql
--- For post queries
-CREATE INDEX idx_posts_status_published_type ON posts(status, published_at, post_type_id);
-CREATE INDEX idx_posts_user_status ON posts(user_id, status);
-
--- For comment queries
-CREATE INDEX idx_comments_post_approved_created ON comments(post_id, approved, created_at);
-
--- For notification queries
-CREATE INDEX idx_notifications_unread ON notifications(notifiable_type, notifiable_id, read_at);
-
--- For report queries
-CREATE INDEX idx_reports_status_created ON reports(status, created_at);
-```
-
----
-
-## Migration Order
-
-1. ✅ Existing tables (already migrated)
-2. `post_types` (no dependencies)
-3. `authors` (no dependencies)
-4. `static_pages` (no dependencies)
-5. `moderation_settings` (no dependencies)
-6. Modify `users` table
-7. Modify `categories` table
-8. Modify `posts` table
-9. `post_pages` (depends on posts)
-10. `notifications` (Laravel default)
-11. `notification_settings` (depends on users)
-12. `reports` (depends on users)
-13. `follows` (depends on users)
-14. `reading_lists` (depends on users)
-15. `reading_list_items` (depends on reading_lists, posts)
-16. `contact_submissions` (no dependencies)
-17. `comment_reactions` (depends on comments, users)
-18. Install Spatie Media Library (creates `media` table)
 
 ---
 
 ## Database Relationships Summary
 
-### User Relationships
+### User
 
-- `hasMany`: posts, comments, likes, bookmarks, reports, reading_lists
-- `morphMany`: notifications, follows (as follower)
-- `belongsToMany`: roles, permissions
+- `hasMany`: posts, comments, likes, bookmarks, reports, reading_lists, follows (as follower)
+- `morphMany`: notifications
+- `belongsToMany`: roles, permissions (Spatie)
 
-### Post Relationships
+### Post
 
-- `belongsTo`: user, category, post_type, author
-- `hasMany`: comments, likes, bookmarks, views, pages
+- `belongsTo`: user, author, category, post_type, approved_by (user)
+- `hasMany`: pages, comments, likes, bookmarks, views
 - `morphMany`: reports, media
 
-### Category Relationships
+### PostPage
+
+- `belongsTo`: post
+
+### Comment
+
+- `belongsTo`: post, user, parent (self)
+- `hasMany`: replies (self)
+- `morphMany`: reports
+
+### Category
 
 - `belongsTo`: parent (self)
 - `hasMany`: children (self), posts
-- `morphOne`: media (for image)
+- `morphOne`: media
 
-### Comment Relationships
-
-- `belongsTo`: post, user, parent (self)
-- `hasMany`: replies (self), reactions
-- `morphMany`: reports
-
-### Author Relationships
+### Author
 
 - `hasMany`: posts
 - `morphMany`: follows, media
+
+### Follow
+
+- `belongsTo`: follower (User)
+- `morphTo`: followable (User, Author)
+
+### ReadingList
+
+- `belongsTo`: user
+- `hasMany`: items
+- `belongsToMany`: posts (through items)
+
+### Report
+
+- `belongsTo`: reporter (User), resolved_by (User)
+- `morphTo`: reportable
+
+---
+
+## Migration Order
+
+1. `post_types` (no dependencies)
+2. `authors` (no dependencies)
+3. `categories` (self-referencing)
+4. `users` modifications (add profile columns)
+5. `posts` (depends on users, authors, categories, post_types)
+6. `post_pages` (depends on posts)
+7. `comments` (depends on posts, users, self)
+8. `likes` (depends on users, posts)
+9. `bookmarks` (depends on users, posts)
+10. `views` (depends on posts, users)
+11. `follows` (depends on users, polymorphic)
+12. `reading_lists` (depends on users)
+13. `reading_list_items` (depends on reading_lists, posts)
+14. `notifications` (Laravel default)
+15. `notification_settings` (depends on users)
+16. `reports` (depends on users, polymorphic)
+17. `contact_submissions` (no dependencies)
+18. `moderation_settings` (no dependencies)
+
+---
+
+## Feature Flows
+
+### Post Creation Flow
+
+```
+User creates post → status: draft
+  ↓
+User adds pages → post_pages with order: 10, 20, 30...
+  ↓
+User submits → status: pending (if moderation enabled)
+  ↓
+Admin approves → status: published, approved_at set
+  ↓
+Followers notified (where notify_new_posts = true)
+```
+
+### Multi-Page Display Flow
+
+```
+Load post → Query post_pages WHERE status = 'published' ORDER BY order
+  ↓
+Count pages → If > 1, show pagination
+  ↓
+Display page N → Calculate from sorted order position
+```
+
+### Notification Flow (Twitter-like)
+
+```
+User A follows User B (notify_new_posts = true)
+  ↓
+User B publishes post
+  ↓
+Query: SELECT * FROM follows WHERE followable = User:B AND notify_new_posts = true
+  ↓
+Fanout notifications to followers via preferred channels
+```
+
+### Mention Flow
+
+```
+User writes comment with @username
+  ↓
+Parse content for @mentions
+  ↓
+Create notification for each mentioned user (if mention notifications enabled)
+```
 
 ---
 

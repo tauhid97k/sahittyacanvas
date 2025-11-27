@@ -10,16 +10,29 @@
 
 - Laravel 12 with Inertia.js (React 19)
 - User authentication (Laravel Fortify with 2FA)
-- Spatie Laravel Permission package installed
-- Basic database schema with:
-    - Users, Posts, Categories (nested), Comments (nested)
-    - Bookmarks, Likes, Views
-    - SEO metadata
-    - About Us page management
+- **All packages installed and configured**:
+    - Spatie Laravel Permission (roles & permissions)
+    - Spatie Media Library (file uploads)
+    - Laravisit (visit tracking)
+    - Laravel Adjacency List (nested comments & categories)
+    - Spatie Laravel Sitemap (SEO sitemap)
+    - Laravel SEO (meta tags, OpenGraph, JSON-LD)
+    - Spatie Laravel Activitylog (audit trail)
+- **Database migrations completed**:
+    - post_types, authors, categories
+    - users (profile columns), posts, post_pages
+    - comments, likes, bookmarks
+    - follows, reading_lists, reading_list_items
+    - notifications, notification_settings
+    - reports, contact_submissions, moderation_settings
+    - activity_log (with event & batch_uuid)
 
 ### 🚧 Needs Implementation
 
-See detailed plans in respective documentation files.
+- Eloquent Models with traits and relationships
+- Controllers and API routes
+- Frontend React components
+- See detailed plans in respective documentation files.
 
 ## Documentation Structure
 
@@ -41,8 +54,13 @@ This plan is split into multiple focused documents:
 - **PHP**: 8.4.14
 - **Database**: MySQL
 - **Authentication**: Laravel Fortify (with 2FA)
-- **Permissions**: Spatie Laravel Permission
-- **Media**: Spatie Media Library (to be installed)
+- **Permissions**: Spatie Laravel Permission ✅ - [GitHub](https://github.com/spatie/laravel-permission)
+- **Media**: Spatie Media Library ✅ - [GitHub](https://github.com/spatie/laravel-medialibrary)
+- **Visit Tracking**: Laravisit ✅ - [GitHub](https://github.com/coderflexx/laravisit)
+- **Recursive Relations**: Laravel Adjacency List ✅ - [GitHub](https://github.com/staudenmeir/laravel-adjacency-list)
+- **Sitemap**: Spatie Laravel Sitemap ✅ - [GitHub](https://github.com/spatie/laravel-sitemap)
+- **SEO**: Laravel SEO ✅ - [GitHub](https://github.com/ralphjsmit/laravel-seo)
+- **Activity Log**: Spatie Laravel Activitylog ✅ - [GitHub](https://github.com/spatie/laravel-activitylog)
 - **Broadcasting**: Laravel Echo + Pusher/Soketi
 - **Queue**: Redis/Database
 - **Cache**: Redis
@@ -122,11 +140,18 @@ This plan is split into multiple focused documents:
 
 ### 6. Engagement Features
 
-- Views tracking (IP-based + user-based)
+- **Views tracking via Laravisit**:
+    - IP-based + user-based tracking
+    - Popular posts by timeframe (today, week, month, year, all-time)
+    - Unique visits with configurable intervals (hourly, daily, weekly, monthly)
+    - Custom data tracking (region, referrer, etc.)
 - Likes system
 - Bookmarks/Reading lists
-- Nested comments with infinite replies
-- Comment reactions
+- **Nested comments via Laravel Adjacency List**:
+    - Efficient recursive queries using CTEs (Common Table Expressions)
+    - Get all ancestors, descendants, siblings in single query
+    - Tree traversal without N+1 queries
+    - Depth limiting for performance
 
 ### 7. Report System
 
@@ -156,6 +181,25 @@ This plan is split into multiple focused documents:
 - Image optimization
 - Multiple collections (avatars, banners, post images)
 - CDN-ready
+
+### 11. Activity Logging
+
+- **Spatie Laravel Activitylog** for audit trails:
+    - Track all model changes (create, update, delete)
+    - Log user actions (login, logout, profile updates)
+    - Admin actions logging (approvals, bans, content moderation)
+    - Custom activity logging for business events
+    - Store old/new values for change tracking
+    - Causer tracking (who performed the action)
+
+### 12. SEO & Sitemap
+
+- **Spatie Laravel Sitemap** for SEO:
+    - Auto-generate sitemap.xml
+    - Include posts, categories, authors, static pages
+    - Configurable change frequency and priority
+    - Sitemap index for large sites
+    - Scheduled regeneration via queue
 
 ## Development Principles
 
@@ -206,6 +250,6 @@ This plan is split into multiple focused documents:
 
 ---
 
-**Last Updated**: November 20, 2025  
-**Version**: 1.0.0  
-**Status**: Planning Phase
+**Last Updated**: November 27, 2025  
+**Version**: 1.1.0  
+**Status**: Migration Phase
