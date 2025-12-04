@@ -40,7 +40,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Categories',
-        href: '#',
+        href: '/dashboard/categories',
         icon: List,
     },
     {
