@@ -309,7 +309,14 @@ export default function CategoriesIndex({
                     <DataTable data={categories.data} columns={columns} />
 
                     {/* Pagination */}
-                    <Pagination links={categories.links} />
+                    <Pagination
+                        links={categories.links}
+                        from={categories.from}
+                        to={categories.to}
+                        total={categories.total}
+                        perPage={categories.per_page}
+                        currentPath={categories.path}
+                    />
                 </div>
             </div>
 
