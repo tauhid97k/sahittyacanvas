@@ -7,7 +7,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
     return (
         <Sonner
             richColors
-            position="bottom-right"
+            position="top-center"
             theme={appearance as ToasterProps['theme']}
             className="toaster group"
             style={

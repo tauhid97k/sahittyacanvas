@@ -27,8 +27,30 @@ class UpdateCategoryRequest extends FormRequest
         $category = $this->route('category');
 
         return [
-            'name_bn' => ['required', 'string', 'max:255'],
-            'name_en' => ['nullable', 'string', 'max:255'],
+            'name_bn' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) use ($category) {
+                    if (Category::whereRaw('LOWER(name_bn) = ?', [mb_strtolower($value)])
+                        ->where('id', '!=', $category->id)
+                        ->exists()) {
+                        $fail('This category name (Bengali) already exists.');
+                    }
+                },
+            ],
+            'name_en' => [
+                'nullable',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) use ($category) {
+                    if ($value && Category::whereRaw('LOWER(name_en) = ?', [strtolower($value)])
+                        ->where('id', '!=', $category->id)
+                        ->exists()) {
+                        $fail('This category name (English) already exists.');
+                    }
+                },
+            ],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique('categories', 'slug')->ignore($category->id)],
             'description' => ['nullable', 'string'],
             'parent_id' => [
