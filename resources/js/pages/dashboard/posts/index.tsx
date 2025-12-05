@@ -361,16 +361,14 @@ export default function PostsIndex({ posts, categories, filters }: Props) {
                         <DataTable columns={columns} data={posts.data} />
 
                         {/* Pagination */}
-                        {posts.last_page > 1 && (
-                            <Pagination
-                                links={posts.links}
-                                from={posts.from}
-                                to={posts.to}
-                                total={posts.total}
-                                perPage={posts.per_page}
-                                currentPath="/dashboard/posts"
-                            />
-                        )}
+                        <Pagination
+                            links={posts.links}
+                            from={posts.from}
+                            to={posts.to}
+                            total={posts.total}
+                            perPage={posts.per_page}
+                            currentPath="/dashboard/posts"
+                        />
                     </CardContent>
                 </Card>
             </div>

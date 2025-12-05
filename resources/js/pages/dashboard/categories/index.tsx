@@ -229,16 +229,14 @@ export default function CategoriesIndex({ categories, filters }: Props) {
                         <DataTable columns={columns} data={categories.data} />
 
                         {/* Pagination */}
-                        {categories.last_page > 1 && (
-                            <Pagination
-                                links={categories.links}
-                                from={categories.from}
-                                to={categories.to}
-                                total={categories.total}
-                                perPage={categories.per_page}
-                                currentPath="/dashboard/categories"
-                            />
-                        )}
+                        <Pagination
+                            links={categories.links}
+                            from={categories.from}
+                            to={categories.to}
+                            total={categories.total}
+                            perPage={categories.per_page}
+                            currentPath="/dashboard/categories"
+                        />
                     </CardContent>
                 </Card>
             </div>
