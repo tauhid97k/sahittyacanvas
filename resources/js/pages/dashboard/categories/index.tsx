@@ -19,6 +19,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { NoImage } from '@/components/ui/no-image';
 import { Pagination } from '@/components/ui/pagination';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
@@ -95,6 +96,20 @@ export default function CategoriesIndex({ categories, filters }: Props) {
 
     // Table columns
     const columns: ColumnDef<Category>[] = [
+        {
+            accessorKey: 'image_url',
+            header: 'Image',
+            cell: ({ row }) =>
+                row.original.image_url ? (
+                    <img
+                        src={row.original.image_url}
+                        alt={row.original.name_bn}
+                        className="size-14 rounded-md object-cover"
+                    />
+                ) : (
+                    <NoImage className="size-14" />
+                ),
+        },
         {
             accessorKey: 'name_bn',
             header: 'Name (Bengali)',
