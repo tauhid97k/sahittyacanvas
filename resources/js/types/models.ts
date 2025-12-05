@@ -35,21 +35,43 @@ export interface CategoryParent {
 
 export interface Post {
     id: number;
-    title: string;
+    user_id: number;
+    author_id: number | null;
+    title_bn: string;
+    title_en: string | null;
     slug: string;
-    excerpt: string | null;
-    status: 'draft' | 'pending' | 'published' | 'rejected';
+    excerpt: string;
+    meta_description: string | null;
+    status: 'draft' | 'pending' | 'published' | 'archived';
     published_at: string | null;
+    requires_approval: boolean;
+    approved_at: string | null;
+    approved_by: number | null;
     created_at: string;
     updated_at: string;
     // Relations
-    category?: Category;
-    author?: Author;
+    categories?: Category[];
+    author?: Author | null;
     user?: User;
+    pages?: PostPage[];
     // Counts
     likes_count?: number;
     comments_count?: number;
     bookmarks_count?: number;
+    // Computed
+    featured_image_url?: string | null;
+}
+
+export interface PostPage {
+    id: number;
+    post_id: number;
+    title: string | null;
+    content: string;
+    order: number;
+    status: 'draft' | 'published';
+    published_at: string | null;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface Author {
@@ -58,6 +80,9 @@ export interface Author {
     name_en: string | null;
     slug: string;
     bio: string | null;
+    birth_date: string | null;
+    death_date: string | null;
+    nationality: string | null;
     is_active: boolean;
     created_at: string;
     updated_at: string;

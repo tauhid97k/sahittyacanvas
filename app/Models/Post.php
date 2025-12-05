@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -25,11 +26,11 @@ class Post extends Model implements HasMedia, CanVisit
     protected $fillable = [
         'user_id',
         'author_id',
-        'category_id',
-        'post_type_id',
-        'title',
+        'title_bn',
+        'title_en',
         'slug',
         'excerpt',
+        'meta_description',
         'featured_image',
         'status',
         'published_at',
@@ -59,7 +60,7 @@ class Post extends Model implements HasMedia, CanVisit
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['title', 'slug', 'status', 'category_id', 'post_type_id', 'requires_approval'])
+            ->logOnly(['title', 'slug', 'status', 'requires_approval'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
@@ -177,19 +178,11 @@ class Post extends Model implements HasMedia, CanVisit
     }
 
     /**
-     * Get the category
+     * Get the categories (many-to-many)
      */
-    public function category(): BelongsTo
+    public function categories(): BelongsToMany
     {
-        return $this->belongsTo(Category::class);
-    }
-
-    /**
-     * Get the post type
-     */
-    public function postType(): BelongsTo
-    {
-        return $this->belongsTo(PostType::class);
+        return $this->belongsToMany(Category::class)->withTimestamps();
     }
 
     /**

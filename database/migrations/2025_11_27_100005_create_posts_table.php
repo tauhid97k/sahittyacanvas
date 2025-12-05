@@ -15,11 +15,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('author_id')->nullable()->constrained('authors')->nullOnDelete();
-            $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('post_type_id')->nullable()->constrained('post_types')->nullOnDelete();
-            $table->string('title');
+            $table->string('title_bn');
+            $table->string('title_en')->nullable();
             $table->string('slug')->unique();
-            $table->text('excerpt')->nullable();
+            $table->text('excerpt');
+            $table->string('meta_description', 160)->nullable();
             $table->string('featured_image')->nullable();
             $table->enum('status', ['draft', 'pending', 'published', 'archived'])->default('draft');
             $table->timestamp('published_at')->nullable();
@@ -38,8 +38,6 @@ return new class extends Migration
             $table->index('published_at');
             $table->index(['status', 'published_at']);
             $table->index(['user_id', 'status']);
-            $table->index(['category_id', 'status']);
-            $table->index(['post_type_id', 'status']);
             $table->index(['author_id', 'status']);
         });
     }

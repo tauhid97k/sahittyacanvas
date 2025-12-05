@@ -50,7 +50,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Posts',
-        href: '#',
+        href: '/dashboard/posts',
         icon: PenBox,
     },
     {
