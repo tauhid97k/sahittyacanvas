@@ -19,7 +19,7 @@ class CategoryController extends Controller
     public function index(Request $request): Response
     {
         $categories = Category::query()
-            ->with('parent:id,name_bn,name_en,slug')
+            ->with(['parent:id,name_bn,name_en,slug', 'media'])
             ->withCount('posts')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->get('search');
@@ -36,19 +36,53 @@ class CategoryController extends Controller
             ->paginate($request->get('per_page', 10))
             ->withQueryString();
 
-        // Get all categories for parent selection (excluding current for edit)
-        $allCategories = Category::query()
-            ->select('id', 'name_bn', 'name_en', 'slug', 'parent_id')
-            ->ordered()
-            ->get();
+        // Add image URL to each category
+        $categories->through(function ($category) {
+            $category->image_url = $category->getFirstMediaUrl('image') ?: null;
+            return $category;
+        });
 
         return Inertia::render('dashboard/categories/index', [
             'categories' => $categories,
-            'allCategories' => $allCategories,
             'filters' => [
                 'search' => $request->get('search', ''),
                 'status' => $request->get('status', ''),
             ],
+        ]);
+    }
+
+    /**
+     * Show the form for creating a new category.
+     */
+    public function create(): Response
+    {
+        $categories = Category::query()
+            ->select('id', 'name_bn', 'name_en')
+            ->ordered()
+            ->get();
+
+        return Inertia::render('dashboard/categories/create', [
+            'categories' => $categories,
+        ]);
+    }
+
+    /**
+     * Show the form for editing the specified category.
+     */
+    public function edit(Category $category): Response
+    {
+        $category->load('media');
+        $category->image_url = $category->getFirstMediaUrl('image') ?: null;
+
+        $categories = Category::query()
+            ->select('id', 'name_bn', 'name_en')
+            ->where('id', '!=', $category->id)
+            ->ordered()
+            ->get();
+
+        return Inertia::render('dashboard/categories/edit', [
+            'category' => $category,
+            'categories' => $categories,
         ]);
     }
 
@@ -59,10 +93,12 @@ class CategoryController extends Controller
     {
         $validated = $request->validated();
 
-        // Generate slug if not provided
-        if (empty($validated['slug'])) {
-            $validated['slug'] = Str::slug($validated['name_bn']);
-        }
+        // Remove image from validated data (handled separately)
+        $image = $validated['image'] ?? null;
+        unset($validated['image']);
+
+        // Generate slug from name_en
+        $validated['slug'] = Str::slug($validated['name_en']);
 
         // Ensure unique slug
         $baseSlug = $validated['slug'];
@@ -71,7 +107,12 @@ class CategoryController extends Controller
             $validated['slug'] = $baseSlug . '-' . $counter++;
         }
 
-        Category::create($validated);
+        $category = Category::create($validated);
+
+        // Handle image upload
+        if ($image) {
+            $category->addMedia($image)->toMediaCollection('image');
+        }
 
         return back()->with('success', 'Category created successfully.');
     }
@@ -83,19 +124,31 @@ class CategoryController extends Controller
     {
         $validated = $request->validated();
 
-        // Generate slug if not provided
-        if (empty($validated['slug'])) {
-            $validated['slug'] = Str::slug($validated['name_bn']);
-        }
+        // Remove image fields from validated data (handled separately)
+        $image = $validated['image'] ?? null;
+        $removeImage = $validated['remove_image'] ?? false;
+        unset($validated['image'], $validated['remove_image']);
 
-        // Ensure unique slug (excluding current)
-        $baseSlug = $validated['slug'];
-        $counter = 1;
-        while (Category::where('slug', $validated['slug'])->where('id', '!=', $category->id)->exists()) {
-            $validated['slug'] = $baseSlug . '-' . $counter++;
+        // Regenerate slug if name_en changed
+        if ($validated['name_en'] !== $category->name_en) {
+            $validated['slug'] = Str::slug($validated['name_en']);
+
+            // Ensure unique slug (excluding current)
+            $baseSlug = $validated['slug'];
+            $counter = 1;
+            while (Category::where('slug', $validated['slug'])->where('id', '!=', $category->id)->exists()) {
+                $validated['slug'] = $baseSlug . '-' . $counter++;
+            }
         }
 
         $category->update($validated);
+
+        // Handle image: upload new or remove existing
+        if ($image) {
+            $category->addMedia($image)->toMediaCollection('image');
+        } elseif ($removeImage) {
+            $category->clearMediaCollection('image');
+        }
 
         return back()->with('success', 'Category updated successfully.');
     }

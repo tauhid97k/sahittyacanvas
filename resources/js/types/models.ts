@@ -11,10 +11,7 @@ export interface Category {
     description: string | null;
     meta_description: string | null;
     parent_id: number | null;
-    icon: string | null;
-    image: string | null;
     is_active: boolean;
-    position: number;
     created_at: string;
     updated_at: string;
     // Relations
@@ -26,6 +23,7 @@ export interface Category {
     // Computed
     display_name?: string;
     breadcrumb?: Array<{ name: string; slug: string }>;
+    image_url?: string;
 }
 
 export interface CategoryParent {

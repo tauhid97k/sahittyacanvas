@@ -23,42 +23,36 @@ class CategorySeeder extends Seeder
                 'name_en' => 'Poetry',
                 'description' => 'বাংলা ও বিশ্ব সাহিত্যের কবিতা সংকলন',
                 'is_active' => true,
-                'position' => 1,
             ],
             [
                 'name_bn' => 'গল্প',
                 'name_en' => 'Short Stories',
                 'description' => 'ছোটগল্প ও উপন্যাসিকা',
                 'is_active' => true,
-                'position' => 2,
             ],
             [
                 'name_bn' => 'উপন্যাস',
                 'name_en' => 'Novels',
                 'description' => 'বাংলা ও অনূদিত উপন্যাস',
                 'is_active' => true,
-                'position' => 3,
             ],
             [
                 'name_bn' => 'প্রবন্ধ',
                 'name_en' => 'Essays',
                 'description' => 'সাহিত্য ও সমাজ বিষয়ক প্রবন্ধ',
                 'is_active' => true,
-                'position' => 4,
             ],
             [
                 'name_bn' => 'নাটক',
                 'name_en' => 'Drama',
                 'description' => 'মঞ্চ নাটক ও নাট্য সাহিত্য',
                 'is_active' => true,
-                'position' => 5,
             ],
             [
                 'name_bn' => 'ছড়া',
                 'name_en' => 'Rhymes',
                 'description' => 'শিশুতোষ ছড়া ও কিশোর সাহিত্য',
                 'is_active' => true,
-                'position' => 6,
             ],
         ];
 
@@ -80,7 +74,6 @@ class CategorySeeder extends Seeder
                 'description' => 'প্রেম ও ভালোবাসার কবিতা',
                 'parent' => 'Poetry',
                 'is_active' => true,
-                'position' => 1,
             ],
             [
                 'name_bn' => 'দেশাত্মবোধক কবিতা',
@@ -88,7 +81,6 @@ class CategorySeeder extends Seeder
                 'description' => 'দেশপ্রেম ও স্বাধীনতার কবিতা',
                 'parent' => 'Poetry',
                 'is_active' => true,
-                'position' => 2,
             ],
             [
                 'name_bn' => 'প্রকৃতির কবিতা',
@@ -96,7 +88,6 @@ class CategorySeeder extends Seeder
                 'description' => 'প্রকৃতি ও ঋতু বিষয়ক কবিতা',
                 'parent' => 'Poetry',
                 'is_active' => true,
-                'position' => 3,
             ],
             // Short Stories sub-categories
             [
@@ -105,7 +96,6 @@ class CategorySeeder extends Seeder
                 'description' => 'সমাজ জীবন নিয়ে গল্প',
                 'parent' => 'Short Stories',
                 'is_active' => true,
-                'position' => 1,
             ],
             [
                 'name_bn' => 'রহস্য গল্প',
@@ -113,7 +103,6 @@ class CategorySeeder extends Seeder
                 'description' => 'রহস্য ও রোমাঞ্চকর গল্প',
                 'parent' => 'Short Stories',
                 'is_active' => true,
-                'position' => 2,
             ],
             // Essays sub-categories
             [
@@ -122,7 +111,6 @@ class CategorySeeder extends Seeder
                 'description' => 'সাহিত্য বিশ্লেষণ ও সমালোচনা',
                 'parent' => 'Essays',
                 'is_active' => true,
-                'position' => 1,
             ],
         ];
 

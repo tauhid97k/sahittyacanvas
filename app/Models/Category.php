@@ -26,17 +26,13 @@ class Category extends Model implements HasMedia
         'description',
         'meta_description',
         'parent_id',
-        'icon',
-        'image',
         'is_active',
-        'position',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
-            'position' => 'integer',
         ];
     }
 
@@ -46,7 +42,7 @@ class Category extends Model implements HasMedia
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name_bn', 'name_en', 'slug', 'parent_id', 'is_active', 'position'])
+            ->logOnly(['name_bn', 'name_en', 'slug', 'parent_id', 'is_active'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
@@ -59,7 +55,7 @@ class Category extends Model implements HasMedia
         return new SEOData(
             title: $this->name_bn,
             description: $this->meta_description ?: ($this->description ? str()->limit($this->description, 160) : null),
-            image: $this->getFirstMediaUrl('banner'),
+            image: $this->getFirstMediaUrl('image'),
         );
     }
 
@@ -68,13 +64,9 @@ class Category extends Model implements HasMedia
      */
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('banner')
+        $this->addMediaCollection('image')
             ->singleFile()
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
-
-        $this->addMediaCollection('icon')
-            ->singleFile()
-            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']);
     }
 
     /**
@@ -117,11 +109,11 @@ class Category extends Model implements HasMedia
     }
 
     /**
-     * Scope: Order by position
+     * Scope: Order by name
      */
     public function scopeOrdered($query)
     {
-        return $query->orderBy('position');
+        return $query->orderBy('name_bn');
     }
 
     /**

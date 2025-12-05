@@ -27,6 +27,7 @@ class UpdateCategoryRequest extends FormRequest
         $category = $this->route('category');
 
         return [
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:2048'],
             'name_bn' => [
                 'required',
                 'string',
@@ -40,19 +41,19 @@ class UpdateCategoryRequest extends FormRequest
                 },
             ],
             'name_en' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
                 function ($attribute, $value, $fail) use ($category) {
-                    if ($value && Category::whereRaw('LOWER(name_en) = ?', [strtolower($value)])
+                    if (Category::whereRaw('LOWER(name_en) = ?', [strtolower($value)])
                         ->where('id', '!=', $category->id)
                         ->exists()) {
                         $fail('This category name (English) already exists.');
                     }
                 },
             ],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('categories', 'slug')->ignore($category->id)],
             'description' => ['nullable', 'string'],
+            'meta_description' => ['nullable', 'string', 'max:160'],
             'parent_id' => [
                 'nullable',
                 'exists:categories,id',
@@ -66,7 +67,7 @@ class UpdateCategoryRequest extends FormRequest
                 },
             ],
             'is_active' => ['boolean'],
-            'position' => ['nullable', 'integer', 'min:0'],
+            'remove_image' => ['boolean'],
         ];
     }
 }

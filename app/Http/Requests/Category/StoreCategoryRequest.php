@@ -23,6 +23,7 @@ class StoreCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:2048'],
             'name_bn' => [
                 'required',
                 'string',
@@ -34,20 +35,19 @@ class StoreCategoryRequest extends FormRequest
                 },
             ],
             'name_en' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
                 function ($attribute, $value, $fail) {
-                    if ($value && Category::whereRaw('LOWER(name_en) = ?', [strtolower($value)])->exists()) {
+                    if (Category::whereRaw('LOWER(name_en) = ?', [strtolower($value)])->exists()) {
                         $fail('This category name (English) already exists.');
                     }
                 },
             ],
-            'slug' => ['nullable', 'string', 'max:255', 'unique:categories,slug'],
             'description' => ['nullable', 'string'],
+            'meta_description' => ['nullable', 'string', 'max:160'],
             'parent_id' => ['nullable', 'exists:categories,id'],
             'is_active' => ['boolean'],
-            'position' => ['nullable', 'integer', 'min:0'],
         ];
     }
 }
