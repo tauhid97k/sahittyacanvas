@@ -142,77 +142,81 @@ Additional profile columns for the existing users table.
 
 ### 5. posts
 
-Main content table with moderation support.
+Main content table with multi-page and moderation support.
 
-| Column            | Type            | Constraints                  | Description                         |
-| ----------------- | --------------- | ---------------------------- | ----------------------------------- |
-| id                | BIGINT UNSIGNED | PK, AUTO_INCREMENT           |                                     |
-| user_id           | BIGINT UNSIGNED | FK → users.id, NOT NULL      | Post author                         |
-| author_id         | BIGINT UNSIGNED | FK → authors.id, NULLABLE    | Famous writer attribution           |
-| category_id       | BIGINT UNSIGNED | FK → categories.id, NULLABLE |                                     |
-| post_type_id      | BIGINT UNSIGNED | FK → post_types.id, NULLABLE |                                     |
-| title             | VARCHAR(255)    | NOT NULL                     |                                     |
-| slug              | VARCHAR(255)    | UNIQUE, NOT NULL             |                                     |
-| excerpt           | TEXT            | NULLABLE                     | Short description                   |
-| featured_image    | VARCHAR(255)    | NULLABLE                     |                                     |
-| status            | ENUM            | DEFAULT 'draft'              | draft, pending, published, archived |
-| published_at      | TIMESTAMP       | NULLABLE                     |                                     |
-| requires_approval | BOOLEAN         | DEFAULT FALSE                | Moderation flag                     |
-| approved_at       | TIMESTAMP       | NULLABLE                     |                                     |
-| approved_by       | BIGINT UNSIGNED | FK → users.id, NULLABLE      | Admin who approved                  |
-| likes_count       | INT UNSIGNED    | DEFAULT 0                    | Cached counter                      |
-| comments_count    | INT UNSIGNED    | DEFAULT 0                    | Cached counter                      |
-| bookmarks_count   | INT UNSIGNED    | DEFAULT 0                    | Cached counter                      |
-| created_at        | TIMESTAMP       | NULLABLE                     |                                     |
-| updated_at        | TIMESTAMP       | NULLABLE                     |                                     |
-| deleted_at        | TIMESTAMP       | NULLABLE                     | Soft delete                         |
+| Column            | Type            | Constraints               | Description                         |
+| ----------------- | --------------- | ------------------------- | ----------------------------------- |
+| id                | BIGINT UNSIGNED | PK, AUTO_INCREMENT        |                                     |
+| user_id           | BIGINT UNSIGNED | FK → users.id, NOT NULL   | Post author (submitter)             |
+| author_id         | BIGINT UNSIGNED | FK → authors.id, NULLABLE | Famous writer attribution           |
+| title_bn          | VARCHAR(255)    | UNIQUE, NOT NULL          | Bengali title                       |
+| title_en          | VARCHAR(255)    | UNIQUE, NOT NULL          | English title                       |
+| slug              | VARCHAR(255)    | UNIQUE, NOT NULL          | URL-friendly identifier             |
+| excerpt           | TEXT            | NOT NULL                  | Short summary                       |
+| content           | LONGTEXT        | NOT NULL                  | Page 1 content (main content)       |
+| meta_description  | VARCHAR(160)    | NULLABLE                  | SEO meta description                |
+| featured_image    | VARCHAR(255)    | NULLABLE                  | Via Spatie Media Library            |
+| status            | ENUM            | DEFAULT 'draft'           | draft, pending, published, archived |
+| published_at      | TIMESTAMP       | NULLABLE                  |                                     |
+| requires_approval | BOOLEAN         | DEFAULT FALSE             | Moderation flag                     |
+| approved_at       | TIMESTAMP       | NULLABLE                  |                                     |
+| approved_by       | BIGINT UNSIGNED | FK → users.id, NULLABLE   | Admin who approved                  |
+| likes_count       | INT UNSIGNED    | DEFAULT 0                 | Cached counter                      |
+| comments_count    | INT UNSIGNED    | DEFAULT 0                 | Cached counter                      |
+| bookmarks_count   | INT UNSIGNED    | DEFAULT 0                 | Cached counter                      |
+| pages_count       | INT UNSIGNED    | DEFAULT 0                 | Extra pages count (page 2+)         |
+| created_at        | TIMESTAMP       | NULLABLE                  |                                     |
+| updated_at        | TIMESTAMP       | NULLABLE                  |                                     |
+| deleted_at        | TIMESTAMP       | NULLABLE                  | Soft delete                         |
 
-**Indexes**: `status`, `published_at`, `(status, published_at)`, `(user_id, status)`, `(category_id, status)`, `(post_type_id, status)`, `(author_id, status)`
+**Indexes**: `slug` (unique), `title_bn` (unique), `title_en` (unique), `status`, `published_at`, `(status, published_at)`, `(user_id, status)`, `(author_id, status)`
 
 **Foreign Keys**:
 
 - `user_id` → `users(id)` ON DELETE CASCADE
 - `author_id` → `authors(id)` ON DELETE SET NULL
-- `category_id` → `categories(id)` ON DELETE SET NULL
-- `post_type_id` → `post_types(id)` ON DELETE SET NULL
 - `approved_by` → `users(id)` ON DELETE SET NULL
+
+**Multi-Page System**:
+
+- `content` field stores Page 1 (main content)
+- Additional pages stored in `post_pages` table
+- `pages_count` = number of extra pages (total pages = 1 + pages_count)
 
 > **Note**: `views_count` is handled dynamically by **Laravisit** package via `Post::withTotalVisitCount()`.
 
-> **Note**: SEO (title, description, OpenGraph, Twitter Cards, JSON-LD) is handled by **Laravel SEO** package via `HasSEO` trait and polymorphic `seo` table.
+> **Note**: Featured images handled via **Spatie Media Library** with `featured` collection.
 
 ---
 
 ### 6. post_pages
 
-Multi-page content support using order-based system.
+Multi-page content support. Page 1 content is stored in `posts.content`, additional pages (2+) are stored here.
 
-| Column       | Type            | Constraints             | Description             |
-| ------------ | --------------- | ----------------------- | ----------------------- |
-| id           | BIGINT UNSIGNED | PK, AUTO_INCREMENT      |                         |
-| post_id      | BIGINT UNSIGNED | FK → posts.id, NOT NULL |                         |
-| title        | VARCHAR(255)    | NULLABLE                | Chapter/page title      |
-| content      | LONGTEXT        | NOT NULL                | Page content (MDX)      |
-| order        | INT UNSIGNED    | DEFAULT 10              | Order-based positioning |
-| status       | ENUM            | DEFAULT 'draft'         | draft, published        |
-| published_at | TIMESTAMP       | NULLABLE                |                         |
-| created_at   | TIMESTAMP       | NULLABLE                |                         |
-| updated_at   | TIMESTAMP       | NULLABLE                |                         |
-| deleted_at   | TIMESTAMP       | NULLABLE                | Soft delete             |
+| Column     | Type            | Constraints             | Description                     |
+| ---------- | --------------- | ----------------------- | ------------------------------- |
+| id         | BIGINT UNSIGNED | PK, AUTO_INCREMENT      |                                 |
+| post_id    | BIGINT UNSIGNED | FK → posts.id, NOT NULL |                                 |
+| content    | LONGTEXT        | NULLABLE                | Page content (required on save) |
+| order      | INT             | NOT NULL                | Page number (2, 3, 4...)        |
+| created_at | TIMESTAMP       | NULLABLE                |                                 |
+| updated_at | TIMESTAMP       | NULLABLE                |                                 |
 
-**Indexes**: `(post_id, order)`, `(post_id, status)`
+**Indexes**: `(post_id, order)`
 
-**Unique Constraints**: `(post_id, order)`
+**Unique Constraints**: `unique_post_page_order (post_id, order)` - prevents duplicate page numbers
 
 **Foreign Keys**: `post_id` → `posts(id)` ON DELETE CASCADE
 
-**Order System Notes**:
+**Implementation Notes**:
 
-- Pages use `order` field (10, 20, 30...) instead of sequential page numbers
-- Insert between pages: use fractional order (e.g., 15 between 10 and 20)
-- Frontend calculates display page numbers from sorted order
-- Soft deletes maintain stable references
-- Background job can rebalance order gaps periodically
+- **Page 1** = `posts.content` (main post content)
+- **Page 2+** = `post_pages` table entries
+- `posts.pages_count` tracks extra pages count (not including page 1)
+- Total pages = `1 + pages_count`
+- Order numbers may have gaps after deletions (e.g., 1, 4, 5 if pages 2-3 deleted)
+- Frontend uses actual `pageOrders` array from backend for navigation
+- Backend validates content exists before allowing new page creation
 
 ---
 

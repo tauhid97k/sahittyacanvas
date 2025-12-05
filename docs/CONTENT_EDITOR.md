@@ -1,12 +1,20 @@
 # Content Editor Implementation
 
-## Overview
+## Current Status
 
-This document covers the implementation of a rich text/MDX editor with multi-page support for the Sahittyacanvas blogging platform.
+> **Note**: The multi-page system is implemented using a simple Textarea. The Tiptap rich text editor below is planned for future implementation.
+>
+> For the current multi-page implementation, see [POST_MULTIPAGE.md](./POST_MULTIPAGE.md).
 
 ---
 
-## Editor Choice: Tiptap
+## Overview
+
+This document covers the planned implementation of a rich text/MDX editor with multi-page support for the Sahittyacanvas blogging platform.
+
+---
+
+## Editor Choice: Tiptap (Planned)
 
 **Why Tiptap?**
 
