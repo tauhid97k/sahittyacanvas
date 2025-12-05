@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('title_en')->unique();
             $table->string('slug')->unique();
             $table->text('excerpt');
+            $table->longText('content'); // Page 1 content (main content)
             $table->string('meta_description', 160)->nullable();
             $table->string('featured_image')->nullable();
             $table->enum('status', ['draft', 'pending', 'published', 'archived'])->default('draft');
@@ -30,6 +31,7 @@ return new class extends Migration
             $table->unsignedInteger('likes_count')->default(0);
             $table->unsignedInteger('comments_count')->default(0);
             $table->unsignedInteger('bookmarks_count')->default(0);
+            $table->unsignedInteger('pages_count')->default(0); // Extra pages (page 2+)
             // SEO handled by ralphjsmit/laravel-seo package (polymorphic seo table)
             $table->timestamps();
             $table->softDeletes();

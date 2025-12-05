@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\PostPageController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -32,6 +33,11 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
     Route::get('posts/{post}/edit', [PostController::class, 'edit'])->name('posts.edit');
     Route::put('posts/{post}', [PostController::class, 'update'])->name('posts.update');
     Route::delete('posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
+
+    // Post Pages (multi-page support)
+    Route::post('posts/{post}/pages', [PostPageController::class, 'store'])->name('posts.pages.store');
+    Route::put('posts/{post}/pages/{page}', [PostPageController::class, 'update'])->name('posts.pages.update');
+    Route::delete('posts/{post}/pages/{page}', [PostPageController::class, 'destroy'])->name('posts.pages.destroy');
 });
 
 require __DIR__.'/settings.php';

@@ -104,11 +104,26 @@ class PostController extends Controller
 
     /**
      * Show the form for editing the specified post.
+     * Supports ?page=N query param for multi-page editing.
      */
-    public function edit(Post $post): Response
+    public function edit(Request $request, Post $post): Response|RedirectResponse
     {
         $post->load(['media', 'pages', 'categories']);
         $post->featured_image_url = $post->getFirstMediaUrl('featured') ?: null;
+
+        // Get current page number from query (default: 1 = main post content)
+        $currentPage = (int) $request->query('page', 1);
+        
+        // Get the page data if editing page 2+
+        $currentPageData = null;
+        if ($currentPage > 1) {
+            $currentPageData = $post->pages()->where('order', $currentPage)->first();
+            
+            // If page doesn't exist, redirect to main post
+            if (!$currentPageData) {
+                return redirect()->route('posts.edit', $post->slug);
+            }
+        }
 
         $categories = Category::query()
             ->select('id', 'name_bn', 'name_en')
@@ -122,10 +137,16 @@ class PostController extends Controller
             ->orderBy('name_bn')
             ->get();
 
+        // Get actual page orders (for navigation buttons)
+        $pageOrders = $post->pages->pluck('order')->toArray();
+
         return Inertia::render('dashboard/posts/edit', [
             'post' => $post,
             'categories' => $categories,
             'authors' => $authors,
+            'currentPage' => $currentPage,
+            'currentPageData' => $currentPageData,
+            'pageOrders' => $pageOrders,
         ]);
     }
 
@@ -138,9 +159,8 @@ class PostController extends Controller
 
         // Remove fields handled separately
         $image = $validated['featured_image'] ?? null;
-        $content = $validated['content'] ?? '';
         $categoryIds = $validated['category_ids'] ?? [];
-        unset($validated['featured_image'], $validated['content'], $validated['category_ids']);
+        unset($validated['featured_image'], $validated['category_ids']);
 
         // Generate slug from title_en
         $validated['slug'] = Str::slug($validated['title_en']);
@@ -172,15 +192,6 @@ class PostController extends Controller
             $post->addMedia($image)->toMediaCollection('featured');
         }
 
-        // Create first page with content
-        $post->pages()->create([
-            'title' => null, // Uses post title
-            'content' => $content,
-            'order' => 10,
-            'status' => $validated['status'] === 'published' ? 'published' : 'draft',
-            'published_at' => $validated['status'] === 'published' ? now() : null,
-        ]);
-
         return redirect()->route('posts.index')->with('success', 'Post created successfully.');
     }
 
@@ -194,9 +205,8 @@ class PostController extends Controller
         // Remove fields handled separately
         $image = $validated['featured_image'] ?? null;
         $removeImage = $validated['remove_image'] ?? false;
-        $content = $validated['content'] ?? '';
         $categoryIds = $validated['category_ids'] ?? [];
-        unset($validated['featured_image'], $validated['remove_image'], $validated['content'], $validated['category_ids']);
+        unset($validated['featured_image'], $validated['remove_image'], $validated['category_ids']);
 
         // Regenerate slug if title_en changed
         if ($validated['title_en'] !== $post->title_en) {
@@ -225,25 +235,6 @@ class PostController extends Controller
             $post->addMedia($image)->toMediaCollection('featured');
         } elseif ($removeImage) {
             $post->clearMediaCollection('featured');
-        }
-
-        // Update first page content
-        $firstPage = $post->pages()->orderBy('order')->first();
-        if ($firstPage) {
-            $firstPage->update([
-                'content' => $content,
-                'status' => $validated['status'] === 'published' ? 'published' : 'draft',
-                'published_at' => $validated['status'] === 'published' ? now() : null,
-            ]);
-        } else {
-            // Create first page if it doesn't exist
-            $post->pages()->create([
-                'title' => null,
-                'content' => $content,
-                'order' => 10,
-                'status' => $validated['status'] === 'published' ? 'published' : 'draft',
-                'published_at' => $validated['status'] === 'published' ? now() : null,
-            ]);
         }
 
         return back()->with('success', 'Post updated successfully.');

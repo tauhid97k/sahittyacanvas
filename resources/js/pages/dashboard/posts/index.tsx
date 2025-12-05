@@ -250,7 +250,7 @@ export default function PostsIndex({ posts, categories, filters }: Props) {
             cell: ({ row }) => (
                 <span className="flex items-center justify-center gap-1.5">
                     <FileText className="size-5" />
-                    {row.original.pages_count ?? 0}
+                    {(row.original.pages_count ?? 0) + 1}
                 </span>
             ),
         },

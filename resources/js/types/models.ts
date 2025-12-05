@@ -41,6 +41,7 @@ export interface Post {
     title_en: string;
     slug: string;
     excerpt: string;
+    content: string;
     meta_description: string | null;
     status: 'draft' | 'pending' | 'published' | 'archived';
     published_at: string | null;
@@ -67,11 +68,8 @@ export interface Post {
 export interface PostPage {
     id: number;
     post_id: number;
-    title: string | null;
     content: string;
     order: number;
-    status: 'draft' | 'published';
-    published_at: string | null;
     created_at: string;
     updated_at: string;
 }

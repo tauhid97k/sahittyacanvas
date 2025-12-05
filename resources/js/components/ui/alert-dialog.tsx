@@ -129,14 +129,16 @@ function AlertDialogDescription({
 function AlertDialogAction({
     className,
     isLoading,
+    variant,
     children,
     ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Action> & {
     isLoading?: boolean
+    variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
 }) {
     return (
         <AlertDialogPrimitive.Action
-            className={cn(buttonVariants(), className)}
+            className={cn(buttonVariants({ variant }), className)}
             disabled={isLoading}
             {...props}
         >

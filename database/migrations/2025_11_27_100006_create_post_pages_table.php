@@ -9,27 +9,22 @@ return new class extends Migration
     /**
      * Run the migrations.
      * 
-     * Multi-page support using order-based system:
-     * - Uses `order` field instead of sequential page numbers
-     * - Soft deletes maintain stable references
-     * - Frontend calculates page numbers from sorted order
-     * - Fractional ordering allows insertions without cascading updates
+     * Multi-page support for content continuation:
+     * - Page 1 content is in the post itself
+     * - Page 2+ content stored here
+     * - Order field determines page sequence (2, 3, 4...)
+     * - Inherits status/published_at from parent post
      */
     public function up(): void
     {
         Schema::create('post_pages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('post_id')->constrained()->cascadeOnDelete();
-            $table->string('title')->nullable();
-            $table->longText('content');
-            $table->unsignedInteger('order')->default(10);
-            $table->enum('status', ['draft', 'published'])->default('draft');
-            $table->timestamp('published_at')->nullable();
+            $table->longText('content')->nullable(); // Nullable for auto-creation, required on save
+            $table->unsignedInteger('order'); // Page number (2, 3, 4...)
             $table->timestamps();
-            $table->softDeletes();
 
             $table->index(['post_id', 'order']);
-            $table->index(['post_id', 'status']);
             $table->unique(['post_id', 'order'], 'unique_post_page_order');
         });
     }

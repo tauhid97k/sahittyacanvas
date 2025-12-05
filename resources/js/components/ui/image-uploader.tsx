@@ -8,6 +8,7 @@ interface ImageUploaderProps {
     accept?: string;
     maxSize?: number; // in MB
     className?: string;
+    containerClassName?: string; // For overriding the upload box styles
     disabled?: boolean;
     error?: string;
 }
@@ -18,6 +19,7 @@ export function ImageUploader({
     accept = 'image/jpeg,image/png,image/webp',
     maxSize = 2,
     className,
+    containerClassName,
     disabled = false,
     error,
 }: ImageUploaderProps) {
@@ -135,7 +137,8 @@ export function ImageUploader({
                         !preview && !dragActive && 'border-input hover:border-primary/50',
                         preview && (displayError ? 'border-destructive' : 'border-input'),
                         disabled && 'cursor-not-allowed opacity-50',
-                        !preview && displayError && 'border-destructive'
+                        !preview && displayError && 'border-destructive',
+                        containerClassName
                     )}
                 >
                     <input

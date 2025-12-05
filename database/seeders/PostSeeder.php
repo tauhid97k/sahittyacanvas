@@ -167,15 +167,13 @@ class PostSeeder extends Seeder
                 ->pluck('id')
                 ->toArray();
 
-            // Extract content for page
-            $content = $postData['content'];
-
-            // Create post
+            // Create post with content
             $slugSource = $postData['title_en'] ?: $postData['title_bn'];
             $post = Post::create([
                 'title_bn' => $postData['title_bn'],
                 'title_en' => $postData['title_en'],
                 'excerpt' => $postData['excerpt'],
+                'content' => $postData['content'], // Page 1 content in post itself
                 'meta_description' => $postData['meta_description'],
                 'status' => $postData['status'],
                 'user_id' => $user->id,
@@ -186,17 +184,8 @@ class PostSeeder extends Seeder
 
             // Attach categories
             $post->categories()->attach($categoryIds);
-
-            // Create first page with content
-            $post->pages()->create([
-                'title' => null,
-                'content' => $content,
-                'order' => 10,
-                'status' => $postData['status'] === 'published' ? 'published' : 'draft',
-                'published_at' => $postData['status'] === 'published' ? now() : null,
-            ]);
         }
 
-        $this->command->info('Created ' . count($posts) . ' posts with pages.');
+        $this->command->info('Created ' . count($posts) . ' posts.');
     }
 }

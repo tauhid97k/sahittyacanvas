@@ -30,6 +30,7 @@ class Post extends Model implements HasMedia, CanVisit
         'title_en',
         'slug',
         'excerpt',
+        'content',
         'meta_description',
         'featured_image',
         'status',
@@ -40,6 +41,7 @@ class Post extends Model implements HasMedia, CanVisit
         'likes_count',
         'comments_count',
         'bookmarks_count',
+        'pages_count',
     ];
 
     protected function casts(): array
@@ -51,6 +53,7 @@ class Post extends Model implements HasMedia, CanVisit
             'likes_count' => 'integer',
             'comments_count' => 'integer',
             'bookmarks_count' => 'integer',
+            'pages_count' => 'integer',
         ];
     }
 
@@ -60,7 +63,7 @@ class Post extends Model implements HasMedia, CanVisit
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['title', 'slug', 'status', 'requires_approval'])
+            ->logOnly(['title_bn', 'title_en', 'slug', 'status', 'requires_approval'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
@@ -202,16 +205,6 @@ class Post extends Model implements HasMedia, CanVisit
     }
 
     /**
-     * Get published pages only
-     */
-    public function publishedPages(): HasMany
-    {
-        return $this->hasMany(PostPage::class)
-            ->where('status', 'published')
-            ->orderBy('order');
-    }
-
-    /**
      * Get comments
      */
     public function comments(): HasMany
@@ -256,11 +249,11 @@ class Post extends Model implements HasMedia, CanVisit
     }
 
     /**
-     * Check if post is multi-page
+     * Check if post has multiple pages
      */
-    public function isMultiPage(): bool
+    public function hasPages(): bool
     {
-        return $this->pages()->count() > 1;
+        return $this->pages_count > 0;
     }
 
     /**
