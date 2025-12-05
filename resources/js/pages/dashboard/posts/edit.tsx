@@ -67,7 +67,7 @@ export default function EditPost({ post, categories, authors }: Props) {
         featured_image: null,
         remove_image: false,
         title_bn: post.title_bn,
-        title_en: post.title_en || '',
+        title_en: post.title_en,
         excerpt: post.excerpt,
         meta_description: post.meta_description || '',
         content: firstPageContent,
@@ -76,8 +76,8 @@ export default function EditPost({ post, categories, authors }: Props) {
         status: post.status,
     });
 
-    // Derived slug preview (from title_en or title_bn)
-    const slugPreview = slugify(form.data.title_en || form.data.title_bn, {
+    // Derived slug preview from title_en
+    const slugPreview = slugify(form.data.title_en, {
         lower: true,
         strict: true,
     });
@@ -236,7 +236,10 @@ export default function EditPost({ post, categories, authors }: Props) {
                                             }
                                         >
                                             <FieldLabel htmlFor="title_en">
-                                                Title (English)
+                                                Title (English){' '}
+                                                <span className="text-destructive">
+                                                    *
+                                                </span>
                                             </FieldLabel>
                                             <Input
                                                 id="title_en"

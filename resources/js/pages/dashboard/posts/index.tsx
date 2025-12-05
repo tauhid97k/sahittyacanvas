@@ -36,7 +36,16 @@ import { Category, Post } from '@/types/models';
 import { PaginatedData } from '@/types/pagination';
 import { Head, Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { MoreVertical, Pencil, Plus, Trash } from 'lucide-react';
+import {
+    Bookmark,
+    Eye,
+    FileText,
+    Heart,
+    MoreVertical,
+    Pencil,
+    Plus,
+    Trash,
+} from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useDebounceCallback } from 'usehooks-ts';
@@ -203,6 +212,46 @@ export default function PostsIndex({ posts, categories, filters }: Props) {
                     {row.original.status.charAt(0).toUpperCase() +
                         row.original.status.slice(1)}
                 </Badge>
+            ),
+        },
+        {
+            accessorKey: 'visit_count_total',
+            header: 'Views',
+            cell: ({ row }) => (
+                <span className="flex items-center justify-center gap-1.5">
+                    <Eye className="size-5" />
+                    {row.original.visit_count_total ?? 0}
+                </span>
+            ),
+        },
+        {
+            accessorKey: 'likes_count',
+            header: 'Likes',
+            cell: ({ row }) => (
+                <span className="flex items-center justify-center gap-1.5">
+                    <Heart className="size-5" />
+                    {row.original.likes_count ?? 0}
+                </span>
+            ),
+        },
+        {
+            accessorKey: 'bookmarks_count',
+            header: 'Bookmarks',
+            cell: ({ row }) => (
+                <span className="flex items-center justify-center gap-1.5">
+                    <Bookmark className="size-5" />
+                    {row.original.bookmarks_count ?? 0}
+                </span>
+            ),
+        },
+        {
+            accessorKey: 'pages_count',
+            header: 'Pages',
+            cell: ({ row }) => (
+                <span className="flex items-center justify-center gap-1.5">
+                    <FileText className="size-5" />
+                    {row.original.pages_count ?? 0}
+                </span>
             ),
         },
         {

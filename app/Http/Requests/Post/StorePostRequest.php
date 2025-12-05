@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Post;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StorePostRequest extends FormRequest
 {
@@ -20,8 +21,8 @@ class StorePostRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title_bn' => ['required', 'string', 'max:255'],
-            'title_en' => ['nullable', 'string', 'max:255'],
+            'title_bn' => ['required', 'string', 'max:255', Rule::unique('posts', 'title_bn')],
+            'title_en' => ['required', 'string', 'max:255', Rule::unique('posts', 'title_en')],
             'excerpt' => ['required', 'string'],
             'meta_description' => ['nullable', 'string', 'max:160'],
             'content' => ['required', 'string'],

@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('author_id')->nullable()->constrained('authors')->nullOnDelete();
-            $table->string('title_bn');
-            $table->string('title_en')->nullable();
+            $table->string('title_bn')->unique();
+            $table->string('title_en')->unique();
             $table->string('slug')->unique();
             $table->text('excerpt');
             $table->string('meta_description', 160)->nullable();

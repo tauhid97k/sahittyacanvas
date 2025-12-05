@@ -38,7 +38,7 @@ export interface Post {
     user_id: number;
     author_id: number | null;
     title_bn: string;
-    title_en: string | null;
+    title_en: string;
     slug: string;
     excerpt: string;
     meta_description: string | null;
@@ -58,6 +58,8 @@ export interface Post {
     likes_count?: number;
     comments_count?: number;
     bookmarks_count?: number;
+    pages_count?: number;
+    visit_count_total?: number;
     // Computed
     featured_image_url?: string | null;
 }

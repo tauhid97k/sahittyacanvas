@@ -19,6 +19,7 @@ class CategoryController extends Controller
     public function index(Request $request): Response
     {
         $categories = Category::query()
+            ->select(['id', 'name_bn', 'name_en', 'slug', 'description', 'parent_id', 'is_active', 'created_at'])
             ->with(['parent:id,name_bn,name_en,slug', 'media'])
             ->withCount('posts')
             ->when($request->filled('search'), function ($query) use ($request) {

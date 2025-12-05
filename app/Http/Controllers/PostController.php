@@ -21,16 +21,24 @@ class PostController extends Controller
     public function index(Request $request): Response
     {
         $posts = Post::query()
+            ->select([
+                'id', 'user_id', 'author_id', 'title_bn', 'title_en', 'slug', 
+                'excerpt', 'status', 'published_at', 'created_at',
+                'likes_count', 'comments_count', 'bookmarks_count'
+            ])
             ->with([
                 'user:id,name',
                 'author:id,name_bn,name_en,slug',
                 'categories:id,name_bn,name_en,slug',
                 'media',
             ])
+            ->withTotalVisitCount()
+            ->withCount('pages')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->get('search');
                 $query->where(function ($q) use ($search) {
-                    $q->where('title', 'like', "%{$search}%")
+                    $q->where('title_bn', 'like', "%{$search}%")
+                      ->orWhere('title_en', 'like', "%{$search}%")
                       ->orWhere('slug', 'like', "%{$search}%")
                       ->orWhere('excerpt', 'like', "%{$search}%");
                 });
@@ -134,9 +142,8 @@ class PostController extends Controller
         $categoryIds = $validated['category_ids'] ?? [];
         unset($validated['featured_image'], $validated['content'], $validated['category_ids']);
 
-        // Generate slug from title_en (or title_bn if no English title)
-        $slugSource = $validated['title_en'] ?: $validated['title_bn'];
-        $validated['slug'] = Str::slug($slugSource);
+        // Generate slug from title_en
+        $validated['slug'] = Str::slug($validated['title_en']);
 
         // Ensure unique slug
         $baseSlug = $validated['slug'];
@@ -191,11 +198,9 @@ class PostController extends Controller
         $categoryIds = $validated['category_ids'] ?? [];
         unset($validated['featured_image'], $validated['remove_image'], $validated['content'], $validated['category_ids']);
 
-        // Regenerate slug if title_en changed (or title_bn if no English title)
-        $slugSource = $validated['title_en'] ?: $validated['title_bn'];
-        $currentSlugSource = $post->title_en ?: $post->title_bn;
-        if ($slugSource !== $currentSlugSource) {
-            $validated['slug'] = Str::slug($slugSource);
+        // Regenerate slug if title_en changed
+        if ($validated['title_en'] !== $post->title_en) {
+            $validated['slug'] = Str::slug($validated['title_en']);
 
             // Ensure unique slug (excluding current)
             $baseSlug = $validated['slug'];

@@ -68,8 +68,8 @@ export default function CreatePost({ categories, authors }: Props) {
         status: 'draft',
     });
 
-    // Derived slug preview (from title_en or title_bn)
-    const slugPreview = slugify(form.data.title_en || form.data.title_bn, {
+    // Derived slug preview from title_en
+    const slugPreview = slugify(form.data.title_en, {
         lower: true,
         strict: true,
     });
@@ -203,7 +203,10 @@ export default function CreatePost({ categories, authors }: Props) {
                                             }
                                         >
                                             <FieldLabel htmlFor="title_en">
-                                                Title (English)
+                                                Title (English){' '}
+                                                <span className="text-destructive">
+                                                    *
+                                                </span>
                                             </FieldLabel>
                                             <Input
                                                 id="title_en"

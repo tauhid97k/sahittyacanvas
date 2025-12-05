@@ -4,6 +4,7 @@ namespace App\Http\Requests\Post;
 
 use App\Models\Post;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdatePostRequest extends FormRequest
 {
@@ -21,8 +22,8 @@ class UpdatePostRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title_bn' => ['required', 'string', 'max:255'],
-            'title_en' => ['nullable', 'string', 'max:255'],
+            'title_bn' => ['required', 'string', 'max:255', Rule::unique('posts', 'title_bn')->ignore($this->route('post'))],
+            'title_en' => ['required', 'string', 'max:255', Rule::unique('posts', 'title_en')->ignore($this->route('post'))],
             'excerpt' => ['required', 'string'],
             'meta_description' => ['nullable', 'string', 'max:160'],
             'content' => ['required', 'string'],
