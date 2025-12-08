@@ -22,7 +22,6 @@ return new class extends Migration
             $table->string('nationality', 100)->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-
             $table->index('slug');
             $table->index('is_active');
         });

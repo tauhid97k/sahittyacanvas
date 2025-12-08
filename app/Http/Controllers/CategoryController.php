@@ -161,7 +161,7 @@ class CategoryController extends Controller
     {
         // Check if category has posts
         if ($category->posts()->exists()) {
-            return back()->with('error', 'Cannot delete category with posts.');
+            return back()->withErrors(['delete' => 'Cannot delete category with posts.']);
         }
 
         // Move children to parent (or make them root)

@@ -86,6 +86,10 @@ export interface Author {
     is_active: boolean;
     created_at: string;
     updated_at: string;
+    // Counts
+    posts_count?: number;
+    // Computed
+    avatar_url?: string | null;
 }
 
 export interface User {

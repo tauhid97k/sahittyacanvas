@@ -23,7 +23,7 @@ import { NoImage } from '@/components/ui/no-image';
 import { Pagination } from '@/components/ui/pagination';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Category } from '@/types/models';
+import { Author } from '@/types/models';
 import { PaginatedData } from '@/types/pagination';
 import { Head, Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
@@ -33,7 +33,7 @@ import { toast } from 'sonner';
 import { useDebounceCallback } from 'usehooks-ts';
 
 interface Props {
-    categories: PaginatedData<Category>;
+    authors: PaginatedData<Author>;
     filters: {
         search: string;
         status: string;
@@ -42,21 +42,19 @@ interface Props {
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Categories', href: '/dashboard/categories' },
+    { title: 'Authors', href: '/dashboard/authors' },
 ];
 
-export default function CategoriesIndex({ categories, filters }: Props) {
+export default function AuthorsIndex({ authors, filters }: Props) {
     const [search, setSearch] = useState(filters.search);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState<Category | null>(
-        null,
-    );
+    const [selectedAuthor, setSelectedAuthor] = useState<Author | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
     // Debounced search
     const debouncedSearch = useDebounceCallback((value: string) => {
         router.get(
-            '/dashboard/categories',
+            '/dashboard/authors',
             { search: value || undefined, page: 1 },
             { preserveState: true, preserveScroll: true, replace: true },
         );
@@ -68,26 +66,24 @@ export default function CategoriesIndex({ categories, filters }: Props) {
     };
 
     // Open Delete Dialog
-    const openDelete = (category: Category) => {
-        setSelectedCategory(category);
+    const openDelete = (author: Author) => {
+        setSelectedAuthor(author);
         setOpenDeleteDialog(true);
     };
 
     // Handle Delete
     const handleDelete = () => {
-        if (!selectedCategory) return;
+        if (!selectedAuthor) return;
 
         setIsDeleting(true);
-        router.delete(`/dashboard/categories/${selectedCategory.slug}`, {
+        router.delete(`/dashboard/authors/${selectedAuthor.slug}`, {
             onSuccess: () => {
-                toast.success('Category deleted successfully');
+                toast.success('Author deleted successfully');
                 setOpenDeleteDialog(false);
-                setSelectedCategory(null);
+                setSelectedAuthor(null);
             },
-            onError: (errors) => {
-                const message = errors.delete || 'Failed to delete category';
-                toast.error(message);
-                setOpenDeleteDialog(false);
+            onError: () => {
+                toast.error('Failed to delete author');
             },
             onFinish: () => {
                 setIsDeleting(false);
@@ -96,19 +92,19 @@ export default function CategoriesIndex({ categories, filters }: Props) {
     };
 
     // Table columns
-    const columns: ColumnDef<Category>[] = [
+    const columns: ColumnDef<Author>[] = [
         {
-            accessorKey: 'image_url',
-            header: 'Image',
+            accessorKey: 'avatar_url',
+            header: 'Photo',
             cell: ({ row }) =>
-                row.original.image_url ? (
+                row.original.avatar_url ? (
                     <img
-                        src={row.original.image_url}
+                        src={row.original.avatar_url}
                         alt={row.original.name_bn}
-                        className="size-14 rounded-md object-cover"
+                        className="size-14 rounded-full object-cover"
                     />
                 ) : (
-                    <NoImage className="size-14" />
+                    <NoImage className="size-14 rounded-full" />
                 ),
         },
         {
@@ -128,13 +124,13 @@ export default function CategoriesIndex({ categories, filters }: Props) {
             ),
         },
         {
-            accessorKey: 'parent',
-            header: 'Parent',
+            accessorKey: 'nationality',
+            header: 'Nationality',
             cell: ({ row }) =>
-                row.original.parent ? (
-                    <Badge variant="secondary">
-                        {row.original.parent.name_bn}
-                    </Badge>
+                row.original.nationality ? (
+                    <span className="text-muted-foreground">
+                        {row.original.nationality}
+                    </span>
                 ) : null,
         },
         {
@@ -170,7 +166,7 @@ export default function CategoriesIndex({ categories, filters }: Props) {
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
                             <Link
-                                href={`/dashboard/categories/${row.original.slug}/edit`}
+                                href={`/dashboard/authors/${row.original.slug}/edit`}
                             >
                                 <Pencil />
                                 Edit
@@ -191,21 +187,21 @@ export default function CategoriesIndex({ categories, filters }: Props) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Categories" />
+            <Head title="Authors" />
 
             <div className="flex flex-col gap-6">
                 {/* Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl font-semibold">Categories</h1>
+                        <h1 className="text-2xl font-semibold">Authors</h1>
                         <p className="text-sm text-muted-foreground">
-                            Manage your content categories
+                            Manage famous writers and authors
                         </p>
                     </div>
                     <Button asChild>
-                        <Link href="/dashboard/categories/create">
+                        <Link href="/dashboard/authors/create">
                             <Plus />
-                            Add Category
+                            Add Author
                         </Link>
                     </Button>
                 </div>
@@ -216,7 +212,7 @@ export default function CategoriesIndex({ categories, filters }: Props) {
                         {/* Search */}
                         <div className="mb-6 flex items-center gap-4">
                             <Input
-                                placeholder="Search categories..."
+                                placeholder="Search authors..."
                                 value={search}
                                 type="search"
                                 onChange={(e) =>
@@ -227,16 +223,16 @@ export default function CategoriesIndex({ categories, filters }: Props) {
                         </div>
 
                         {/* Table */}
-                        <DataTable columns={columns} data={categories.data} />
+                        <DataTable columns={columns} data={authors.data} />
 
                         {/* Pagination */}
                         <Pagination
-                            links={categories.links}
-                            from={categories.from}
-                            to={categories.to}
-                            total={categories.total}
-                            perPage={categories.per_page}
-                            currentPath="/dashboard/categories"
+                            links={authors.links}
+                            from={authors.from}
+                            to={authors.to}
+                            total={authors.total}
+                            perPage={authors.per_page}
+                            currentPath="/dashboard/authors"
                         />
                     </CardContent>
                 </Card>
@@ -249,10 +245,10 @@ export default function CategoriesIndex({ categories, filters }: Props) {
             >
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Category</AlertDialogTitle>
+                        <AlertDialogTitle>Delete Author</AlertDialogTitle>
                         <AlertDialogDescription>
                             Are you sure you want to delete "
-                            {selectedCategory?.name_bn}"? This action cannot be
+                            {selectedAuthor?.name_bn}"? This action cannot be
                             undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>

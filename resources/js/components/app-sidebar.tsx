@@ -45,7 +45,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Famous Writers',
-        href: '#',
+        href: '/dashboard/authors',
         icon: Feather,
     },
     {

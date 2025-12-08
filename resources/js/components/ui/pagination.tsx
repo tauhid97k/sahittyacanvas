@@ -60,27 +60,28 @@ export function Pagination({
                 )}
             </div>
 
-            {/* Controls */}
-            <div className="flex items-center gap-3">
-                {/* Per page selector */}
-                <Select
-                    value={perPage.toString()}
-                    onValueChange={handlePerPageChange}
-                >
-                    <SelectTrigger className="w-[120px]">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {perPageOptions.map((option) => (
-                            <SelectItem key={option} value={option.toString()}>
-                                {option} / page
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+            {/* Controls - only show if there's more than one page worth of data */}
+            {total > Math.min(...perPageOptions) && (
+                <div className="flex items-center gap-3">
+                    {/* Per page selector */}
+                    <Select
+                        value={perPage.toString()}
+                        onValueChange={handlePerPageChange}
+                    >
+                        <SelectTrigger className="w-[120px]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {perPageOptions.map((option) => (
+                                <SelectItem key={option} value={option.toString()}>
+                                    {option} / page
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
 
-                {/* Page links */}
-                {links.length > 3 && (
+                    {/* Page links */}
+                    {links.length > 3 && (
                     <div className="flex items-center gap-1.5">
                         {links.map((link, index) =>
                             link.url ? (
@@ -119,8 +120,9 @@ export function Pagination({
                             )
                         )}
                     </div>
-                )}
-            </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
