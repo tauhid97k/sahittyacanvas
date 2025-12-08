@@ -25,7 +25,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Author, Category } from '@/types/models';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import { useState } from 'react';
 import slugify from 'slugify';
 import { toast } from 'sonner';
@@ -45,6 +45,7 @@ export default function CreatePost({ categories, authors }: Props) {
     const [submittingStatus, setSubmittingStatus] = useState<
         'draft' | 'published' | null
     >(null);
+    const [isAddingPage, setIsAddingPage] = useState(false);
 
     const form = useForm<{
         featured_image: File | null;
@@ -111,6 +112,44 @@ export default function CreatePost({ categories, authors }: Props) {
         });
     };
 
+    // Handle adding a new page - saves post first, then creates page 2
+    const handleAddPage = () => {
+        // Validate content exists
+        if (!form.data.content || form.data.content.trim() === '') {
+            toast.error('Please add content to the current page first');
+            return;
+        }
+
+        // Validate required fields
+        if (!form.data.title_bn || !form.data.title_en || !form.data.excerpt) {
+            toast.error('Please fill in all required fields first');
+            return;
+        }
+
+        setIsAddingPage(true);
+
+        // Save as draft and create new page
+        form.transform((data) => ({
+            ...data,
+            status: 'draft',
+            _create_page: true, // Signal backend to create page 2
+        }));
+
+        form.post('/dashboard/posts', {
+            forceFormData: true,
+            onSuccess: () => {
+                toast.success('Post saved. Redirecting to add new page...');
+            },
+            onError: () => {
+                toast.error('Failed to save post');
+                setIsAddingPage(false);
+            },
+            onFinish: () => {
+                setIsAddingPage(false);
+            },
+        });
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Post" />
@@ -131,23 +170,170 @@ export default function CreatePost({ categories, authors }: Props) {
                     <FieldSet disabled={form.processing}>
                         {/* Two Column Grid */}
                         <div className="grid gap-6 lg:grid-cols-3">
-                            {/* Left Card - Main Info */}
-                            <Card className="lg:col-span-2">
-                                <CardHeader>
-                                    <CardTitle>Post Information</CardTitle>
-                                    <CardDescription>
-                                        Basic details about the post
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <FieldGroup>
-                                        {/* Featured Image */}
+                            {/* Left Column */}
+                            <div className="flex flex-col gap-6 lg:col-span-2">
+                                {/* Card 1: Basic Info - Title, Slug, Excerpt */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Post Information</CardTitle>
+                                        <CardDescription>
+                                            Basic details about the post
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <FieldGroup>
+                                            {/* Title (Bengali) */}
+                                            <Field
+                                                data-invalid={
+                                                    !!form.errors.title_bn
+                                                }
+                                            >
+                                                <FieldLabel htmlFor="title_bn">
+                                                    Title (Bengali){' '}
+                                                    <span className="text-destructive">
+                                                        *
+                                                    </span>
+                                                </FieldLabel>
+                                                <Input
+                                                    id="title_bn"
+                                                    value={form.data.title_bn}
+                                                    onChange={(e) =>
+                                                        form.setData(
+                                                            'title_bn',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                />
+                                                <FieldError>
+                                                    {form.errors.title_bn}
+                                                </FieldError>
+                                            </Field>
+
+                                            {/* Title (English) */}
+                                            <Field
+                                                data-invalid={
+                                                    !!form.errors.title_en
+                                                }
+                                            >
+                                                <FieldLabel htmlFor="title_en">
+                                                    Title (English){' '}
+                                                    <span className="text-destructive">
+                                                        *
+                                                    </span>
+                                                </FieldLabel>
+                                                <Input
+                                                    id="title_en"
+                                                    value={form.data.title_en}
+                                                    onChange={(e) =>
+                                                        form.setData(
+                                                            'title_en',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                />
+                                                <FieldError>
+                                                    {form.errors.title_en}
+                                                </FieldError>
+                                            </Field>
+
+                                            {/* Slug Preview */}
+                                            <Field>
+                                                <FieldLabel htmlFor="slug">
+                                                    Slug (auto-generated)
+                                                </FieldLabel>
+                                                <Input
+                                                    id="slug"
+                                                    value={slugPreview}
+                                                    disabled
+                                                    readOnly
+                                                    className="bg-muted"
+                                                />
+                                            </Field>
+
+                                            {/* Excerpt */}
+                                            <Field
+                                                data-invalid={
+                                                    !!form.errors.excerpt
+                                                }
+                                            >
+                                                <FieldLabel htmlFor="excerpt">
+                                                    Excerpt{' '}
+                                                    <span className="text-destructive">
+                                                        *
+                                                    </span>
+                                                </FieldLabel>
+                                                <Textarea
+                                                    id="excerpt"
+                                                    value={form.data.excerpt}
+                                                    onChange={(e) =>
+                                                        form.setData(
+                                                            'excerpt',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    rows={2}
+                                                    placeholder="A short summary of the post..."
+                                                />
+                                                <FieldError>
+                                                    {form.errors.excerpt}
+                                                </FieldError>
+                                            </Field>
+                                        </FieldGroup>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Card 2: Content (Large) */}
+                                <Card>
+                                    <CardHeader className="pb-4">
+                                        <CardTitle>Content</CardTitle>
+                                        <CardDescription>
+                                            Write your post content here (Page
+                                            1)
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
                                         <Field
-                                            data-invalid={
-                                                !!form.errors.featured_image
-                                            }
+                                            data-invalid={!!form.errors.content}
                                         >
-                                            <div className="flex flex-col items-center gap-4">
+                                            <Textarea
+                                                id="content"
+                                                value={form.data.content}
+                                                onChange={(e) =>
+                                                    form.setData(
+                                                        'content',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                rows={20}
+                                                placeholder="Write your post content here..."
+                                                className="mt-2 min-h-[400px]"
+                                            />
+                                            <FieldError>
+                                                {form.errors.content}
+                                            </FieldError>
+                                        </Field>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Right Column */}
+                            <div className="flex flex-col gap-6">
+                                {/* Settings Card */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Settings</CardTitle>
+                                        <CardDescription>
+                                            Media and classification
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <FieldGroup>
+                                            {/* Featured Image */}
+                                            <Field
+                                                data-invalid={
+                                                    !!form.errors.featured_image
+                                                }
+                                            >
                                                 <FieldLabel>
                                                     Featured Image
                                                 </FieldLabel>
@@ -165,182 +351,10 @@ export default function CreatePost({ categories, authors }: Props) {
                                                         form.errors
                                                             .featured_image
                                                     }
+                                                    containerClassName="w-full aspect-video"
                                                 />
-                                            </div>
-                                        </Field>
+                                            </Field>
 
-                                        {/* Title (Bengali) */}
-                                        <Field
-                                            data-invalid={
-                                                !!form.errors.title_bn
-                                            }
-                                        >
-                                            <FieldLabel htmlFor="title_bn">
-                                                Title (Bengali){' '}
-                                                <span className="text-destructive">
-                                                    *
-                                                </span>
-                                            </FieldLabel>
-                                            <Input
-                                                id="title_bn"
-                                                value={form.data.title_bn}
-                                                onChange={(e) =>
-                                                    form.setData(
-                                                        'title_bn',
-                                                        e.target.value,
-                                                    )
-                                                }
-                                            />
-                                            <FieldError>
-                                                {form.errors.title_bn}
-                                            </FieldError>
-                                        </Field>
-
-                                        {/* Title (English) */}
-                                        <Field
-                                            data-invalid={
-                                                !!form.errors.title_en
-                                            }
-                                        >
-                                            <FieldLabel htmlFor="title_en">
-                                                Title (English){' '}
-                                                <span className="text-destructive">
-                                                    *
-                                                </span>
-                                            </FieldLabel>
-                                            <Input
-                                                id="title_en"
-                                                value={form.data.title_en}
-                                                onChange={(e) =>
-                                                    form.setData(
-                                                        'title_en',
-                                                        e.target.value,
-                                                    )
-                                                }
-                                            />
-                                            <FieldError>
-                                                {form.errors.title_en}
-                                            </FieldError>
-                                        </Field>
-
-                                        {/* Slug Preview */}
-                                        <Field>
-                                            <FieldLabel htmlFor="slug">
-                                                Slug (auto-generated)
-                                            </FieldLabel>
-                                            <Input
-                                                id="slug"
-                                                value={slugPreview}
-                                                disabled
-                                                readOnly
-                                                className="bg-muted"
-                                            />
-                                        </Field>
-
-                                        {/* Excerpt */}
-                                        <Field
-                                            data-invalid={!!form.errors.excerpt}
-                                        >
-                                            <FieldLabel htmlFor="excerpt">
-                                                Excerpt{' '}
-                                                <span className="text-destructive">
-                                                    *
-                                                </span>
-                                            </FieldLabel>
-                                            <Textarea
-                                                id="excerpt"
-                                                value={form.data.excerpt}
-                                                onChange={(e) =>
-                                                    form.setData(
-                                                        'excerpt',
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                rows={2}
-                                                placeholder="A short summary of the post..."
-                                            />
-                                            <FieldError>
-                                                {form.errors.excerpt}
-                                            </FieldError>
-                                        </Field>
-
-                                        {/* Content */}
-                                        <Field
-                                            data-invalid={!!form.errors.content}
-                                        >
-                                            <FieldLabel htmlFor="content">
-                                                Content{' '}
-                                                <span className="text-destructive">
-                                                    *
-                                                </span>
-                                            </FieldLabel>
-                                            <Textarea
-                                                id="content"
-                                                value={form.data.content}
-                                                onChange={(e) =>
-                                                    form.setData(
-                                                        'content',
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                rows={12}
-                                                placeholder="Write your post content here..."
-                                            />
-                                            <FieldError>
-                                                {form.errors.content}
-                                            </FieldError>
-                                        </Field>
-
-                                        {/* Meta Description */}
-                                        <Field
-                                            data-invalid={
-                                                !!form.errors.meta_description
-                                            }
-                                        >
-                                            <FieldLabel htmlFor="meta_description">
-                                                Meta Description
-                                            </FieldLabel>
-                                            <Textarea
-                                                id="meta_description"
-                                                value={
-                                                    form.data.meta_description
-                                                }
-                                                onChange={(e) =>
-                                                    form.setData(
-                                                        'meta_description',
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                rows={2}
-                                                maxLength={160}
-                                                placeholder="SEO description for search engines..."
-                                            />
-                                            <p className="text-sm text-muted-foreground">
-                                                {
-                                                    form.data.meta_description
-                                                        .length
-                                                }
-                                                /160 characters
-                                            </p>
-                                            <FieldError>
-                                                {form.errors.meta_description}
-                                            </FieldError>
-                                        </Field>
-                                    </FieldGroup>
-                                </CardContent>
-                            </Card>
-
-                            {/* Right Column - Settings Card + Submit */}
-                            <div className="flex flex-col gap-6">
-                                <Card className="h-fit">
-                                    <CardHeader>
-                                        <CardTitle>Settings</CardTitle>
-                                        <CardDescription>
-                                            Post status and classification
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <FieldGroup>
                                             {/* Categories */}
                                             <Field
                                                 data-invalid={
@@ -407,6 +421,48 @@ export default function CreatePost({ categories, authors }: Props) {
                                                     {form.errors.author_id}
                                                 </FieldError>
                                             </Field>
+
+                                            {/* Meta Description */}
+                                            <Field
+                                                data-invalid={
+                                                    !!form.errors
+                                                        .meta_description
+                                                }
+                                            >
+                                                <FieldLabel htmlFor="meta_description">
+                                                    Meta Description
+                                                </FieldLabel>
+                                                <Textarea
+                                                    id="meta_description"
+                                                    value={
+                                                        form.data
+                                                            .meta_description
+                                                    }
+                                                    onChange={(e) =>
+                                                        form.setData(
+                                                            'meta_description',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    rows={2}
+                                                    maxLength={160}
+                                                    placeholder="SEO description for search engines..."
+                                                />
+                                                <p className="text-sm text-muted-foreground">
+                                                    {
+                                                        form.data
+                                                            .meta_description
+                                                            .length
+                                                    }
+                                                    /160 characters
+                                                </p>
+                                                <FieldError>
+                                                    {
+                                                        form.errors
+                                                            .meta_description
+                                                    }
+                                                </FieldError>
+                                            </Field>
                                         </FieldGroup>
                                     </CardContent>
                                 </Card>
@@ -442,6 +498,43 @@ export default function CreatePost({ categories, authors }: Props) {
                                     >
                                         Publish Post
                                     </Button>
+                                </div>
+
+                                {/* Pages Section */}
+                                <div className="flex flex-col gap-3">
+                                    <p className="text-sm font-medium text-muted-foreground">
+                                        Pages
+                                    </p>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {/* Page 1 - Current */}
+                                        <Button
+                                            variant="default"
+                                            size="icon"
+                                            className="size-9 rounded-full"
+                                        >
+                                            <span>1</span>
+                                        </Button>
+
+                                        {/* Add Page Button */}
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="size-9 rounded-full"
+                                            onClick={handleAddPage}
+                                            disabled={
+                                                isAddingPage || form.processing
+                                            }
+                                            isLoading={isAddingPage}
+                                            title="Save post and add new page"
+                                        >
+                                            {!isAddingPage && (
+                                                <Plus className="size-4" />
+                                            )}
+                                        </Button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Click + to save and add more pages
+                                    </p>
                                 </div>
                             </div>
                         </div>

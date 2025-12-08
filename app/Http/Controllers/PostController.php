@@ -192,6 +192,20 @@ class PostController extends Controller
             $post->addMedia($image)->toMediaCollection('featured');
         }
 
+        // Check if user wants to create a new page immediately
+        if ($request->boolean('_create_page')) {
+            // Create page 2
+            $post->pages()->create([
+                'content' => null,
+                'order' => 2,
+            ]);
+            $post->increment('pages_count');
+
+            return redirect()
+                ->route('posts.edit', ['post' => $post->slug, 'page' => 2])
+                ->with('success', 'Post created. Add content for page 2.');
+        }
+
         return redirect()->route('posts.index')->with('success', 'Post created successfully.');
     }
 
