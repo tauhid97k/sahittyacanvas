@@ -20,6 +20,7 @@ import {
     MultiSelect,
     type MultiSelectOption,
 } from '@/components/ui/multi-select';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
@@ -295,22 +296,19 @@ export default function CreatePost({ categories, authors }: Props) {
                                         <Field
                                             data-invalid={!!form.errors.content}
                                         >
-                                            <Textarea
-                                                id="content"
+                                            <RichTextEditor
                                                 value={form.data.content}
-                                                onChange={(e) =>
+                                                onChange={(value) =>
                                                     form.setData(
                                                         'content',
-                                                        e.target.value,
+                                                        value,
                                                     )
                                                 }
-                                                rows={20}
                                                 placeholder="Write your post content here..."
-                                                className="mt-2 min-h-[400px]"
+                                                editorClassName="min-h-[400px]"
+                                                error={form.errors.content}
+                                                uploadContext="post"
                                             />
-                                            <FieldError>
-                                                {form.errors.content}
-                                            </FieldError>
                                         </Field>
                                     </CardContent>
                                 </Card>

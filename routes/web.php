@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthorController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\EditorMediaController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PostPageController;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +48,10 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
     Route::post('posts/{post}/pages', [PostPageController::class, 'store'])->name('posts.pages.store');
     Route::put('posts/{post}/pages/{page}', [PostPageController::class, 'update'])->name('posts.pages.update');
     Route::delete('posts/{post}/pages/{page}', [PostPageController::class, 'destroy'])->name('posts.pages.destroy');
+
+    // Editor Media Upload
+    Route::post('editor/upload', [EditorMediaController::class, 'upload'])->name('editor.upload');
+    Route::delete('editor/image', [EditorMediaController::class, 'destroy'])->name('editor.destroy');
 });
 
 require __DIR__.'/settings.php';

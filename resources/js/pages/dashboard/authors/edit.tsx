@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/field';
 import { ImageUploader } from '@/components/ui/image-uploader';
 import { Input } from '@/components/ui/input';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import {
     Select,
     SelectContent,
@@ -22,7 +23,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Author } from '@/types/models';
@@ -285,22 +285,16 @@ export default function EditAuthor({ author }: Props) {
                                     </CardHeader>
                                     <CardContent>
                                         <Field data-invalid={!!form.errors.bio}>
-                                            <Textarea
-                                                id="bio"
+                                            <RichTextEditor
                                                 value={form.data.bio}
-                                                onChange={(e) =>
-                                                    form.setData(
-                                                        'bio',
-                                                        e.target.value,
-                                                    )
+                                                onChange={(value) =>
+                                                    form.setData('bio', value)
                                                 }
-                                                rows={12}
                                                 placeholder="Write the author's biography here..."
-                                                className="min-h-[300px]"
+                                                editorClassName="min-h-[250px]"
+                                                error={form.errors.bio}
+                                                uploadContext="author"
                                             />
-                                            <FieldError>
-                                                {form.errors.bio}
-                                            </FieldError>
                                         </Field>
                                     </CardContent>
                                 </Card>

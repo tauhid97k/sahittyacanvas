@@ -138,3 +138,77 @@
 .icon {
     @apply size-[22px] stroke-[1.5];
 }
+
+/* Tiptap Editor Styles */
+.tiptap {
+    outline: none;
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+    @apply pointer-events-none float-left h-0 text-muted-foreground;
+    content: attr(data-placeholder);
+}
+
+.tiptap ul,
+.tiptap ol {
+    @apply ml-4 list-outside;
+}
+
+.tiptap ul {
+    @apply list-disc;
+}
+
+.tiptap ol {
+    @apply list-decimal;
+}
+
+.tiptap blockquote {
+    @apply border-l-4 border-primary pl-4 italic;
+}
+
+.tiptap hr {
+    @apply my-4 border-t border-border;
+}
+
+.tiptap table {
+    @apply w-full border-collapse;
+}
+
+.tiptap table td,
+.tiptap table th {
+    @apply border border-border p-2 text-left;
+}
+
+.tiptap table th {
+    @apply bg-muted font-semibold;
+}
+
+.tiptap img {
+    @apply my-4 max-w-full rounded-lg;
+}
+
+.tiptap a {
+    @apply text-primary underline;
+}
+
+.tiptap code {
+    @apply rounded bg-muted px-1.5 py-0.5 font-mono text-sm;
+}
+
+.tiptap pre {
+    @apply my-4 overflow-x-auto rounded-lg bg-muted p-4;
+}
+
+.tiptap pre code {
+    @apply bg-transparent p-0;
+}
+
+/* Image styles - transparent border to prevent layout shift */
+.tiptap img.editor-image {
+    @apply h-auto max-h-[400px] w-auto max-w-full cursor-pointer rounded;
+    @apply border-2 border-transparent;
+}
+
+.tiptap img.editor-image.ProseMirror-selectednode {
+    @apply border-2 border-primary;
+}

@@ -30,6 +30,7 @@ import {
     MultiSelect,
     type MultiSelectOption,
 } from '@/components/ui/multi-select';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
@@ -442,31 +443,36 @@ export default function EditPost({
                                                     : !!pageForm.errors.content
                                             }
                                         >
-                                            <Textarea
-                                                id="content"
+                                            <RichTextEditor
                                                 value={
                                                     isEditingMainPost
                                                         ? form.data.content
                                                         : pageForm.data.content
                                                 }
-                                                onChange={(e) =>
+                                                onChange={(value) =>
                                                     isEditingMainPost
                                                         ? form.setData(
                                                               'content',
-                                                              e.target.value,
+                                                              value,
                                                           )
                                                         : pageForm.setData(
                                                               'content',
-                                                              e.target.value,
+                                                              value,
                                                           )
                                                 }
-                                                rows={20}
                                                 placeholder={
                                                     isEditingMainPost
                                                         ? 'Write your post content here...'
                                                         : `Continue your content for page ${currentPage}...`
                                                 }
-                                                className="mt-2 min-h-[400px]"
+                                                editorClassName="min-h-[400px]"
+                                                error={
+                                                    isEditingMainPost
+                                                        ? form.errors.content
+                                                        : pageForm.errors
+                                                              .content
+                                                }
+                                                uploadContext="post"
                                             />
                                             <FieldError>
                                                 {isEditingMainPost
