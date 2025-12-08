@@ -147,7 +147,7 @@ class AuthorController extends Controller
     {
         // Check if author has posts
         if ($author->posts()->exists()) {
-            return back()->with('error', 'Cannot delete author with posts.');
+            return back()->withErrors(['delete' => 'Cannot delete author with posts.']);
         }
 
         $author->delete();

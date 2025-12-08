@@ -323,43 +323,46 @@ export default function EditAuthor({ author }: Props) {
                                                     !!form.errors.avatar
                                                 }
                                             >
-                                                <FieldLabel>
-                                                    Author Photo
-                                                </FieldLabel>
-                                                <ImageUploader
-                                                    value={
-                                                        form.data.avatar ||
-                                                        (!removeAvatar &&
-                                                        author.avatar_url
-                                                            ? author.avatar_url
-                                                            : null)
-                                                    }
-                                                    onChange={(file) => {
-                                                        form.setData(
-                                                            'avatar',
-                                                            file,
-                                                        );
-                                                        if (file) {
-                                                            setRemoveAvatar(
-                                                                false,
-                                                            );
-                                                            form.setData(
-                                                                'remove_avatar',
-                                                                false,
-                                                            );
-                                                        } else {
-                                                            setRemoveAvatar(
-                                                                true,
-                                                            );
-                                                            form.setData(
-                                                                'remove_avatar',
-                                                                true,
-                                                            );
+                                                <div className="flex flex-col items-center gap-4">
+                                                    <FieldLabel>
+                                                        Author Photo
+                                                    </FieldLabel>
+                                                    <ImageUploader
+                                                        value={
+                                                            form.data.avatar ||
+                                                            (!removeAvatar &&
+                                                            author.avatar_url
+                                                                ? author.avatar_url
+                                                                : null)
                                                         }
-                                                    }}
-                                                    error={form.errors.avatar}
-                                                    containerClassName="w-full aspect-square max-w-[200px] mx-auto"
-                                                />
+                                                        onChange={(file) => {
+                                                            form.setData(
+                                                                'avatar',
+                                                                file,
+                                                            );
+                                                            if (file) {
+                                                                setRemoveAvatar(
+                                                                    false,
+                                                                );
+                                                                form.setData(
+                                                                    'remove_avatar',
+                                                                    false,
+                                                                );
+                                                            } else {
+                                                                setRemoveAvatar(
+                                                                    true,
+                                                                );
+                                                                form.setData(
+                                                                    'remove_avatar',
+                                                                    true,
+                                                                );
+                                                            }
+                                                        }}
+                                                        error={
+                                                            form.errors.avatar
+                                                        }
+                                                    />
+                                                </div>
                                             </Field>
 
                                             {/* Status */}

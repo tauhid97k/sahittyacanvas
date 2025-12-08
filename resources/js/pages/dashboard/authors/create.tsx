@@ -310,20 +310,23 @@ export default function CreateAuthor() {
                                                     !!form.errors.avatar
                                                 }
                                             >
-                                                <FieldLabel>
-                                                    Author Photo
-                                                </FieldLabel>
-                                                <ImageUploader
-                                                    value={form.data.avatar}
-                                                    onChange={(file) =>
-                                                        form.setData(
-                                                            'avatar',
-                                                            file,
-                                                        )
-                                                    }
-                                                    error={form.errors.avatar}
-                                                    containerClassName="w-full aspect-square max-w-[200px] mx-auto"
-                                                />
+                                                <div className="flex flex-col items-center gap-4">
+                                                    <FieldLabel>
+                                                        Author Photo
+                                                    </FieldLabel>
+                                                    <ImageUploader
+                                                        value={form.data.avatar}
+                                                        onChange={(file) =>
+                                                            form.setData(
+                                                                'avatar',
+                                                                file,
+                                                            )
+                                                        }
+                                                        error={
+                                                            form.errors.avatar
+                                                        }
+                                                    />
+                                                </div>
                                             </Field>
 
                                             {/* Status */}

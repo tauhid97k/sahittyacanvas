@@ -82,8 +82,10 @@ export default function AuthorsIndex({ authors, filters }: Props) {
                 setOpenDeleteDialog(false);
                 setSelectedAuthor(null);
             },
-            onError: () => {
-                toast.error('Failed to delete author');
+            onError: (errors) => {
+                const message = errors.delete || 'Failed to delete author';
+                toast.error(message);
+                setOpenDeleteDialog(false);
             },
             onFinish: () => {
                 setIsDeleting(false);
