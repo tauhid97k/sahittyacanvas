@@ -150,6 +150,15 @@ export default function ActivitiesIndex({
             ),
         },
         {
+            accessorKey: 'subject_type_label',
+            header: 'Module',
+            cell: ({ row }) => (
+                <Badge variant="default" className="capitalize">
+                    {row.original.subject_type_label || '-'}
+                </Badge>
+            ),
+        },
+        {
             accessorKey: 'causer_name',
             header: 'User',
             cell: ({ row }) => (
