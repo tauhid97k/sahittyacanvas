@@ -600,11 +600,10 @@ useEffect(() => {
 ```bash
 # Already exist: likes, bookmarks, views, comments
 
-# New: Reading lists, follows, comment reactions
+# New: Reading lists, follows
 php artisan make:migration create_reading_lists_table
 php artisan make:migration create_reading_list_items_table
 php artisan make:migration create_follows_table
-php artisan make:migration create_comment_reactions_table
 
 php artisan migrate
 ```
@@ -653,16 +652,6 @@ php artisan make:controller FollowController
 - Followers/following pages
 - Notification on new posts
 
-**Comment Reactions**:
-
-```bash
-php artisan make:controller CommentReactionController
-```
-
-- React to comments
-- Change reaction
-- Show reaction counts
-
 ### 5.3 Frontend Components
 
 **Create React components**:
@@ -670,7 +659,6 @@ php artisan make:controller CommentReactionController
 - `LikeButton.tsx`
 - `BookmarkButton.tsx`
 - `FollowButton.tsx`
-- `CommentReactions.tsx`
 - `ReadingListManager.tsx`
 
 **Deliverables**:

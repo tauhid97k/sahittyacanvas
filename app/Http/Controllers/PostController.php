@@ -7,8 +7,11 @@ use App\Http\Requests\Post\UpdatePostRequest;
 use App\Models\Author;
 use App\Models\Category;
 use App\Models\Post;
+use App\Models\User;
+use App\Notifications\NewPostPublished;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -103,6 +106,35 @@ class PostController extends Controller
     }
 
     /**
+     * Display the specified post (admin preview).
+     * Supports ?page=N query param for multi-page viewing.
+     */
+    public function show(Request $request, Post $post): Response
+    {
+        $post->load(['media', 'pages', 'categories', 'author', 'user']);
+        $post->featured_image_url = $post->getFirstMediaUrl('featured') ?: null;
+
+        // Get current page number from query (default: 1 = main post content)
+        $currentPage = (int) $request->query('page', 1);
+        
+        // Get the page data if viewing page 2+
+        $currentPageData = null;
+        if ($currentPage > 1) {
+            $currentPageData = $post->pages()->where('order', $currentPage)->first();
+        }
+
+        // Get actual page orders (for navigation)
+        $pageOrders = [1, ...$post->pages->pluck('order')->toArray()];
+
+        return Inertia::render('dashboard/posts/show', [
+            'post' => $post,
+            'currentPage' => $currentPage,
+            'currentPageData' => $currentPageData,
+            'pageOrders' => $pageOrders,
+        ]);
+    }
+
+    /**
      * Show the form for editing the specified post.
      * Supports ?page=N query param for multi-page editing.
      */
@@ -192,6 +224,13 @@ class PostController extends Controller
             $post->addMedia($image)->toMediaCollection('featured');
         }
 
+        // Notify all users (except author) when post is published
+        if ($validated['status'] === 'published') {
+            $author = $request->user();
+            $usersToNotify = User::where('id', '!=', $author->id)->get();
+            Notification::send($usersToNotify, new NewPostPublished($post, $author));
+        }
+
         // Check if user wants to create a new page immediately
         if ($request->boolean('_create_page')) {
             // Create page 2
@@ -234,12 +273,22 @@ class PostController extends Controller
             }
         }
 
+        // Track if post is being published for the first time
+        $isNewlyPublished = $validated['status'] === 'published' && !$post->published_at;
+
         // Handle published_at based on status
-        if ($validated['status'] === 'published' && !$post->published_at) {
+        if ($isNewlyPublished) {
             $validated['published_at'] = now();
         }
 
         $post->update($validated);
+
+        // Notify users when post is published for the first time
+        if ($isNewlyPublished) {
+            $author = $request->user();
+            $usersToNotify = User::where('id', '!=', $author->id)->get();
+            Notification::send($usersToNotify, new NewPostPublished($post, $author));
+        }
 
         // Sync categories
         $post->categories()->sync($categoryIds);

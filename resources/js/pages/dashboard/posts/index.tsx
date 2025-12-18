@@ -267,6 +267,14 @@ export default function PostsIndex({ posts, categories, filters }: Props) {
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
                             <Link
+                                href={`/dashboard/posts/${row.original.slug}`}
+                            >
+                                <Eye />
+                                View
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link
                                 href={`/dashboard/posts/${row.original.slug}/edit`}
                             >
                                 <Pencil />
