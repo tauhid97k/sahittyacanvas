@@ -55,7 +55,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Activities',
-        href: '#',
+        href: '/dashboard/activities',
         icon: Activity,
     },
 ];

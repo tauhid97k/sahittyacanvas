@@ -45,7 +45,7 @@ export function Pagination({
     return (
         <div
             className={cn(
-                'flex flex-col items-center justify-between gap-4 border-t pt-6 sm:flex-row',
+                'flex flex-col items-center justify-between gap-4 border-t pt-6 lg:flex-row',
                 className
             )}
         >
@@ -62,7 +62,7 @@ export function Pagination({
 
             {/* Controls - only show if there's more than one page worth of data */}
             {total > Math.min(...perPageOptions) && (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center flex-col lg:flex-row gap-3">
                     {/* Per page selector */}
                     <Select
                         value={perPage.toString()}
@@ -82,7 +82,7 @@ export function Pagination({
 
                     {/* Page links */}
                     {links.length > 3 && (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center flex-wrap gap-1.5">
                         {links.map((link, index) =>
                             link.url ? (
                                 <Link

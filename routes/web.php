@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\AuthorController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\EditorMediaController;
@@ -52,6 +53,10 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
     // Editor Media Upload
     Route::post('editor/upload', [EditorMediaController::class, 'upload'])->name('editor.upload');
     Route::delete('editor/image', [EditorMediaController::class, 'destroy'])->name('editor.destroy');
+
+    // Activities
+    Route::get('activities', [ActivityController::class, 'index'])->name('activities.index');
+    Route::get('activities/{activity}', [ActivityController::class, 'show'])->name('activities.show');
 });
 
 require __DIR__.'/settings.php';
