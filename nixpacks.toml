@@ -71,13 +71,13 @@ stderr_logfile=/var/log/worker-phpfpm.log
 "worker-laravel.conf" = '''
 [program:worker-laravel]
 process_name=%(program_name)s_%(process_num)02d
-command=bash -c 'exec php /app/artisan queue:work --sleep=3 --tries=3 --max-time=3600'
+command=bash -c 'sleep 10 && exec php /app/artisan queue:work --sleep=3 --tries=3 --max-time=3600'
 autostart=true
 autorestart=true
 stopasgroup=true
 killasgroup=true
 numprocs=2
-startsecs=0
+startsecs=5
 stopwaitsecs=3600
 stdout_logfile=/var/log/worker-laravel.log
 stderr_logfile=/var/log/worker-laravel.log
@@ -86,9 +86,10 @@ stderr_logfile=/var/log/worker-laravel.log
 "worker-inertia-ssr.conf" = '''
 [program:inertia-ssr]
 process_name=%(program_name)s_%(process_num)02d
-command=bash -c 'exec php /app/artisan inertia:start-ssr'
+command=bash -c 'sleep 5 && exec php /app/artisan inertia:start-ssr'
 autostart=true
 autorestart=true
+startsecs=3
 stderr_logfile=/var/log/worker-inertia-ssr.log
 stdout_logfile=/var/log/worker-inertia-ssr.log
 '''
