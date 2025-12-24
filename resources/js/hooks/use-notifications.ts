@@ -11,26 +11,34 @@ interface NotificationsData {
 export function useNotifications() {
     const page = usePage();
     const auth = page.props.auth as { user: { id: number } | null } | undefined;
-    const serverNotifications = page.props.headerNotifications as NotificationsData | null;
+    const serverNotifications = page.props
+        .headerNotifications as NotificationsData | null;
 
     // Track real-time additions separately from server data
-    const [realtimeNotifications, setRealtimeNotifications] = useState<Notification[]>([]);
+    const [realtimeNotifications, setRealtimeNotifications] = useState<
+        Notification[]
+    >([]);
     const [realtimeUnreadDelta, setRealtimeUnreadDelta] = useState<number>(0);
 
     // Combine server data with real-time updates
     const notifications = [
         ...realtimeNotifications,
         ...(serverNotifications?.items || []).filter(
-            (n) => !realtimeNotifications.some((rn) => rn.id === n.id)
+            (n) => !realtimeNotifications.some((rn) => rn.id === n.id),
         ),
     ].slice(0, 10);
 
-    const unreadCount = Math.max(0, (serverNotifications?.unread_count || 0) + realtimeUnreadDelta);
+    const unreadCount = Math.max(
+        0,
+        (serverNotifications?.unread_count || 0) + realtimeUnreadDelta,
+    );
 
-    // Listen for real-time notifications
-    // Note: WebSocket errors are expected if Reverb server isn't running
+    // Listen for real-time notifications only if Echo is configured
+    // Check if VITE_REVERB_APP_KEY exists to determine if broadcasting is enabled
+    const isEchoEnabled = import.meta.env.VITE_REVERB_APP_KEY;
+
     useEchoNotification(
-        auth?.user ? `App.Models.User.${auth.user.id}` : '',
+        isEchoEnabled && auth?.user ? `App.Models.User.${auth.user.id}` : '',
         (notification: Record<string, unknown>) => {
             const notificationType = (notification.type as string) || 'system';
             const newNotification: Notification = {
@@ -43,9 +51,12 @@ export function useNotifications() {
                 created_at: new Date().toISOString(),
             };
 
-            setRealtimeNotifications((prev) => [newNotification, ...prev.slice(0, 9)]);
+            setRealtimeNotifications((prev) => [
+                newNotification,
+                ...prev.slice(0, 9),
+            ]);
             setRealtimeUnreadDelta((prev) => prev + 1);
-        }
+        },
     );
 
     const markAsRead = useCallback((id: string) => {
@@ -59,12 +70,14 @@ export function useNotifications() {
                     // Update realtime notifications if it's there
                     setRealtimeNotifications((prev) =>
                         prev.map((n) =>
-                            n.id === id ? { ...n, read_at: new Date().toISOString() } : n
-                        )
+                            n.id === id
+                                ? { ...n, read_at: new Date().toISOString() }
+                                : n,
+                        ),
                     );
                     setRealtimeUnreadDelta((prev) => prev - 1);
                 },
-            }
+            },
         );
     }, []);
 
@@ -77,27 +90,35 @@ export function useNotifications() {
                 preserveState: true,
                 onSuccess: () => {
                     setRealtimeNotifications((prev) =>
-                        prev.map((n) => ({ ...n, read_at: new Date().toISOString() }))
+                        prev.map((n) => ({
+                            ...n,
+                            read_at: new Date().toISOString(),
+                        })),
                     );
                     setRealtimeUnreadDelta(0);
                 },
-            }
+            },
         );
     }, []);
 
-    const deleteNotification = useCallback((id: string) => {
-        router.delete(`/dashboard/notifications/${id}`, {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => {
-                const notification = notifications.find((n) => n.id === id);
-                setRealtimeNotifications((prev) => prev.filter((n) => n.id !== id));
-                if (notification && !notification.read_at) {
-                    setRealtimeUnreadDelta((prev) => prev - 1);
-                }
-            },
-        });
-    }, [notifications]);
+    const deleteNotification = useCallback(
+        (id: string) => {
+            router.delete(`/dashboard/notifications/${id}`, {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    const notification = notifications.find((n) => n.id === id);
+                    setRealtimeNotifications((prev) =>
+                        prev.filter((n) => n.id !== id),
+                    );
+                    if (notification && !notification.read_at) {
+                        setRealtimeUnreadDelta((prev) => prev - 1);
+                    }
+                },
+            });
+        },
+        [notifications],
+    );
 
     return {
         notifications,
