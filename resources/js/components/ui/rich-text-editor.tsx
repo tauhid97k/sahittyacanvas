@@ -13,9 +13,19 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Underline } from '@tiptap/extension-underline';
 import { Youtube } from '@tiptap/extension-youtube';
-import { EditorContent, useEditor } from '@tiptap/react';
+import { EditorContent, useEditor, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { Image } from '@tiptap/extension-image';
+import { Node, mergeAttributes } from '@tiptap/core';
+
+// Extend Tiptap commands to include our custom setImage command
+declare module '@tiptap/core' {
+    interface Commands<ReturnType> {
+        customImage: {
+            setImage: (options: { src: string; alt?: string; title?: string; align?: 'left' | 'center' | 'right' }) => ReturnType;
+            setImageAlign: (align: 'left' | 'center' | 'right') => ReturnType;
+        };
+    }
+}
 import {
     AlignCenter,
     AlignJustify,
@@ -43,12 +53,13 @@ import {
     Subscript as SubscriptIcon,
     Superscript as SuperscriptIcon,
     Table as TableIcon,
-    Trash2,
     Underline as UnderlineIcon,
     Undo,
     Video,
+    Trash,
 } from 'lucide-react';
 import * as React from 'react';
+import { toast } from 'sonner';
 import { Button } from './button';
 import {
     DropdownMenu,
@@ -65,11 +76,13 @@ import {
 } from './tooltip';
 
 // Helper function to delete image from server
-async function deleteImageFromServer(src: string) {
-    if (!src || src.startsWith('data:')) return;
+async function deleteImageFromServer(src: string): Promise<{ success: boolean; error?: string }> {
+    if (!src || src.startsWith('data:')) {
+        return { success: true };
+    }
 
     try {
-        await fetch('/dashboard/editor/image', {
+        const response = await fetch('/dashboard/editor/image', {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -81,10 +94,111 @@ async function deleteImageFromServer(src: string) {
             },
             body: JSON.stringify({ url: src }),
         });
+
+        if (!response.ok) {
+            const data = await response.json();
+            return { success: false, error: data.message || 'Failed to delete image' };
+        }
+
+        return { success: true };
     } catch (error) {
         console.error('Failed to delete image from server:', error);
+        return { success: false, error: 'Network error while deleting image' };
     }
 }
+
+// Custom Image Node View Component
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ImageNodeView = ({ node, selected }: any) => {
+    const align = node.attrs.align || 'left';
+    
+    return (
+        <NodeViewWrapper
+            className={cn(
+                'my-4',
+                align === 'center' && 'flex justify-center',
+                align === 'right' && 'flex justify-end',
+                align === 'left' && 'flex justify-start',
+            )}
+        >
+            <img
+                src={node.attrs.src}
+                alt={node.attrs.alt || ''}
+                title={node.attrs.title || ''}
+                className={cn(
+                    'editor-image',
+                    selected && 'ring-2 ring-primary',
+                )}
+                draggable="false"
+            />
+        </NodeViewWrapper>
+    );
+};
+
+// Custom Image Extension with React NodeView
+const CustomImage = Node.create({
+    name: 'image',
+    group: 'block',
+    draggable: true,
+    atom: true,
+
+    addAttributes() {
+        return {
+            src: {
+                default: null,
+            },
+            alt: {
+                default: null,
+            },
+            title: {
+                default: null,
+            },
+            align: {
+                default: 'left',
+                parseHTML: (element) => element.getAttribute('data-align') || 'left',
+                renderHTML: (attributes) => {
+                    return {
+                        'data-align': attributes.align,
+                    };
+                },
+            },
+        };
+    },
+
+    parseHTML() {
+        return [
+            {
+                tag: 'img[src]',
+            },
+        ];
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return ['img', mergeAttributes(HTMLAttributes, { class: 'editor-image' })];
+    },
+
+    addNodeView() {
+        return ReactNodeViewRenderer(ImageNodeView);
+    },
+
+    addCommands() {
+        return {
+            setImage:
+                (options: { src: string; alt?: string; title?: string; align?: 'left' | 'center' | 'right' }) =>
+                ({ commands }) => {
+                    return commands.insertContent({
+                        type: this.name,
+                        attrs: { ...options, align: options.align || 'left' },
+                    });
+                },
+            setImageAlign:
+                (align: 'left' | 'center' | 'right') =>
+                ({ commands }) => {
+                    return commands.updateAttributes(this.name, { align });
+                },
+        };
+    },
+});
 
 interface RichTextEditorProps {
     value?: string;
@@ -108,6 +222,10 @@ export function RichTextEditor({
     uploadContext = 'general',
 }: RichTextEditorProps) {
     const [isUploading, setIsUploading] = React.useState(false);
+    const [showImageMenu, setShowImageMenu] = React.useState(false);
+    const [menuPosition, setMenuPosition] = React.useState({ top: 0, left: 0 });
+    const [isDeletingImage, setIsDeletingImage] = React.useState(false);
+    const editorRef = React.useRef<HTMLDivElement>(null);
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
@@ -130,19 +248,7 @@ export function RichTextEditor({
                     class: 'text-primary underline',
                 },
             }),
-            Image.configure({
-                inline: false,
-                allowBase64: true,
-                HTMLAttributes: {
-                    class: 'editor-image',
-                },
-                resize: {
-                    enabled: true,
-                    minWidth: 50,
-                    minHeight: 50,
-                    alwaysPreserveAspectRatio: true,
-                },
-            }),
+            CustomImage,
             Youtube.configure({
                 HTMLAttributes: {
                     class: 'w-full aspect-video rounded-lg',
@@ -168,7 +274,7 @@ export function RichTextEditor({
         editorProps: {
             attributes: {
                 class: cn(
-                    'prose prose-sm dark:prose-invert max-w-none focus:outline-none',
+                    'tiptap prose prose-sm dark:prose-invert max-w-none focus:outline-none',
                     'min-h-[150px] px-3 py-2',
                     editorClassName,
                 ),
@@ -183,13 +289,85 @@ export function RichTextEditor({
         }
     }, [value, editor]);
 
+    // Track image selection and position menu
+    React.useEffect(() => {
+        if (!editor) return;
+
+        const updateMenu = () => {
+            const isImageActive = editor.isActive('image');
+            setShowImageMenu(isImageActive);
+
+            if (isImageActive && editorRef.current) {
+                const positionMenu = () => {
+                    if (!editorRef.current) return;
+                    
+                    const { view } = editor;
+                    const { from } = view.state.selection;
+                    const node = view.domAtPos(from);
+                    const imageElement = node.node.nodeType === 1 
+                        ? (node.node as HTMLElement).querySelector('img')
+                        : (node.node.parentElement as HTMLElement)?.querySelector('img');
+
+                    if (imageElement) {
+                        const editorRect = editorRef.current.getBoundingClientRect();
+                        const imageRect = imageElement.getBoundingClientRect();
+                        
+                        setMenuPosition({
+                            top: imageRect.top - editorRect.top - 50,
+                            left: imageRect.left - editorRect.left + (imageRect.width / 2),
+                        });
+                    }
+                };
+
+                // Wait for image to load before positioning
+                const { view } = editor;
+                const { from } = view.state.selection;
+                const node = view.domAtPos(from);
+                const imageElement = node.node.nodeType === 1 
+                    ? (node.node as HTMLElement).querySelector('img')
+                    : (node.node.parentElement as HTMLElement)?.querySelector('img');
+
+                if (imageElement) {
+                    if ((imageElement as HTMLImageElement).complete) {
+                        // Image already loaded
+                        positionMenu();
+                    } else {
+                        // Wait for image to load
+                        imageElement.addEventListener('load', positionMenu, { once: true });
+                        // Fallback timeout in case load event doesn't fire
+                        setTimeout(positionMenu, 100);
+                    }
+                }
+            }
+        };
+
+        editor.on('selectionUpdate', updateMenu);
+        editor.on('transaction', updateMenu);
+
+        return () => {
+            editor.off('selectionUpdate', updateMenu);
+            editor.off('transaction', updateMenu);
+        };
+    }, [editor]);
+
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const addImageFromUrl = React.useCallback(() => {
         const url = window.prompt('Enter image URL:');
-        if (url && editor) {
-            editor.chain().focus().setImage({ src: url }).run();
-        }
+        if (!url || !editor) return;
+
+        const alt = window.prompt('Enter image description (alt text):') || '';
+        const title = window.prompt('Enter image title (optional):') || '';
+
+        editor
+            .chain()
+            .focus()
+            .setImage({
+                src: url,
+                alt: alt,
+                title: title || undefined,
+            })
+            .run();
     }, [editor]);
 
     const addImageFromFile = React.useCallback(() => {
@@ -228,7 +406,19 @@ export function RichTextEditor({
                 const data = await response.json();
 
                 if (data.success && data.url) {
-                    editor.chain().focus().setImage({ src: data.url }).run();
+                    // Prompt for alt text after successful upload
+                    const alt = window.prompt('Enter image description (alt text):') || file.name;
+                    const title = window.prompt('Enter image title (optional):') || '';
+
+                    editor
+                        .chain()
+                        .focus()
+                        .setImage({
+                            src: data.url,
+                            alt: alt,
+                            title: title || undefined,
+                        })
+                        .run();
                 }
             } catch (error) {
                 console.error('Image upload failed:', error);
@@ -236,7 +426,18 @@ export function RichTextEditor({
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const base64 = e.target?.result as string;
-                    editor.chain().focus().setImage({ src: base64 }).run();
+                    const alt = window.prompt('Enter image description (alt text):') || file.name;
+                    const title = window.prompt('Enter image title (optional):') || '';
+
+                    editor
+                        .chain()
+                        .focus()
+                        .setImage({
+                            src: base64,
+                            alt: alt,
+                            title: title || undefined,
+                        })
+                        .run();
                 };
                 reader.readAsDataURL(file);
             } finally {
@@ -253,22 +454,6 @@ export function RichTextEditor({
         const url = window.prompt('Enter YouTube URL:');
         if (url && editor) {
             editor.chain().focus().setYoutubeVideo({ src: url }).run();
-        }
-    }, [editor]);
-
-    const deleteSelectedImage = React.useCallback(async () => {
-        if (!editor) return;
-
-        const { state } = editor;
-        const { selection } = state;
-        const node = state.doc.nodeAt(selection.from);
-
-        if (node?.type.name === 'image') {
-            const src = node.attrs.src as string;
-            // Delete from server
-            await deleteImageFromServer(src);
-            // Delete from editor
-            editor.chain().focus().deleteSelection().run();
         }
     }, [editor]);
 
@@ -309,17 +494,9 @@ export function RichTextEditor({
 
     return (
         <TooltipProvider delayDuration={300}>
-            <div
-                className={cn(
-                    'rounded-lg border-2 border-input bg-background transition-colors',
-                    'focus-within:border-primary',
-                    error && 'border-destructive',
-                    disabled && 'opacity-50',
-                    className,
-                )}
-            >
+            <div ref={editorRef} className={cn('relative border rounded-lg', className)}>
                 {/* Toolbar */}
-                <div className="flex flex-wrap items-center gap-0.5 border-b border-input p-1">
+                <div className="flex flex-wrap items-center gap-1 border-b p-2">
                     {/* Undo/Redo */}
                     <ToolbarButton
                         onClick={() => editor.chain().focus().undo().run()}
@@ -581,15 +758,6 @@ export function RichTextEditor({
                         <ImageIcon className="size-4" />
                     </ToolbarButton>
 
-                    {/* Delete Selected Image */}
-                    <ToolbarButton
-                        onClick={deleteSelectedImage}
-                        tooltip="Delete Selected Image"
-                        disabled={!editor.isActive('image')}
-                    >
-                        <Trash2 className="size-4" />
-                    </ToolbarButton>
-
                     {/* YouTube */}
                     <ToolbarButton
                         onClick={addYoutubeVideo}
@@ -633,6 +801,81 @@ export function RichTextEditor({
 
                 {/* Editor Content */}
                 <EditorContent editor={editor} />
+
+                {/* Image Bubble Menu */}
+                {showImageMenu && (
+                    <div
+                        className="absolute z-50 flex items-center gap-1 rounded-lg border bg-popover p-1 shadow-md"
+                        style={{
+                            top: `${menuPosition.top}px`,
+                            left: `${menuPosition.left}px`,
+                            transform: 'translateX(-50%)',
+                        }}
+                    >
+                            <ToolbarButton
+                                onClick={() => editor.chain().focus().setImageAlign('left').run()}
+                                isActive={editor.getAttributes('image').align === 'left'}
+                                tooltip="Align Left"
+                            >
+                                <AlignLeft className="size-4" />
+                            </ToolbarButton>
+                            <ToolbarButton
+                                onClick={() => editor.chain().focus().setImageAlign('center').run()}
+                                isActive={editor.getAttributes('image').align === 'center'}
+                                tooltip="Align Center"
+                            >
+                                <AlignCenter className="size-4" />
+                            </ToolbarButton>
+                            <ToolbarButton
+                                onClick={() => editor.chain().focus().setImageAlign('right').run()}
+                                isActive={editor.getAttributes('image').align === 'right'}
+                                tooltip="Align Right"
+                            >
+                                <AlignRight className="size-4" />
+                            </ToolbarButton>
+                            <div className="h-6 w-px bg-border mx-1" />
+                            <ToolbarButton
+                                onClick={async () => {
+                                    const { state } = editor;
+                                    const { selection } = state;
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    let imageNode: any = null;
+                                    let imagePos: number | null = null;
+
+                                    state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+                                        if (node.type.name === 'image') {
+                                            imageNode = node;
+                                            imagePos = pos;
+                                            return false;
+                                        }
+                                    });
+
+                                    if (imageNode && imagePos !== null) {
+                                        setIsDeletingImage(true);
+                                        const src = imageNode.attrs.src as string;
+                                        const result = await deleteImageFromServer(src);
+                                        
+                                        if (result.success) {
+                                            toast.success('Image deleted successfully');
+                                            editor.chain().focus().deleteSelection().run();
+                                            setIsDeletingImage(false);
+                                        } else {
+                                            toast.error(result.error || 'Failed to delete image');
+                                            setIsDeletingImage(false);
+                                        }
+                                    }
+                                }}
+                                tooltip="Delete Image"
+                                disabled={isDeletingImage}
+                            >
+                                {isDeletingImage ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                ) : (
+                                    <Trash className="size-4" />
+                                )}
+                            </ToolbarButton>
+                    </div>
+                )}
             </div>
 
             {/* Hidden file input for image upload */}
