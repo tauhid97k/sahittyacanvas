@@ -3,7 +3,10 @@
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\AuthorController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\EditorMediaController;
+use App\Http\Controllers\LikeController;
+use App\Http\Controllers\ModerationController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PostPageController;
@@ -65,6 +68,23 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
     Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
     Route::delete('notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+
+    // Likes
+    Route::get('likes', [LikeController::class, 'index'])->name('likes.index');
+    Route::delete('likes/{like}', [LikeController::class, 'destroy'])->name('likes.destroy');
+
+    // Comments
+    Route::get('comments', [CommentController::class, 'index'])->name('comments.index');
+    Route::post('comments/{comment}/approve', [CommentController::class, 'approve'])->name('comments.approve');
+    Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+
+    // Moderation
+    Route::get('moderation', [ModerationController::class, 'index'])->name('moderation.index');
+    Route::post('moderation/posts/{post}/approve', [ModerationController::class, 'approvePost'])->name('moderation.posts.approve');
+    Route::post('moderation/posts/{post}/reject', [ModerationController::class, 'rejectPost'])->name('moderation.posts.reject');
+    Route::post('moderation/comments/{comment}/approve', [ModerationController::class, 'approveComment'])->name('moderation.comments.approve');
+    Route::post('moderation/comments/{comment}/reject', [ModerationController::class, 'rejectComment'])->name('moderation.comments.reject');
+    Route::post('moderation/settings', [ModerationController::class, 'updateSettings'])->name('moderation.settings.update');
 });
 
 require __DIR__.'/settings.php';

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('parent_id')->nullable()->constrained('comments')->cascadeOnDelete();
             $table->text('content');
             $table->boolean('is_approved')->default(false);
+            $table->enum('moderation_status', ['approved', 'rejected', 'auto', 'pending'])->default('pending');
             $table->unsignedInteger('replies_count')->default(0);
             $table->timestamps();
             $table->softDeletes();

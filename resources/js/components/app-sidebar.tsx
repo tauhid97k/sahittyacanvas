@@ -15,10 +15,13 @@ import {
     Activity,
     Bell,
     Feather,
+    Heart,
     LayoutGrid,
     List,
+    MessageCircle,
     PenBox,
     Shield,
+    ShieldCheck,
     User,
 } from 'lucide-react';
 import { useMemo } from 'react';
@@ -67,6 +70,21 @@ export function AppSidebar() {
                 title: 'Posts',
                 href: '/dashboard/posts',
                 icon: PenBox,
+            },
+            {
+                title: 'Likes',
+                href: '/dashboard/likes',
+                icon: Heart,
+            },
+            {
+                title: 'Comments',
+                href: '/dashboard/comments',
+                icon: MessageCircle,
+            },
+            {
+                title: 'Moderation',
+                href: '/dashboard/moderation',
+                icon: ShieldCheck,
             },
             {
                 title: 'Activities',

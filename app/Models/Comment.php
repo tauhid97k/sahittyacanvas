@@ -22,6 +22,7 @@ class Comment extends Model
         'parent_id',
         'content',
         'is_approved',
+        'moderation_status',
         'replies_count',
     ];
 
