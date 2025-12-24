@@ -10,4 +10,5 @@ enum Role: string
     case AUTHOR = 'AUTHOR';
     case EDITOR = 'EDITOR';
     case MODERATOR = 'MODERATOR';
+    case SELLER = 'SELLER';
 }

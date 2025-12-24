@@ -48,12 +48,12 @@ export function AppSidebar() {
             },
             {
                 title: 'Users',
-                href: '#',
+                href: '/dashboard/users',
                 icon: User,
             },
             {
                 title: 'Roles',
-                href: '#',
+                href: '/dashboard/roles',
                 icon: Shield,
             },
             {

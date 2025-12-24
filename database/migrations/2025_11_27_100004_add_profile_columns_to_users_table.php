@@ -21,6 +21,8 @@ return new class extends Migration
             $table->unsignedInteger('posts_count')->default(0)->after('reputation_score');
             $table->unsignedInteger('followers_count')->default(0)->after('posts_count');
             $table->unsignedInteger('following_count')->default(0)->after('followers_count');
+            $table->timestamp('banned_at')->nullable()->after('following_count');
+            $table->text('ban_reason')->nullable()->after('banned_at');
 
             $table->index('username');
             $table->index('is_verified');
@@ -48,6 +50,8 @@ return new class extends Migration
                 'posts_count',
                 'followers_count',
                 'following_count',
+                'banned_at',
+                'ban_reason',
             ]);
         });
     }

@@ -48,6 +48,7 @@ class RolesPermissionsSeeder extends Seeder
             ['name' => RoleEnum::AUTHOR->value],
             ['name' => RoleEnum::EDITOR->value],
             ['name' => RoleEnum::MODERATOR->value],
+            ['name' => RoleEnum::SELLER->value],
         ];
 
         foreach ($roles as $role) {

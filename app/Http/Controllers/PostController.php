@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Role;
 use App\Http\Requests\Post\StorePostRequest;
 use App\Http\Requests\Post\UpdatePostRequest;
 use App\Models\Author;
@@ -213,6 +214,12 @@ class PostController extends Controller
         }
 
         $post = Post::create($validated);
+
+        // Auto-assign AUTHOR role on first post creation
+        $user = $request->user();
+        if (!$user->hasRole(Role::AUTHOR->value)) {
+            $user->assignRole(Role::AUTHOR->value);
+        }
 
         // Sync categories
         if (!empty($categoryIds)) {

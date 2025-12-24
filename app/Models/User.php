@@ -37,6 +37,8 @@ class User extends Authenticatable implements HasMedia
         'banner',
         'is_verified',
         'reputation_score',
+        'banned_at',
+        'ban_reason',
     ];
 
     /**
@@ -67,6 +69,7 @@ class User extends Authenticatable implements HasMedia
             'posts_count' => 'integer',
             'followers_count' => 'integer',
             'following_count' => 'integer',
+            'banned_at' => 'datetime',
         ];
     }
 
@@ -275,5 +278,13 @@ class User extends Authenticatable implements HasMedia
     public function getBannerUrlAttribute(): ?string
     {
         return $this->getFirstMediaUrl('banner') ?: $this->banner;
+    }
+
+    /**
+     * Check if user is banned
+     */
+    public function isBanned(): bool
+    {
+        return $this->banned_at !== null;
     }
 }
