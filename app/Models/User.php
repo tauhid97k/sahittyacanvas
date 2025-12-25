@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -196,11 +197,11 @@ class User extends Authenticatable implements HasMedia
     }
 
     /**
-     * Get posts approved by this user (moderator)
+     * Get posts moderated by this user (moderator)
      */
-    public function approvedPosts(): HasMany
+    public function moderatedPosts(): HasMany
     {
-        return $this->hasMany(Post::class, 'approved_by');
+        return $this->hasMany(Post::class, 'moderated_by');
     }
 
     /**
@@ -209,6 +210,38 @@ class User extends Authenticatable implements HasMedia
     public function resolvedReports(): HasMany
     {
         return $this->hasMany(Report::class, 'resolved_by');
+    }
+
+    /**
+     * Get user's products (as seller)
+     */
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    /**
+     * Get user's orders (as buyer)
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Get orders where user is seller
+     */
+    public function sellerOrders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'seller_id');
+    }
+
+    /**
+     * Get user's cart
+     */
+    public function cart(): HasOne
+    {
+        return $this->hasOne(Cart::class);
     }
 
     // ==================== HELPER METHODS ====================

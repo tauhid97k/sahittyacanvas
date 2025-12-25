@@ -23,14 +23,36 @@ class RolesPermissionsSeeder extends Seeder
 
         // Create Permissions
         $permissions = [
+            // User permissions
             ['name' => PermissionEnum::LIST_USER->value, 'group' => 'USER'],
             ['name' => PermissionEnum::CREATE_USER->value, 'group' => 'USER'],
             ['name' => PermissionEnum::EDIT_USER->value, 'group' => 'USER'],
             ['name' => PermissionEnum::DELETE_USER->value, 'group' => 'USER'],
+
+            // Role permissions
             ['name' => PermissionEnum::LIST_ROLE->value, 'group' => 'ROLE'],
             ['name' => PermissionEnum::CREATE_ROLE->value, 'group' => 'ROLE'],
             ['name' => PermissionEnum::EDIT_ROLE->value, 'group' => 'ROLE'],
             ['name' => PermissionEnum::DELETE_ROLE->value, 'group' => 'ROLE'],
+
+            // Product Category permissions (Admin)
+            ['name' => PermissionEnum::LIST_PRODUCT_CATEGORY->value, 'group' => 'PRODUCT_CATEGORY'],
+            ['name' => PermissionEnum::CREATE_PRODUCT_CATEGORY->value, 'group' => 'PRODUCT_CATEGORY'],
+            ['name' => PermissionEnum::EDIT_PRODUCT_CATEGORY->value, 'group' => 'PRODUCT_CATEGORY'],
+            ['name' => PermissionEnum::DELETE_PRODUCT_CATEGORY->value, 'group' => 'PRODUCT_CATEGORY'],
+
+            // Product permissions (Seller)
+            ['name' => PermissionEnum::LIST_PRODUCT->value, 'group' => 'PRODUCT'],
+            ['name' => PermissionEnum::CREATE_PRODUCT->value, 'group' => 'PRODUCT'],
+            ['name' => PermissionEnum::EDIT_PRODUCT->value, 'group' => 'PRODUCT'],
+            ['name' => PermissionEnum::DELETE_PRODUCT->value, 'group' => 'PRODUCT'],
+            ['name' => PermissionEnum::APPROVE_PRODUCT->value, 'group' => 'PRODUCT'],
+
+            // Order permissions
+            ['name' => PermissionEnum::LIST_ORDER->value, 'group' => 'ORDER'],
+            ['name' => PermissionEnum::VIEW_ORDER->value, 'group' => 'ORDER'],
+            ['name' => PermissionEnum::UPDATE_ORDER_STATUS->value, 'group' => 'ORDER'],
+            ['name' => PermissionEnum::CANCEL_ORDER->value, 'group' => 'ORDER'],
         ];
 
         foreach ($permissions as $permission) {
@@ -102,5 +124,13 @@ class RolesPermissionsSeeder extends Seeder
             'password' => Hash::make("moderator12345"),
         ]);
         $moderator->assignRole(RoleEnum::MODERATOR->value);
+
+        // Create Seller
+        $seller = User::create([
+            'name' => 'Seller',
+            'email' => 'seller@example.com',
+            'password' => Hash::make("seller12345"),
+        ]);
+        $seller->assignRole(RoleEnum::SELLER->value);
     }
 }
