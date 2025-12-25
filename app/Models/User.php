@@ -164,14 +164,6 @@ class User extends Authenticatable implements HasMedia
     }
 
     /**
-     * Get user's reading lists
-     */
-    public function readingLists(): HasMany
-    {
-        return $this->hasMany(ReadingList::class);
-    }
-
-    /**
      * Get user's notification settings
      */
     public function notificationSettings(): HasMany

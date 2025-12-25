@@ -78,6 +78,7 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
     // Comments
     Route::get('comments', [CommentController::class, 'index'])->name('comments.index');
     Route::post('comments/{comment}/approve', [CommentController::class, 'approve'])->name('comments.approve');
+    Route::post('comments/{comment}/reject', [CommentController::class, 'reject'])->name('comments.reject');
     Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
 
     // Moderation

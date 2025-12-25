@@ -16,6 +16,7 @@ class ModerationSetting extends Model
     public const KEYS = [
         'posts_require_approval' => 'Posts require approval before publishing',
         'comments_require_approval' => 'Comments require approval before showing',
+        'products_require_approval' => 'Products require approval before publishing',
         'auto_approve_verified_users' => 'Auto-approve content from verified users',
         'max_links_in_comment' => 'Maximum links allowed in comments',
         'spam_filter_enabled' => 'Enable spam filter',
@@ -103,6 +104,14 @@ class ModerationSetting extends Model
     public static function commentsRequireApproval(): bool
     {
         return (bool) self::getValue('comments_require_approval', false);
+    }
+
+    /**
+     * Check if products require approval
+     */
+    public static function productsRequireApproval(): bool
+    {
+        return (bool) self::getValue('products_require_approval', false);
     }
 
     /**

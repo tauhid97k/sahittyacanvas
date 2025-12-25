@@ -43,11 +43,11 @@ export interface Post {
     excerpt: string;
     content: string;
     meta_description: string | null;
-    status: 'draft' | 'pending' | 'published' | 'archived';
+    status: 'draft' | 'published' | 'archived';
     published_at: string | null;
-    requires_approval: boolean;
-    approved_at: string | null;
-    approved_by: number | null;
+    moderation_status: 'auto' | 'pending' | 'approved' | 'rejected';
+    moderated_at: string | null;
+    moderated_by: number | null;
     created_at: string;
     updated_at: string;
     // Relations

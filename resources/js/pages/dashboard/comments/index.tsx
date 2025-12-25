@@ -51,8 +51,9 @@ interface Comment {
     user_id: number;
     parent_id: number | null;
     content: string;
-    is_approved: boolean;
-    moderation_status: 'approved' | 'rejected' | 'auto' | 'pending';
+    moderation_status: 'auto' | 'pending' | 'approved' | 'rejected';
+    moderated_at: string | null;
+    moderated_by: number | null;
     replies_count: number;
     created_at: string;
     user: {
@@ -283,7 +284,7 @@ export default function CommentsIndex({
                                 View Post
                             </Link>
                         </DropdownMenuItem>
-                        {!row.original.is_approved && (
+                        {row.original.moderation_status === 'pending' && (
                             <DropdownMenuItem
                                 onClick={() => handleApprove(row.original)}
                                 disabled={isApproving}
@@ -356,11 +357,17 @@ export default function CommentsIndex({
                                     <SelectItem value="all">
                                         All Status
                                     </SelectItem>
-                                    <SelectItem value="approved">
-                                        Approved
+                                    <SelectItem value="auto">
+                                        Auto
                                     </SelectItem>
                                     <SelectItem value="pending">
                                         Pending
+                                    </SelectItem>
+                                    <SelectItem value="approved">
+                                        Approved
+                                    </SelectItem>
+                                    <SelectItem value="rejected">
+                                        Rejected
                                     </SelectItem>
                                 </SelectContent>
                             </Select>

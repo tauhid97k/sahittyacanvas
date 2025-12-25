@@ -283,7 +283,7 @@ export default function UsersIndex({ users, roles, filters }: Props) {
             header: 'User',
             cell: ({ row }) => (
                 <div className="flex items-center gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-full bg-muted">
+                    <div className="flex size-10 items-center justify-center rounded-full bg-muted shrink-0">
                         {row.original.avatar ? (
                             <img
                                 src={row.original.avatar}

@@ -22,11 +22,11 @@ return new class extends Migration
             $table->longText('content'); // Page 1 content (main content)
             $table->string('meta_description', 160)->nullable();
             $table->string('featured_image')->nullable();
-            $table->enum('status', ['draft', 'pending', 'published', 'archived'])->default('draft');
+            $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->timestamp('published_at')->nullable();
-            $table->boolean('requires_approval')->default(false);
-            $table->timestamp('approved_at')->nullable();
-            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->enum('moderation_status', ['auto', 'pending', 'approved', 'rejected'])->default('auto');
+            $table->timestamp('moderated_at')->nullable();
+            $table->foreignId('moderated_by')->nullable()->constrained('users')->nullOnDelete();
             // views_count handled by Laravisit package (coderflexx/laravisit)
             $table->unsignedInteger('likes_count')->default(0);
             $table->unsignedInteger('comments_count')->default(0);
@@ -36,9 +36,16 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
+            // Performance indexes
             $table->index('status');
             $table->index('published_at');
+            $table->index('deleted_at');
+            $table->index('likes_count');
+            $table->index('comments_count');
+            $table->index('moderation_status');
             $table->index(['status', 'published_at']);
+            $table->index(['status', 'published_at', 'created_at']);
+            $table->index(['status', 'moderation_status']);
             $table->index(['user_id', 'status']);
             $table->index(['author_id', 'status']);
         });

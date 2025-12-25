@@ -8,6 +8,7 @@ use App\Http\Requests\Post\UpdatePostRequest;
 use App\Models\Author;
 use App\Models\Category;
 use App\Models\Post;
+use App\Models\ModerationSetting;
 use App\Models\User;
 use App\Notifications\NewPostPublished;
 use Illuminate\Http\RedirectResponse;
@@ -208,9 +209,18 @@ class PostController extends Controller
         // Set user_id
         $validated['user_id'] = $request->user()->id;
 
-        // Handle published_at based on status
-        if ($validated['status'] === 'published' && empty($validated['published_at'])) {
-            $validated['published_at'] = now();
+        // Handle moderation and publishing
+        if ($validated['status'] === 'published') {
+            if (empty($validated['published_at'])) {
+                $validated['published_at'] = now();
+            }
+            
+            // Check if moderation is required
+            if (ModerationSetting::postsRequireApproval()) {
+                $validated['moderation_status'] = 'pending';
+            } else {
+                $validated['moderation_status'] = 'auto';
+            }
         }
 
         $post = Post::create($validated);
@@ -231,8 +241,8 @@ class PostController extends Controller
             $post->addMedia($image)->toMediaCollection('featured');
         }
 
-        // Notify all users (except author) when post is published
-        if ($validated['status'] === 'published') {
+        // Notify all users (except author) when post is published and approved
+        if ($validated['status'] === 'published' && $post->moderation_status !== 'pending') {
             $author = $request->user();
             $usersToNotify = User::where('id', '!=', $author->id)->get();
             Notification::send($usersToNotify, new NewPostPublished($post, $author));
@@ -282,16 +292,36 @@ class PostController extends Controller
 
         // Track if post is being published for the first time
         $isNewlyPublished = $validated['status'] === 'published' && !$post->published_at;
+        $wasPublished = $post->status === 'published';
 
         // Handle published_at based on status
         if ($isNewlyPublished) {
             $validated['published_at'] = now();
         }
 
+        // Handle moderation when publishing or re-publishing after edit
+        if ($validated['status'] === 'published') {
+            if (ModerationSetting::postsRequireApproval()) {
+                // Reset to pending if content was edited and post was already published
+                if ($wasPublished && $post->moderation_status !== 'pending') {
+                    $validated['moderation_status'] = 'pending';
+                    $validated['moderated_at'] = null;
+                    $validated['moderated_by'] = null;
+                } elseif ($isNewlyPublished) {
+                    $validated['moderation_status'] = 'pending';
+                }
+            } else {
+                // No moderation required
+                if ($isNewlyPublished || $post->moderation_status === 'pending') {
+                    $validated['moderation_status'] = 'auto';
+                }
+            }
+        }
+
         $post->update($validated);
 
-        // Notify users when post is published for the first time
-        if ($isNewlyPublished) {
+        // Notify users when post is published for the first time and approved
+        if ($isNewlyPublished && $post->moderation_status !== 'pending') {
             $author = $request->user();
             $usersToNotify = User::where('id', '!=', $author->id)->get();
             Notification::send($usersToNotify, new NewPostPublished($post, $author));

@@ -31,7 +31,9 @@ return new class extends Migration
             
             $table->timestamps();
 
+            // Performance indexes
             $table->unique(['follower_id', 'followable_type', 'followable_id'], 'unique_follow');
+            $table->index('follower_id');
             // Note: morphs() already creates index on (followable_type, followable_id)
         });
     }

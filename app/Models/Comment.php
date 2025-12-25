@@ -21,15 +21,16 @@ class Comment extends Model
         'user_id',
         'parent_id',
         'content',
-        'is_approved',
         'moderation_status',
+        'moderated_at',
+        'moderated_by',
         'replies_count',
     ];
 
     protected function casts(): array
     {
         return [
-            'is_approved' => 'boolean',
+            'moderated_at' => 'datetime',
             'replies_count' => 'integer',
         ];
     }
@@ -40,7 +41,7 @@ class Comment extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['content', 'is_approved'])
+            ->logOnly(['content', 'moderation_status'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
@@ -56,19 +57,27 @@ class Comment extends Model
     // ==================== SCOPES ====================
 
     /**
-     * Scope: Approved comments
+     * Scope: Visible comments (auto or approved)
      */
-    public function scopeApproved($query)
+    public function scopeVisible($query)
     {
-        return $query->where('is_approved', true);
+        return $query->whereIn('moderation_status', ['auto', 'approved']);
     }
 
     /**
-     * Scope: Pending approval
+     * Scope: Pending moderation
      */
-    public function scopePending($query)
+    public function scopePendingModeration($query)
     {
-        return $query->where('is_approved', false);
+        return $query->where('moderation_status', 'pending');
+    }
+
+    /**
+     * Scope: Rejected
+     */
+    public function scopeRejected($query)
+    {
+        return $query->where('moderation_status', 'rejected');
     }
 
     /**
@@ -105,14 +114,38 @@ class Comment extends Model
         return $this->morphMany(Report::class, 'reportable');
     }
 
+    /**
+     * Get the moderator who moderated
+     */
+    public function moderator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'moderated_by');
+    }
+
     // ==================== HELPER METHODS ====================
 
     /**
-     * Check if comment is approved
+     * Check if comment is visible (auto or approved)
      */
-    public function isApproved(): bool
+    public function isVisible(): bool
     {
-        return $this->is_approved === true;
+        return in_array($this->moderation_status, ['auto', 'approved']);
+    }
+
+    /**
+     * Check if comment is pending moderation
+     */
+    public function isPendingModeration(): bool
+    {
+        return $this->moderation_status === 'pending';
+    }
+
+    /**
+     * Check if comment is rejected
+     */
+    public function isRejected(): bool
+    {
+        return $this->moderation_status === 'rejected';
     }
 
     /**

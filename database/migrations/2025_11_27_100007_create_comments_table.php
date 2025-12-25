@@ -17,15 +17,18 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('parent_id')->nullable()->constrained('comments')->cascadeOnDelete();
             $table->text('content');
-            $table->boolean('is_approved')->default(false);
-            $table->enum('moderation_status', ['approved', 'rejected', 'auto', 'pending'])->default('pending');
+            $table->enum('moderation_status', ['auto', 'pending', 'approved', 'rejected'])->default('auto');
+            $table->timestamp('moderated_at')->nullable();
+            $table->foreignId('moderated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->unsignedInteger('replies_count')->default(0);
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index(['post_id', 'is_approved', 'created_at']);
+            // Performance indexes
+            $table->index(['post_id', 'moderation_status', 'created_at']);
             $table->index(['user_id', 'created_at']);
             $table->index('parent_id');
+            $table->index('moderation_status');
         });
     }
 

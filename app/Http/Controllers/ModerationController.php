@@ -19,19 +19,18 @@ class ModerationController extends Controller
     {
         $tab = $request->get('tab', 'posts');
 
-        // Pending posts (requires_approval = true and approved_at = null)
+        // Pending posts (moderation_status = pending)
         $pendingPosts = Post::query()
             ->select([
                 'id', 'user_id', 'author_id', 'title_bn', 'title_en', 'slug',
-                'excerpt', 'status', 'requires_approval', 'approved_at', 'created_at',
+                'excerpt', 'status', 'moderation_status', 'moderated_at', 'created_at',
             ])
             ->with([
                 'user:id,name,email',
                 'author:id,name_bn,name_en',
                 'categories:id,name_bn,name_en',
             ])
-            ->where('requires_approval', true)
-            ->whereNull('approved_at')
+            ->where('moderation_status', 'pending')
             ->when($request->filled('search') && $tab === 'posts', function ($query) use ($request) {
                 $search = $request->get('search');
                 $query->where(function ($q) use ($search) {
@@ -55,7 +54,7 @@ class ModerationController extends Controller
                 'user:id,name,email,avatar',
                 'post:id,title_bn,title_en,slug',
             ])
-            ->where('is_approved', false)
+            ->where('moderation_status', 'pending')
             ->when($request->filled('search') && $tab === 'comments', function ($query) use ($request) {
                 $search = $request->get('search');
                 $query->where('content', 'like', "%{$search}%");
@@ -72,8 +71,8 @@ class ModerationController extends Controller
                 'search' => $request->get('search', ''),
             ],
             'counts' => [
-                'posts' => Post::where('requires_approval', true)->whereNull('approved_at')->count(),
-                'comments' => Comment::where('is_approved', false)->count(),
+                'posts' => Post::where('moderation_status', 'pending')->count(),
+                'comments' => Comment::where('moderation_status', 'pending')->count(),
             ],
             'settings' => [
                 'posts_require_approval' => ModerationSetting::postsRequireApproval(),
@@ -88,9 +87,9 @@ class ModerationController extends Controller
     public function approvePost(Request $request, Post $post): RedirectResponse
     {
         $post->update([
-            'approved_at' => now(),
-            'approved_by' => $request->user()->id,
-            'status' => 'published',
+            'moderation_status' => 'approved',
+            'moderated_at' => now(),
+            'moderated_by' => $request->user()->id,
         ]);
 
         return back()->with('success', 'Post approved and published successfully.');
@@ -99,35 +98,43 @@ class ModerationController extends Controller
     /**
      * Reject a post.
      */
-    public function rejectPost(Post $post): RedirectResponse
+    public function rejectPost(Request $request, Post $post): RedirectResponse
     {
         $post->update([
-            'requires_approval' => false,
-            'status' => 'draft',
+            'moderation_status' => 'rejected',
+            'moderated_at' => now(),
+            'moderated_by' => $request->user()->id,
         ]);
 
-        return back()->with('success', 'Post rejected and moved to draft.');
+        return back()->with('success', 'Post rejected.');
     }
 
     /**
      * Approve a comment.
      */
-    public function approveComment(Comment $comment): RedirectResponse
+    public function approveComment(Request $request, Comment $comment): RedirectResponse
     {
-        $comment->update(['is_approved' => true]);
+        $comment->update([
+            'moderation_status' => 'approved',
+            'moderated_at' => now(),
+            'moderated_by' => $request->user()->id,
+        ]);
 
         return back()->with('success', 'Comment approved successfully.');
     }
 
     /**
-     * Reject/delete a comment.
+     * Reject a comment.
      */
-    public function rejectComment(Comment $comment): RedirectResponse
+    public function rejectComment(Request $request, Comment $comment): RedirectResponse
     {
-        $comment->update(['moderation_status' => 'rejected']);
-        $comment->delete();
+        $comment->update([
+            'moderation_status' => 'rejected',
+            'moderated_at' => now(),
+            'moderated_by' => $request->user()->id,
+        ]);
 
-        return back()->with('success', 'Comment rejected and deleted.');
+        return back()->with('success', 'Comment rejected.');
     }
 
     /**
@@ -136,7 +143,7 @@ class ModerationController extends Controller
     public function updateSettings(Request $request): RedirectResponse
     {
         $request->validate([
-            'key' => 'required|string|in:posts_require_approval,comments_require_approval',
+            'key' => 'required|string|in:posts_require_approval,comments_require_approval,products_require_approval',
             'value' => 'required|boolean',
         ]);
 

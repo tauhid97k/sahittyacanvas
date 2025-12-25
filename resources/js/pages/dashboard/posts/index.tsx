@@ -37,6 +37,7 @@ import { PaginatedData } from '@/types/pagination';
 import { Head, Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import {
+    ArrowLeft,
     Bookmark,
     Eye,
     FileText,
@@ -300,8 +301,13 @@ export default function PostsIndex({ posts, categories, filters }: Props) {
 
             <div className="flex flex-col gap-6">
                 {/* Header */}
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+                    <Button variant="outline" size="icon" asChild>
+                        <Link href="/dashboard">
+                            <ArrowLeft />
+                        </Link>
+                    </Button>
+                    <div className="flex-1">
                         <h1 className="text-2xl font-semibold">Posts</h1>
                         <p className="text-sm text-muted-foreground">
                             Manage your blog posts

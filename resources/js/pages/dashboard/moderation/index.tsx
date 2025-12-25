@@ -47,8 +47,8 @@ interface PendingPost {
     slug: string;
     excerpt: string;
     status: string;
-    requires_approval: boolean;
-    approved_at: string | null;
+    moderation_status: 'auto' | 'pending' | 'approved' | 'rejected';
+    moderated_at: string | null;
     created_at: string;
     featured_image_url: string | null;
     user: {
@@ -73,7 +73,8 @@ interface PendingComment {
     post_id: number;
     user_id: number;
     content: string;
-    is_approved: boolean;
+    moderation_status: 'auto' | 'pending' | 'approved' | 'rejected';
+    moderated_at: string | null;
     created_at: string;
     user: {
         id: number;

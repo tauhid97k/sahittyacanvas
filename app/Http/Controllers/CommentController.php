@@ -40,10 +40,8 @@ class CommentController extends Controller
             })
             ->when($request->filled('status'), function ($query) use ($request) {
                 $status = $request->get('status');
-                if ($status === 'approved') {
-                    $query->where('is_approved', true);
-                } elseif ($status === 'pending') {
-                    $query->where('is_approved', false);
+                if (in_array($status, ['auto', 'pending', 'approved', 'rejected'])) {
+                    $query->where('moderation_status', $status);
                 }
             })
             ->latest()
@@ -63,14 +61,29 @@ class CommentController extends Controller
     /**
      * Approve a comment.
      */
-    public function approve(Comment $comment): RedirectResponse
+    public function approve(Request $request, Comment $comment): RedirectResponse
     {
         $comment->update([
-            'is_approved' => true,
             'moderation_status' => 'approved',
+            'moderated_at' => now(),
+            'moderated_by' => $request->user()->id,
         ]);
 
         return back()->with('success', 'Comment approved successfully.');
+    }
+
+    /**
+     * Reject a comment.
+     */
+    public function reject(Request $request, Comment $comment): RedirectResponse
+    {
+        $comment->update([
+            'moderation_status' => 'rejected',
+            'moderated_at' => now(),
+            'moderated_by' => $request->user()->id,
+        ]);
+
+        return back()->with('success', 'Comment rejected successfully.');
     }
 
     /**

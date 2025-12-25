@@ -35,9 +35,9 @@ class Post extends Model implements HasMedia, CanVisit
         'featured_image',
         'status',
         'published_at',
-        'requires_approval',
-        'approved_at',
-        'approved_by',
+        'moderation_status',
+        'moderated_at',
+        'moderated_by',
         'likes_count',
         'comments_count',
         'bookmarks_count',
@@ -48,8 +48,7 @@ class Post extends Model implements HasMedia, CanVisit
     {
         return [
             'published_at' => 'datetime',
-            'approved_at' => 'datetime',
-            'requires_approval' => 'boolean',
+            'moderated_at' => 'datetime',
             'likes_count' => 'integer',
             'comments_count' => 'integer',
             'bookmarks_count' => 'integer',
@@ -63,7 +62,7 @@ class Post extends Model implements HasMedia, CanVisit
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['title_bn', 'title_en', 'slug', 'status', 'requires_approval'])
+            ->logOnly(['title_bn', 'title_en', 'slug', 'status', 'moderation_status'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
@@ -138,11 +137,27 @@ class Post extends Model implements HasMedia, CanVisit
     }
 
     /**
-     * Scope: Pending approval
+     * Scope: Pending moderation
      */
-    public function scopePending($query)
+    public function scopePendingModeration($query)
     {
-        return $query->where('status', 'pending');
+        return $query->where('moderation_status', 'pending');
+    }
+
+    /**
+     * Scope: Approved (auto or manually approved)
+     */
+    public function scopeApproved($query)
+    {
+        return $query->whereIn('moderation_status', ['auto', 'approved']);
+    }
+
+    /**
+     * Scope: Rejected
+     */
+    public function scopeRejected($query)
+    {
+        return $query->where('moderation_status', 'rejected');
     }
 
     /**
@@ -154,12 +169,14 @@ class Post extends Model implements HasMedia, CanVisit
     }
 
     /**
-     * Scope: Requires moderation
+     * Scope: Visible to public (published + approved)
      */
-    public function scopeRequiresModeration($query)
+    public function scopeVisible($query)
     {
-        return $query->where('requires_approval', true)
-            ->whereNull('approved_at');
+        return $query->where('status', 'published')
+            ->whereIn('moderation_status', ['auto', 'approved'])
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
     }
 
     // ==================== RELATIONSHIPS ====================
@@ -189,11 +206,11 @@ class Post extends Model implements HasMedia, CanVisit
     }
 
     /**
-     * Get the moderator who approved
+     * Get the moderator who moderated
      */
-    public function approver(): BelongsTo
+    public function moderator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'approved_by');
+        return $this->belongsTo(User::class, 'moderated_by');
     }
 
     /**
@@ -246,6 +263,31 @@ class Post extends Model implements HasMedia, CanVisit
         return $this->status === 'published' 
             && $this->published_at 
             && $this->published_at->isPast();
+    }
+
+    /**
+     * Check if post is visible to public
+     */
+    public function isVisible(): bool
+    {
+        return $this->isPublished() 
+            && in_array($this->moderation_status, ['auto', 'approved']);
+    }
+
+    /**
+     * Check if post is pending moderation
+     */
+    public function isPendingModeration(): bool
+    {
+        return $this->moderation_status === 'pending';
+    }
+
+    /**
+     * Check if post is rejected
+     */
+    public function isRejected(): bool
+    {
+        return $this->moderation_status === 'rejected';
     }
 
     /**
