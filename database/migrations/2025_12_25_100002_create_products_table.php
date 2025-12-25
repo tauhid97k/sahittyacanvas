@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('name_en')->nullable();
             $table->string('slug')->unique();
             $table->longText('description');
-            $table->decimal('price', 10, 2);
-            $table->decimal('compare_price', 10, 2)->nullable(); // Strikethrough price
+            $table->unsignedBigInteger('price'); // Store in cents (paisa)
+            $table->unsignedBigInteger('compare_price')->nullable(); // Strikethrough price in cents
             $table->unsignedInteger('stock_count')->default(0);
             $table->unsignedInteger('stock_alert_threshold')->default(5);
             $table->string('sku')->nullable();

@@ -27,7 +27,7 @@ return new class extends Migration
             $table->foreignId('cart_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->unsignedInteger('quantity')->default(1);
-            $table->decimal('unit_price', 10, 2); // Price snapshot at add time
+            $table->unsignedBigInteger('unit_price'); // Price snapshot in cents at add time
             $table->timestamps();
 
             // Unique constraint - one product per cart

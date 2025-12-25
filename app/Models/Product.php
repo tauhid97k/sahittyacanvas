@@ -44,8 +44,8 @@ class Product extends Model implements HasMedia
     protected function casts(): array
     {
         return [
-            'price' => 'decimal:2',
-            'compare_price' => 'decimal:2',
+            'price' => 'integer',
+            'compare_price' => 'integer',
             'stock_count' => 'integer',
             'stock_alert_threshold' => 'integer',
             'sales_count' => 'integer',
@@ -53,6 +53,56 @@ class Product extends Model implements HasMedia
             'published_at' => 'datetime',
             'moderated_at' => 'datetime',
         ];
+    }
+
+    // ==================== PRICE ACCESSORS/MUTATORS ====================
+
+    /**
+     * Get price in taka (from paisa)
+     */
+    public function getPriceInTakaAttribute(): float
+    {
+        return $this->price / 100;
+    }
+
+    /**
+     * Get compare price in taka (from paisa)
+     */
+    public function getComparePriceInTakaAttribute(): ?float
+    {
+        return $this->compare_price ? $this->compare_price / 100 : null;
+    }
+
+    /**
+     * Set price from taka (to paisa)
+     */
+    public function setPriceFromTaka(float $taka): void
+    {
+        $this->price = (int) round($taka * 100);
+    }
+
+    /**
+     * Set compare price from taka (to paisa)
+     */
+    public function setComparePriceFromTaka(?float $taka): void
+    {
+        $this->compare_price = $taka ? (int) round($taka * 100) : null;
+    }
+
+    /**
+     * Get formatted price
+     */
+    public function getFormattedPriceAttribute(): string
+    {
+        return '৳' . number_format($this->price_in_taka, 2);
+    }
+
+    /**
+     * Get formatted compare price
+     */
+    public function getFormattedComparePriceAttribute(): ?string
+    {
+        return $this->compare_price ? '৳' . number_format($this->compare_price_in_taka, 2) : null;
     }
 
     /**

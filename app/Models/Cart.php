@@ -83,11 +83,27 @@ class Cart extends Model
     }
 
     /**
-     * Get subtotal
+     * Get subtotal in cents
      */
-    public function getSubtotalAttribute(): float
+    public function getSubtotalAttribute(): int
     {
-        return $this->items->sum(fn($item) => $item->quantity * $item->unit_price);
+        return $this->items->sum(fn($item) => $item->total);
+    }
+
+    /**
+     * Get subtotal in taka
+     */
+    public function getSubtotalInTakaAttribute(): float
+    {
+        return $this->subtotal / 100;
+    }
+
+    /**
+     * Get formatted subtotal
+     */
+    public function getFormattedSubtotalAttribute(): string
+    {
+        return '৳' . number_format($this->subtotal_in_taka, 2);
     }
 
     /**

@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
@@ -47,15 +49,65 @@ class Order extends Model
     protected function casts(): array
     {
         return [
-            'subtotal' => 'decimal:2',
-            'shipping_cost' => 'decimal:2',
-            'total' => 'decimal:2',
+            'subtotal' => 'integer',
+            'shipping_cost' => 'integer',
+            'total' => 'integer',
             'status' => OrderStatus::class,
             'payment_status' => PaymentStatus::class,
             'shipped_at' => 'datetime',
             'delivered_at' => 'datetime',
             'cancelled_at' => 'datetime',
         ];
+    }
+
+    // ==================== PRICE ACCESSORS ====================
+
+    /**
+     * Get subtotal in taka
+     */
+    public function getSubtotalInTakaAttribute(): float
+    {
+        return $this->subtotal / 100;
+    }
+
+    /**
+     * Get shipping cost in taka
+     */
+    public function getShippingCostInTakaAttribute(): float
+    {
+        return $this->shipping_cost / 100;
+    }
+
+    /**
+     * Get total in taka
+     */
+    public function getTotalInTakaAttribute(): float
+    {
+        return $this->total / 100;
+    }
+
+    /**
+     * Get formatted subtotal
+     */
+    public function getFormattedSubtotalAttribute(): string
+    {
+        return '৳' . number_format($this->subtotal_in_taka, 2);
+    }
+
+    /**
+     * Get formatted shipping cost
+     */
+    public function getFormattedShippingCostAttribute(): string
+    {
+        return '৳' . number_format($this->shipping_cost_in_taka, 2);
+    }
+
+    /**
+     * Get formatted total
+     */
+    public function getFormattedTotalAttribute(): string
+    {
+        return '৳' . number_format($this->total_in_taka, 2);
     }
 
     /**
@@ -199,6 +251,22 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * Get transactions for this order
+     */
+    public function transactions(): MorphMany
+    {
+        return $this->morphMany(Transaction::class, 'transactionable');
+    }
+
+    /**
+     * Get the latest transaction
+     */
+    public function latestTransaction()
+    {
+        return $this->morphOne(Transaction::class, 'transactionable')->latestOfMany();
     }
 
     // ==================== HELPER METHODS ====================

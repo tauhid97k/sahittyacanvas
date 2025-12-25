@@ -24,9 +24,43 @@ class OrderItem extends Model
     {
         return [
             'quantity' => 'integer',
-            'unit_price' => 'decimal:2',
-            'total' => 'decimal:2',
+            'unit_price' => 'integer',
+            'total' => 'integer',
         ];
+    }
+
+    // ==================== PRICE ACCESSORS ====================
+
+    /**
+     * Get unit price in taka
+     */
+    public function getUnitPriceInTakaAttribute(): float
+    {
+        return $this->unit_price / 100;
+    }
+
+    /**
+     * Get total in taka
+     */
+    public function getTotalInTakaAttribute(): float
+    {
+        return $this->total / 100;
+    }
+
+    /**
+     * Get formatted unit price
+     */
+    public function getFormattedUnitPriceAttribute(): string
+    {
+        return '৳' . number_format($this->unit_price_in_taka, 2);
+    }
+
+    /**
+     * Get formatted total
+     */
+    public function getFormattedTotalAttribute(): string
+    {
+        return '৳' . number_format($this->total_in_taka, 2);
     }
 
     // ==================== RELATIONSHIPS ====================

@@ -21,8 +21,26 @@ class CartItem extends Model
     {
         return [
             'quantity' => 'integer',
-            'unit_price' => 'decimal:2',
+            'unit_price' => 'integer',
         ];
+    }
+
+    // ==================== PRICE ACCESSORS ====================
+
+    /**
+     * Get unit price in taka
+     */
+    public function getUnitPriceInTakaAttribute(): float
+    {
+        return $this->unit_price / 100;
+    }
+
+    /**
+     * Get formatted unit price
+     */
+    public function getFormattedUnitPriceAttribute(): string
+    {
+        return '৳' . number_format($this->unit_price_in_taka, 2);
     }
 
     // ==================== RELATIONSHIPS ====================
@@ -46,11 +64,27 @@ class CartItem extends Model
     // ==================== HELPER METHODS ====================
 
     /**
-     * Get line total
+     * Get line total in cents
      */
-    public function getTotalAttribute(): float
+    public function getTotalAttribute(): int
     {
         return $this->quantity * $this->unit_price;
+    }
+
+    /**
+     * Get line total in taka
+     */
+    public function getTotalInTakaAttribute(): float
+    {
+        return $this->total / 100;
+    }
+
+    /**
+     * Get formatted total
+     */
+    public function getFormattedTotalAttribute(): string
+    {
+        return '৳' . number_format($this->total_in_taka, 2);
     }
 
     /**

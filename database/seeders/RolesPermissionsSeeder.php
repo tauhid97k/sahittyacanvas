@@ -53,6 +53,18 @@ class RolesPermissionsSeeder extends Seeder
             ['name' => PermissionEnum::VIEW_ORDER->value, 'group' => 'ORDER'],
             ['name' => PermissionEnum::UPDATE_ORDER_STATUS->value, 'group' => 'ORDER'],
             ['name' => PermissionEnum::CANCEL_ORDER->value, 'group' => 'ORDER'],
+
+            // Transaction permissions
+            ['name' => PermissionEnum::LIST_TRANSACTION->value, 'group' => 'TRANSACTION'],
+            ['name' => PermissionEnum::VIEW_TRANSACTION->value, 'group' => 'TRANSACTION'],
+            ['name' => PermissionEnum::MARK_TRANSACTION_PAID->value, 'group' => 'TRANSACTION'],
+            ['name' => PermissionEnum::REFUND_TRANSACTION->value, 'group' => 'TRANSACTION'],
+
+            // Payment Method permissions (Admin)
+            ['name' => PermissionEnum::LIST_PAYMENT_METHOD->value, 'group' => 'PAYMENT_METHOD'],
+            ['name' => PermissionEnum::CREATE_PAYMENT_METHOD->value, 'group' => 'PAYMENT_METHOD'],
+            ['name' => PermissionEnum::EDIT_PAYMENT_METHOD->value, 'group' => 'PAYMENT_METHOD'],
+            ['name' => PermissionEnum::DELETE_PAYMENT_METHOD->value, 'group' => 'PAYMENT_METHOD'],
         ];
 
         foreach ($permissions as $permission) {

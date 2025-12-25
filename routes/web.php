@@ -2,15 +2,20 @@
 
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\AuthorController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\EditorMediaController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\ModerationController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PostPageController;
+use App\Http\Controllers\ProductCategoryController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -108,6 +113,53 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
     Route::delete('roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
     Route::get('roles/{role}/permissions', [RoleController::class, 'permissions'])->name('roles.permissions');
     Route::put('roles/{role}/permissions', [RoleController::class, 'updatePermissions'])->name('roles.permissions.update');
+
+    // Product Categories (Admin)
+    Route::get('product-categories', [ProductCategoryController::class, 'index'])->name('product-categories.index');
+    Route::get('product-categories/create', [ProductCategoryController::class, 'create'])->name('product-categories.create');
+    Route::post('product-categories', [ProductCategoryController::class, 'store'])->name('product-categories.store');
+    Route::get('product-categories/{product_category}/edit', [ProductCategoryController::class, 'edit'])->name('product-categories.edit');
+    Route::put('product-categories/{product_category}', [ProductCategoryController::class, 'update'])->name('product-categories.update');
+    Route::delete('product-categories/{product_category}', [ProductCategoryController::class, 'destroy'])->name('product-categories.destroy');
+
+    // Products (Seller)
+    Route::get('products', [ProductController::class, 'index'])->name('products.index');
+    Route::get('products/create', [ProductController::class, 'create'])->name('products.create');
+    Route::post('products', [ProductController::class, 'store'])->name('products.store');
+    Route::get('products/{product}', [ProductController::class, 'show'])->name('products.show');
+    Route::get('products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
+    Route::put('products/{product}', [ProductController::class, 'update'])->name('products.update');
+    Route::delete('products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+
+    // Seller Orders
+    Route::get('orders', [OrderController::class, 'sellerIndex'])->name('seller.orders.index');
+    Route::get('orders/{order}', [OrderController::class, 'show'])->name('seller.orders.show');
+    Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('seller.orders.status');
+    Route::post('orders/{order}/paid', [OrderController::class, 'markPaid'])->name('seller.orders.paid');
+
+    // Seller Transactions
+    Route::get('transactions', [TransactionController::class, 'index'])->name('seller.transactions.index');
+    Route::get('transactions/{transaction}', [TransactionController::class, 'show'])->name('seller.transactions.show');
+    Route::post('transactions/{transaction}/paid', [TransactionController::class, 'markPaid'])->name('seller.transactions.paid');
+    Route::post('transactions/{transaction}/refund', [TransactionController::class, 'refund'])->name('seller.transactions.refund');
+});
+
+// Cart Routes (authenticated users)
+Route::middleware(['auth'])->group(function () {
+    Route::get('cart', [CartController::class, 'index'])->name('cart.index');
+    Route::post('cart', [CartController::class, 'store'])->name('cart.store');
+    Route::put('cart/{cartItem}', [CartController::class, 'update'])->name('cart.update');
+    Route::delete('cart/{cartItem}', [CartController::class, 'destroy'])->name('cart.destroy');
+    Route::delete('cart', [CartController::class, 'clear'])->name('cart.clear');
+    Route::get('cart/count', [CartController::class, 'count'])->name('cart.count');
+
+    // Checkout
+    Route::post('checkout', [OrderController::class, 'checkout'])->name('checkout');
+
+    // Buyer Orders
+    Route::get('my-orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('my-orders/{order}', [OrderController::class, 'buyerShow'])->name('orders.show');
+    Route::post('my-orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
 });
 
 require __DIR__.'/settings.php';

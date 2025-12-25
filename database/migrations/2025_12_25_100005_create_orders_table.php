@@ -17,10 +17,10 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete(); // The buyer
             $table->foreignId('seller_id')->constrained('users')->cascadeOnDelete(); // The seller
 
-            // Pricing
-            $table->decimal('subtotal', 10, 2);
-            $table->decimal('shipping_cost', 10, 2)->default(0);
-            $table->decimal('total', 10, 2);
+            // Pricing (stored in cents/paisa)
+            $table->unsignedBigInteger('subtotal');
+            $table->unsignedBigInteger('shipping_cost')->default(0);
+            $table->unsignedBigInteger('total');
 
             // Status
             $table->enum('status', [
@@ -80,8 +80,8 @@ return new class extends Migration
             $table->string('product_name'); // Snapshot
             $table->string('product_sku')->nullable(); // Snapshot
             $table->unsignedInteger('quantity');
-            $table->decimal('unit_price', 10, 2); // Snapshot
-            $table->decimal('total', 10, 2);
+            $table->unsignedBigInteger('unit_price'); // Snapshot in cents
+            $table->unsignedBigInteger('total'); // In cents
             $table->timestamps();
 
             // Performance indexes
