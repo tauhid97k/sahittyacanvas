@@ -111,8 +111,26 @@ class UserController extends Controller
                 ->paginate($perPage)
                 ->withQueryString();
         } elseif ($tab === 'products') {
-            // Products tab - placeholder for now, adjust when Product model exists
-            $tabData = collect()->paginate($perPage);
+            $tabData = $user->products()
+                ->with('categories:id,name_bn')
+                ->select('id', 'user_id', 'name_bn', 'name_en', 'slug', 'status', 'price', 'discount_type', 'discount_value', 'stock_count', 'created_at')
+                ->latest()
+                ->paginate($perPage)
+                ->withQueryString()
+                ->through(fn ($product) => [
+                    'id' => $product->id,
+                    'name_bn' => $product->name_bn,
+                    'name_en' => $product->name_en,
+                    'slug' => $product->slug,
+                    'status' => $product->status,
+                    'featured_image_url' => $product->featured_image_url,
+                    'formatted_price' => $product->formatted_price,
+                    'formatted_discounted_price' => $product->formatted_discounted_price,
+                    'discount_percentage' => $product->discount_percentage,
+                    'stock_count' => $product->stock_count,
+                    'created_at' => $product->created_at,
+                    'categories' => $product->categories,
+                ]);
         } elseif ($tab === 'followers') {
             $tabData = $user->followers()
                 ->with('follower:id,name,email,username,avatar')

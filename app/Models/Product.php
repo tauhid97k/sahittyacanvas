@@ -28,7 +28,8 @@ class Product extends Model implements HasMedia
         'slug',
         'description',
         'price',
-        'compare_price',
+        'discount_type',
+        'discount_value',
         'stock_count',
         'stock_alert_threshold',
         'sku',
@@ -45,7 +46,7 @@ class Product extends Model implements HasMedia
     {
         return [
             'price' => 'integer',
-            'compare_price' => 'integer',
+            'discount_value' => 'integer',
             'stock_count' => 'integer',
             'stock_alert_threshold' => 'integer',
             'sales_count' => 'integer',
@@ -66,11 +67,44 @@ class Product extends Model implements HasMedia
     }
 
     /**
-     * Get compare price in taka (from paisa)
+     * Get discounted price in paisa
      */
-    public function getComparePriceInTakaAttribute(): ?float
+    public function getDiscountedPriceAttribute(): int
     {
-        return $this->compare_price ? $this->compare_price / 100 : null;
+        if (!$this->discount_type || !$this->discount_value) {
+            return $this->price;
+        }
+
+        if ($this->discount_type === 'percentage') {
+            return (int) round($this->price * (1 - $this->discount_value / 100));
+        }
+
+        // Flat discount (discount_value is in paisa)
+        return max(0, $this->price - $this->discount_value);
+    }
+
+    /**
+     * Get discounted price in taka
+     */
+    public function getDiscountedPriceInTakaAttribute(): float
+    {
+        return $this->discounted_price / 100;
+    }
+
+    /**
+     * Get discount amount in paisa
+     */
+    public function getDiscountAmountAttribute(): int
+    {
+        return $this->price - $this->discounted_price;
+    }
+
+    /**
+     * Get discount amount in taka
+     */
+    public function getDiscountAmountInTakaAttribute(): float
+    {
+        return $this->discount_amount / 100;
     }
 
     /**
@@ -82,15 +116,7 @@ class Product extends Model implements HasMedia
     }
 
     /**
-     * Set compare price from taka (to paisa)
-     */
-    public function setComparePriceFromTaka(?float $taka): void
-    {
-        $this->compare_price = $taka ? (int) round($taka * 100) : null;
-    }
-
-    /**
-     * Get formatted price
+     * Get formatted price (original)
      */
     public function getFormattedPriceAttribute(): string
     {
@@ -98,11 +124,30 @@ class Product extends Model implements HasMedia
     }
 
     /**
-     * Get formatted compare price
+     * Get formatted discounted price
      */
-    public function getFormattedComparePriceAttribute(): ?string
+    public function getFormattedDiscountedPriceAttribute(): string
     {
-        return $this->compare_price ? '৳' . number_format($this->compare_price_in_taka, 2) : null;
+        return '৳' . number_format($this->discounted_price_in_taka, 2);
+    }
+
+    /**
+     * Get formatted discount amount
+     */
+    public function getFormattedDiscountAmountAttribute(): ?string
+    {
+        if (!$this->hasDiscount()) {
+            return null;
+        }
+        return '৳' . number_format($this->discount_amount_in_taka, 2);
+    }
+
+    /**
+     * Check if product has a discount
+     */
+    public function hasDiscount(): bool
+    {
+        return $this->discount_type && $this->discount_value > 0;
     }
 
     /**
@@ -396,15 +441,35 @@ class Product extends Model implements HasMedia
     }
 
     /**
-     * Get discount percentage
+     * Get discount percentage (for display)
      */
     public function getDiscountPercentageAttribute(): ?int
     {
-        if (!$this->compare_price || $this->compare_price <= $this->price) {
+        if (!$this->hasDiscount()) {
             return null;
         }
 
-        return (int) round((($this->compare_price - $this->price) / $this->compare_price) * 100);
+        if ($this->discount_type === 'percentage') {
+            return $this->discount_value;
+        }
+
+        // Calculate percentage from flat discount
+        if ($this->price > 0) {
+            return (int) round(($this->discount_value / $this->price) * 100);
+        }
+
+        return null;
+    }
+
+    /**
+     * Get discount value in taka (for flat discounts)
+     */
+    public function getDiscountValueInTakaAttribute(): ?float
+    {
+        if ($this->discount_type !== 'flat' || !$this->discount_value) {
+            return null;
+        }
+        return $this->discount_value / 100;
     }
 
     /**

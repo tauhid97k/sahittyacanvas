@@ -13,15 +13,19 @@ import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import {
     Activity,
+    Banknote,
     Bell,
     Feather,
+    FolderTree,
     Heart,
     LayoutGrid,
     List,
     MessageCircle,
+    Package,
     PenBox,
     Shield,
     ShieldCheck,
+    ShoppingCart,
     User,
 } from 'lucide-react';
 import { useMemo } from 'react';
@@ -96,6 +100,27 @@ export function AppSidebar() {
                 href: '/dashboard/notifications',
                 icon: Bell,
                 badge: unreadCount > 0 ? unreadCount : null,
+            },
+            // Ecommerce
+            {
+                title: 'Product Categories',
+                href: '/dashboard/product-categories',
+                icon: FolderTree,
+            },
+            {
+                title: 'Products',
+                href: '/dashboard/products',
+                icon: Package,
+            },
+            {
+                title: 'Orders',
+                href: '/dashboard/orders',
+                icon: ShoppingCart,
+            },
+            {
+                title: 'Transactions',
+                href: '/dashboard/transactions',
+                icon: Banknote,
             },
         ],
         [unreadCount],

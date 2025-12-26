@@ -19,22 +19,31 @@ class StoreProductRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'name_bn' => ['required', 'string', 'max:255'],
             'name_en' => ['nullable', 'string', 'max:255'],
             'description' => ['required', 'string', 'min:50'],
-            'price' => ['required', 'numeric', 'min:0', 'max:9999999.99'],
-            'compare_price' => ['nullable', 'numeric', 'min:0', 'max:9999999.99', 'gt:price'],
+            'price' => ['required', 'numeric', 'min:0.01', 'max:9999999.99'],
+            'discount_type' => ['nullable', 'in:percentage,flat'],
+            'discount_value' => ['nullable', 'numeric', 'min:0'],
             'stock_count' => ['required', 'integer', 'min:0', 'max:999999'],
             'stock_alert_threshold' => ['nullable', 'integer', 'min:0', 'max:999'],
             'sku' => ['nullable', 'string', 'max:100'],
             'status' => ['required', 'in:draft,published'],
-            'categories' => ['required', 'array', 'min:1'],
-            'categories.*' => ['exists:product_categories,id'],
-            'featured_image' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:5120'],
+            'category_ids' => ['nullable', 'array'],
+            'category_ids.*' => ['exists:product_categories,id'],
             'images' => ['nullable', 'array', 'max:10'],
             'images.*' => ['image', 'mimes:jpeg,png,webp', 'max:5120'],
         ];
+
+        // Add conditional validation for discount_value
+        if ($this->discount_type === 'percentage') {
+            $rules['discount_value'] = ['required_with:discount_type', 'numeric', 'min:1', 'max:100'];
+        } elseif ($this->discount_type === 'flat') {
+            $rules['discount_value'] = ['required_with:discount_type', 'numeric', 'min:0.01', 'lt:price'];
+        }
+
+        return $rules;
     }
 
     /**
@@ -43,18 +52,17 @@ class StoreProductRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name_bn.required' => 'বাংলা নাম আবশ্যক।',
-            'description.required' => 'পণ্যের বিবরণ আবশ্যক।',
-            'description.min' => 'পণ্যের বিবরণ কমপক্ষে ৫০ অক্ষর হতে হবে।',
-            'price.required' => 'মূল্য আবশ্যক।',
-            'price.min' => 'মূল্য ০ এর কম হতে পারবে না।',
-            'compare_price.gt' => 'তুলনামূলক মূল্য অবশ্যই মূল মূল্যের চেয়ে বেশি হতে হবে।',
-            'stock_count.required' => 'স্টক সংখ্যা আবশ্যক।',
-            'categories.required' => 'কমপক্ষে একটি ক্যাটাগরি নির্বাচন করুন।',
-            'categories.min' => 'কমপক্ষে একটি ক্যাটাগরি নির্বাচন করুন।',
-            'featured_image.max' => 'ফিচার্ড ছবির আকার ৫ মেগাবাইটের বেশি হতে পারবে না।',
-            'images.max' => 'সর্বোচ্চ ১০টি ছবি আপলোড করা যাবে।',
-            'images.*.max' => 'প্রতিটি ছবির আকার ৫ মেগাবাইটের বেশি হতে পারবে না।',
+            'name_bn.required' => 'Name (Bengali) is required.',
+            'description.required' => 'Description is required.',
+            'description.min' => 'Description must be at least 50 characters.',
+            'price.required' => 'Price is required.',
+            'price.min' => 'Price must be greater than 0.',
+            'discount_value.required_with' => 'Discount value is required when discount type is selected.',
+            'discount_value.max' => 'Percentage discount cannot exceed 100%.',
+            'discount_value.lt' => 'Flat discount must be less than the price.',
+            'stock_count.required' => 'Stock count is required.',
+            'images.max' => 'Maximum 10 images allowed.',
+            'images.*.max' => 'Each image must be less than 5MB.',
         ];
     }
 
@@ -63,16 +71,11 @@ class StoreProductRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        // Convert price from taka to paisa (cents)
-        if ($this->has('price')) {
+        // Clean up empty discount fields
+        if ($this->discount_type === '' || $this->discount_type === null) {
             $this->merge([
-                'price_in_cents' => (int) round($this->price * 100),
-            ]);
-        }
-
-        if ($this->has('compare_price') && $this->compare_price) {
-            $this->merge([
-                'compare_price_in_cents' => (int) round($this->compare_price * 100),
+                'discount_type' => null,
+                'discount_value' => null,
             ]);
         }
     }

@@ -19,7 +19,8 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->longText('description');
             $table->unsignedBigInteger('price'); // Store in cents (paisa)
-            $table->unsignedBigInteger('compare_price')->nullable(); // Strikethrough price in cents
+            $table->enum('discount_type', ['percentage', 'flat'])->nullable();
+            $table->unsignedInteger('discount_value')->nullable(); // Percentage (0-100) or flat amount in paisa
             $table->unsignedInteger('stock_count')->default(0);
             $table->unsignedInteger('stock_alert_threshold')->default(5);
             $table->string('sku')->nullable();

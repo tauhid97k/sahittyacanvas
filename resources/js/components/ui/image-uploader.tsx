@@ -5,6 +5,7 @@ import * as React from 'react';
 interface ImageUploaderProps {
     value?: File | string | null;
     onChange: (file: File | null) => void;
+    existingUrl?: string | null;
     accept?: string;
     maxSize?: number; // in MB
     className?: string;
@@ -16,6 +17,7 @@ interface ImageUploaderProps {
 export function ImageUploader({
     value,
     onChange,
+    existingUrl,
     accept = 'image/jpeg,image/png,image/webp',
     maxSize = 2,
     className,
@@ -28,9 +30,9 @@ export function ImageUploader({
     const [dragActive, setDragActive] = React.useState(false);
     const [localError, setLocalError] = React.useState<string | null>(null);
 
-    // Generate preview from File or URL string
+    // Generate preview from File, URL string, or existingUrl
     React.useEffect(() => {
-        if (!value) {
+        if (!value && !existingUrl) {
             setPreview(null);
             return;
         }
@@ -40,11 +42,20 @@ export function ImageUploader({
             return;
         }
 
-        const objectUrl = URL.createObjectURL(value);
-        setPreview(objectUrl);
+        if (value instanceof File) {
+            const objectUrl = URL.createObjectURL(value);
+            setPreview(objectUrl);
+            return () => URL.revokeObjectURL(objectUrl);
+        }
 
-        return () => URL.revokeObjectURL(objectUrl);
-    }, [value]);
+        // Use existingUrl if no value
+        if (existingUrl) {
+            setPreview(existingUrl);
+            return;
+        }
+
+        setPreview(null);
+    }, [value, existingUrl]);
 
     const validateFile = (file: File): boolean => {
         setLocalError(null);

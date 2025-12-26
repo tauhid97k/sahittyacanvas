@@ -53,6 +53,21 @@ interface Post {
     author?: { id: number; name_bn: string; name_en: string | null } | null;
 }
 
+interface Product {
+    id: number;
+    name_bn: string;
+    name_en: string | null;
+    slug: string;
+    status: string;
+    featured_image_url: string | null;
+    formatted_price: string;
+    formatted_discounted_price: string;
+    discount_percentage: number | null;
+    stock_count: number;
+    created_at: string;
+    categories?: { id: number; name_bn: string }[];
+}
+
 interface Follower {
     id: number;
     follower: {
@@ -67,7 +82,7 @@ interface Follower {
 
 interface Props {
     user: User;
-    tabData: PaginatedData<Post | Follower> | null;
+    tabData: PaginatedData<Post | Product | Follower> | null;
     activeTab: string;
 }
 
@@ -87,6 +102,7 @@ export default function UserShow({ user, tabData, activeTab }: Props) {
     };
 
     const posts = activeTab === 'posts' ? (tabData?.data as Post[]) : [];
+    const products = activeTab === 'products' ? (tabData?.data as Product[]) : [];
     const followers =
         activeTab === 'followers' ? (tabData?.data as Follower[]) : [];
 
@@ -350,9 +366,97 @@ export default function UserShow({ user, tabData, activeTab }: Props) {
                                 <CardTitle>Products</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="flex min-h-[200px] items-center justify-center text-muted-foreground">
-                                    <p>No products to display yet.</p>
-                                </div>
+                                {products && products.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {products.map((product) => (
+                                            <div
+                                                key={product.id}
+                                                className="flex gap-4 rounded-lg border p-4"
+                                            >
+                                                {product.featured_image_url && (
+                                                    <img
+                                                        src={
+                                                            product.featured_image_url
+                                                        }
+                                                        alt={product.name_bn}
+                                                        className="h-20 w-20 shrink-0 rounded-md object-cover"
+                                                    />
+                                                )}
+                                                <div className="flex-1 space-y-1">
+                                                    <h4 className="font-medium">
+                                                        {product.name_bn}
+                                                    </h4>
+                                                    {product.name_en && (
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {product.name_en}
+                                                        </p>
+                                                    )}
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        {product.discount_percentage ? (
+                                                            <>
+                                                                <span className="font-semibold text-primary">
+                                                                    {product.formatted_discounted_price}
+                                                                </span>
+                                                                <span className="text-sm text-muted-foreground line-through">
+                                                                    {product.formatted_price}
+                                                                </span>
+                                                                <Badge variant="destructive" className="text-xs">
+                                                                    -{product.discount_percentage}%
+                                                                </Badge>
+                                                            </>
+                                                        ) : (
+                                                            <span className="font-semibold">
+                                                                {product.formatted_price}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                        <Badge
+                                                            variant={
+                                                                product.status ===
+                                                                'published'
+                                                                    ? 'default'
+                                                                    : 'secondary'
+                                                            }
+                                                        >
+                                                            {product.status}
+                                                        </Badge>
+                                                        <span>Stock: {product.stock_count}</span>
+                                                        <span>
+                                                            {formatDistanceToNow(
+                                                                new Date(
+                                                                    product.created_at,
+                                                                ),
+                                                                {
+                                                                    addSuffix: true,
+                                                                },
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <Button variant="outline" size="sm" asChild>
+                                                    <Link href={`/dashboard/products/${product.slug}`}>
+                                                        View
+                                                    </Link>
+                                                </Button>
+                                            </div>
+                                        ))}
+                                        {tabData && tabData.total > 0 && (
+                                            <Pagination
+                                                links={tabData.links}
+                                                from={tabData.from}
+                                                to={tabData.to}
+                                                total={tabData.total}
+                                                perPage={tabData.per_page}
+                                                currentPath={`/dashboard/users/${user.id}?tab=products`}
+                                            />
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="flex min-h-[200px] items-center justify-center text-muted-foreground">
+                                        <p>No products to display yet.</p>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </TabsContent>

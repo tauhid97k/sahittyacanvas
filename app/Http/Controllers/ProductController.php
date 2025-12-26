@@ -24,11 +24,11 @@ class ProductController extends Controller
 
         $products = Product::query()
             ->select([
-                'id', 'user_id', 'name_bn', 'name_en', 'slug', 'price', 'compare_price',
-                'stock_count', 'status', 'moderation_status', 'published_at', 'sales_count',
+                'id', 'user_id', 'name_bn', 'name_en', 'slug', 'price', 'discount_type', 'discount_value',
+                'stock_count', 'stock_alert_threshold', 'status', 'moderation_status', 'published_at', 'sales_count',
                 'views_count', 'created_at'
             ])
-            ->with(['media', 'categories:id,name_bn,name_en,slug'])
+            ->with(['media', 'categories:id,name_bn,name_en,slug', 'seller:id,name'])
             ->where('user_id', $user->id)
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->get('search');
@@ -65,8 +65,9 @@ class ProductController extends Controller
         $products->through(function ($product) {
             $product->featured_image_url = $product->featured_image_url;
             $product->price_in_taka = $product->price_in_taka;
-            $product->compare_price_in_taka = $product->compare_price_in_taka;
             $product->formatted_price = $product->formatted_price;
+            $product->formatted_discounted_price = $product->formatted_discounted_price;
+            $product->discount_percentage = $product->discount_percentage;
             return $product;
         });
 
@@ -139,7 +140,8 @@ class ProductController extends Controller
             'slug' => $slug,
             'description' => $validated['description'],
             'price' => (int) round($validated['price'] * 100), // Convert to cents
-            'compare_price' => isset($validated['compare_price']) ? (int) round($validated['compare_price'] * 100) : null,
+            'discount_type' => $validated['discount_type'] ?? null,
+            'discount_value' => $this->calculateDiscountValue($validated),
             'stock_count' => $validated['stock_count'],
             'stock_alert_threshold' => $validated['stock_alert_threshold'] ?? 5,
             'sku' => $validated['sku'] ?? null,
@@ -149,19 +151,23 @@ class ProductController extends Controller
         ]);
 
         // Sync categories
-        $product->categories()->sync($validated['categories']);
-
-        // Handle featured image upload
-        if ($request->hasFile('featured_image')) {
-            $product->addMediaFromRequest('featured_image')
-                ->toMediaCollection('featured');
+        if (!empty($validated['category_ids'])) {
+            $product->categories()->sync($validated['category_ids']);
         }
 
-        // Handle gallery images upload
+        // Handle images upload - first image is featured, rest are gallery
         if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $product->addMedia($image)
-                    ->toMediaCollection('images');
+            $images = $request->file('images');
+            foreach ($images as $index => $image) {
+                if ($index === 0) {
+                    // First image goes to featured collection
+                    $product->addMedia($image)
+                        ->toMediaCollection('featured');
+                } else {
+                    // Rest go to images collection
+                    $product->addMedia($image)
+                        ->toMediaCollection('images');
+                }
             }
         }
 
@@ -188,7 +194,9 @@ class ProductController extends Controller
         $product->featured_image_url = $product->featured_image_url;
         $product->image_urls = $product->image_urls;
         $product->price_in_taka = $product->price_in_taka;
-        $product->compare_price_in_taka = $product->compare_price_in_taka;
+        $product->discount_value_in_taka = $product->discount_value_in_taka;
+        $product->formatted_discounted_price = $product->formatted_discounted_price;
+        $product->discount_percentage = $product->discount_percentage;
 
         return Inertia::render('dashboard/products/show', [
             'product' => $product,
@@ -209,7 +217,9 @@ class ProductController extends Controller
         $product->featured_image_url = $product->featured_image_url;
         $product->image_urls = $product->image_urls;
         $product->price_in_taka = $product->price_in_taka;
-        $product->compare_price_in_taka = $product->compare_price_in_taka;
+        $product->discount_value_in_taka = $product->discount_value_in_taka;
+        $product->formatted_discounted_price = $product->formatted_discounted_price;
+        $product->discount_percentage = $product->discount_percentage;
         $product->category_ids = $product->categories->pluck('id')->toArray();
 
         // Get all images with IDs for removal
@@ -279,7 +289,8 @@ class ProductController extends Controller
             'slug' => $slug,
             'description' => $validated['description'],
             'price' => (int) round($validated['price'] * 100), // Convert to cents
-            'compare_price' => isset($validated['compare_price']) ? (int) round($validated['compare_price'] * 100) : null,
+            'discount_type' => $validated['discount_type'] ?? null,
+            'discount_value' => $this->calculateDiscountValue($validated),
             'stock_count' => $validated['stock_count'],
             'stock_alert_threshold' => $validated['stock_alert_threshold'] ?? 5,
             'sku' => $validated['sku'] ?? null,
@@ -289,30 +300,35 @@ class ProductController extends Controller
         ]);
 
         // Sync categories
-        $product->categories()->sync($validated['categories']);
-
-        // Handle featured image upload
-        if ($request->hasFile('featured_image')) {
-            $product->clearMediaCollection('featured');
-            $product->addMediaFromRequest('featured_image')
-                ->toMediaCollection('featured');
+        if (!empty($validated['category_ids'])) {
+            $product->categories()->sync($validated['category_ids']);
         }
 
-        // Remove specified images
-        if (!empty($validated['remove_images'])) {
-            foreach ($validated['remove_images'] as $mediaId) {
-                $media = $product->getMedia('images')->where('id', $mediaId)->first();
-                if ($media) {
-                    $media->delete();
+        // Remove specified images by index
+        if (!empty($validated['removed_images'])) {
+            $allMedia = $product->getMedia('images');
+            foreach ($validated['removed_images'] as $index) {
+                if (isset($allMedia[$index])) {
+                    $allMedia[$index]->delete();
                 }
             }
         }
 
-        // Handle new gallery images upload
+        // Handle new images upload - first image is featured if no existing featured
         if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $product->addMedia($image)
-                    ->toMediaCollection('images');
+            $images = $request->file('images');
+            $hasFeatured = $product->getFirstMedia('featured') !== null;
+            
+            foreach ($images as $index => $image) {
+                if ($index === 0 && !$hasFeatured) {
+                    // First new image becomes featured if none exists
+                    $product->clearMediaCollection('featured');
+                    $product->addMedia($image)
+                        ->toMediaCollection('featured');
+                } else {
+                    $product->addMedia($image)
+                        ->toMediaCollection('images');
+                }
             }
         }
 
@@ -353,5 +369,24 @@ class ProductController extends Controller
         return redirect()
             ->route('products.index')
             ->with('success', 'পণ্য সফলভাবে মুছে ফেলা হয়েছে।');
+    }
+
+    /**
+     * Calculate discount value based on type.
+     * For percentage: store as-is (0-100)
+     * For flat: convert to paisa
+     */
+    private function calculateDiscountValue(array $validated): ?int
+    {
+        if (empty($validated['discount_type']) || empty($validated['discount_value'])) {
+            return null;
+        }
+
+        if ($validated['discount_type'] === 'percentage') {
+            return (int) $validated['discount_value'];
+        }
+
+        // Flat discount - convert to paisa
+        return (int) round($validated['discount_value'] * 100);
     }
 }
