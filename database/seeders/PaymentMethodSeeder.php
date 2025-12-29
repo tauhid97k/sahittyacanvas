@@ -47,6 +47,17 @@ class PaymentMethodSeeder extends Seeder
                 'sort_order' => 3,
             ],
             [
+                'name' => 'উপায়',
+                'slug' => 'upay',
+                'type' => 'mobile_banking',
+                'description' => 'উপায় মোবাইল ব্যাংকিং দিয়ে পেমেন্ট করুন',
+                'instructions' => 'উপায় অ্যাপ থেকে পেমেন্ট করুন এবং ট্রানজেকশন আইডি সংরক্ষণ করুন।',
+                'icon' => 'upay',
+                'is_active' => true,
+                'is_cod' => false,
+                'sort_order' => 4,
+            ],
+            [
                 'name' => 'ব্যাংক ট্রান্সফার',
                 'slug' => 'bank',
                 'type' => 'bank',
@@ -55,7 +66,7 @@ class PaymentMethodSeeder extends Seeder
                 'icon' => 'bank',
                 'is_active' => true,
                 'is_cod' => false,
-                'sort_order' => 4,
+                'sort_order' => 5,
             ],
             [
                 'name' => 'ক্যাশ অন ডেলিভারি',
@@ -66,7 +77,7 @@ class PaymentMethodSeeder extends Seeder
                 'icon' => 'cash',
                 'is_active' => true,
                 'is_cod' => true,
-                'sort_order' => 5,
+                'sort_order' => 6,
             ],
         ];
 

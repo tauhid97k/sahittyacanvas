@@ -19,6 +19,12 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             AuthorSeeder::class,
             PostSeeder::class,
+            // Ecommerce seeders
+            ProductCategorySeeder::class,
+            ProductSeeder::class,
+            OrderSeeder::class,
+            ProductReviewSeeder::class,
+            TransactionSeeder::class,
         ]);
     }
 }

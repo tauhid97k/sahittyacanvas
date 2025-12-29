@@ -174,6 +174,24 @@ export interface Product {
     featured_image_url?: string | null;
     image_urls?: string[];
     display_name?: string;
+    average_rating?: number | null;
+    review_count?: number;
+    rating_distribution?: Record<number, number>;
+}
+
+export interface ProductReview {
+    id: number;
+    product_id: number;
+    user_id: number;
+    order_id: number;
+    rating: number;
+    review: string | null;
+    is_verified_purchase: boolean;
+    created_at: string;
+    updated_at: string;
+    // Relations
+    user?: User;
+    product?: Product;
 }
 
 export interface Order {
@@ -185,13 +203,13 @@ export interface Order {
     shipping_cost: number; // In cents/paisa
     total: number; // In cents/paisa
     status:
-        | 'pending'
-        | 'confirmed'
-        | 'processing'
-        | 'shipped'
-        | 'delivered'
-        | 'cancelled'
-        | 'refunded';
+    | 'pending'
+    | 'confirmed'
+    | 'processing'
+    | 'shipped'
+    | 'delivered'
+    | 'cancelled'
+    | 'refunded';
     payment_status: 'unpaid' | 'paid' | 'refunded';
     payment_method: string | null;
     payment_note: string | null;

@@ -105,14 +105,26 @@ class UserController extends Controller
 
         if ($tab === 'posts') {
             $tabData = $user->posts()
-                ->with(['categories:id,name_bn,name_en', 'author:id,name_bn,name_en'])
-                ->select('id', 'user_id', 'author_id', 'title_bn', 'title_en', 'slug', 'excerpt', 'status', 'featured_image_url', 'created_at')
+                ->with(['categories:id,name_bn,name_en', 'author:id,name_bn,name_en', 'media'])
+                ->select('id', 'user_id', 'author_id', 'title_bn', 'title_en', 'slug', 'excerpt', 'status', 'created_at')
                 ->latest()
                 ->paginate($perPage)
-                ->withQueryString();
+                ->withQueryString()
+                ->through(fn ($post) => [
+                    'id' => $post->id,
+                    'title_bn' => $post->title_bn,
+                    'title_en' => $post->title_en,
+                    'slug' => $post->slug,
+                    'excerpt' => $post->excerpt,
+                    'status' => $post->status,
+                    'featured_image_url' => $post->featured_image_url,
+                    'created_at' => $post->created_at,
+                    'categories' => $post->categories,
+                    'author' => $post->author,
+                ]);
         } elseif ($tab === 'products') {
             $tabData = $user->products()
-                ->with('categories:id,name_bn')
+                ->with(['categories:id,name_bn', 'media'])
                 ->select('id', 'user_id', 'name_bn', 'name_en', 'slug', 'status', 'price', 'discount_type', 'discount_value', 'stock_count', 'created_at')
                 ->latest()
                 ->paginate($perPage)

@@ -29,7 +29,14 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Order } from '@/types/models';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle, Package, Truck, User } from 'lucide-react';
+import {
+    ArrowLeft,
+    Banknote,
+    CheckCircle,
+    Package,
+    Truck,
+    User,
+} from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -112,29 +119,12 @@ export default function OrderShow({ order }: Props) {
                         </Link>
                     </Button>
                     <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-semibold">
-                                {order.order_number}
-                            </h1>
-                            <Badge
-                                variant={statusColors[order.status] as 'default' | 'warning' | 'success' | 'destructive'}
-                            >
-                                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                            </Badge>
-                            <Badge
-                                variant={
-                                    order.payment_status === 'paid'
-                                        ? 'success'
-                                        : order.payment_status === 'unpaid'
-                                          ? 'warning'
-                                          : 'secondary'
-                                }
-                            >
-                                {order.payment_status.charAt(0).toUpperCase() + order.payment_status.slice(1)}
-                            </Badge>
-                        </div>
+                        <h1 className="text-2xl font-semibold">
+                            {order.order_number}
+                        </h1>
                         <p className="text-sm text-muted-foreground">
-                            Placed on {new Date(order.created_at).toLocaleDateString()}
+                            Placed on{' '}
+                            {new Date(order.created_at).toLocaleDateString()}
                         </p>
                     </div>
                     <div className="flex gap-2">
@@ -146,7 +136,7 @@ export default function OrderShow({ order }: Props) {
                         </Button>
                         {order.payment_status === 'unpaid' && (
                             <Button onClick={() => setPaidDialogOpen(true)}>
-                                <CheckCircle className="mr-2 size-4" />
+                                <CheckCircle />
                                 Mark as Paid
                             </Button>
                         )}
@@ -175,7 +165,10 @@ export default function OrderShow({ order }: Props) {
                                     >
                                         {item.product?.featured_image_url ? (
                                             <img
-                                                src={item.product.featured_image_url}
+                                                src={
+                                                    item.product
+                                                        .featured_image_url
+                                                }
                                                 alt={item.product_name}
                                                 className="size-16 rounded-md object-cover"
                                             />
@@ -189,7 +182,8 @@ export default function OrderShow({ order }: Props) {
                                                 {item.product_name}
                                             </div>
                                             <div className="text-sm text-muted-foreground">
-                                                {item.formatted_unit_price} × {item.quantity}
+                                                {item.formatted_unit_price} ×{' '}
+                                                {item.quantity}
                                             </div>
                                         </div>
                                         <div className="font-semibold">
@@ -204,11 +198,15 @@ export default function OrderShow({ order }: Props) {
                             {/* Order Summary */}
                             <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Subtotal</span>
+                                    <span className="text-muted-foreground">
+                                        Subtotal
+                                    </span>
                                     <span>{order.formatted_subtotal}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Shipping</span>
+                                    <span className="text-muted-foreground">
+                                        Shipping
+                                    </span>
                                     <span>{order.formatted_shipping_cost}</span>
                                 </div>
                                 <Separator />
@@ -232,7 +230,9 @@ export default function OrderShow({ order }: Props) {
                             </CardHeader>
                             <CardContent className="space-y-2">
                                 <div>
-                                    <div className="font-medium">{order.buyer?.name}</div>
+                                    <div className="font-medium">
+                                        {order.buyer?.name}
+                                    </div>
                                     <div className="text-sm text-muted-foreground">
                                         {order.buyer?.email}
                                     </div>
@@ -245,19 +245,58 @@ export default function OrderShow({ order }: Props) {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <Truck className="size-5" />
-                                    Shipping Address
+                                    Shipping
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-sm">
-                                    <div className="font-medium">{order.shipping_name}</div>
-                                    <div className="text-muted-foreground">
-                                        {order.shipping_phone}
+                            <CardContent className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">
+                                        Status
+                                    </span>
+                                    <Badge
+                                        variant={
+                                            statusColors[order.status] as
+                                                | 'default'
+                                                | 'warning'
+                                                | 'success'
+                                                | 'destructive'
+                                        }
+                                    >
+                                        <span className="font-medium text-white">
+                                            {order.status
+                                                .charAt(0)
+                                                .toUpperCase() +
+                                                order.status.slice(1)}
+                                        </span>
+                                    </Badge>
+                                </div>
+                                <Separator />
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">
+                                            Name
+                                        </span>
+                                        <span className="font-medium">
+                                            {order.shipping_name}
+                                        </span>
                                     </div>
-                                    <div className="mt-2 text-muted-foreground">
-                                        {order.shipping_address}
-                                        {order.shipping_city && `, ${order.shipping_city}`}
-                                        {order.shipping_postal_code && ` ${order.shipping_postal_code}`}
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">
+                                            Phone
+                                        </span>
+                                        <span>{order.shipping_phone}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">
+                                            Address
+                                        </span>
+                                        <span className="text-right">
+                                            {order.shipping_address}
+                                            {order.shipping_city &&
+                                                `, ${order.shipping_city}`}
+                                            {order.shipping_postal_code &&
+                                                ` ${order.shipping_postal_code}`}
+                                        </span>
                                     </div>
                                 </div>
                             </CardContent>
@@ -266,11 +305,16 @@ export default function OrderShow({ order }: Props) {
                         {/* Payment Info */}
                         <Card>
                             <CardHeader>
-                                <CardTitle>Payment</CardTitle>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Banknote className="size-5" />
+                                    Payment
+                                </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2">
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Status</span>
+                                    <span className="text-muted-foreground">
+                                        Status
+                                    </span>
                                     <Badge
                                         variant={
                                             order.payment_status === 'paid'
@@ -278,17 +322,32 @@ export default function OrderShow({ order }: Props) {
                                                 : 'warning'
                                         }
                                     >
-                                        {order.payment_status.charAt(0).toUpperCase() + order.payment_status.slice(1)}
+                                        <span className="font-medium text-white">
+                                            {order.payment_status
+                                                .charAt(0)
+                                                .toUpperCase() +
+                                                order.payment_status.slice(1)}
+                                        </span>
                                     </Badge>
                                 </div>
                                 {order.transaction && (
                                     <>
                                         <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">Method</span>
-                                            <span>{order.transaction.paymentMethod?.name}</span>
+                                            <span className="text-muted-foreground">
+                                                Method
+                                            </span>
+                                            <span>
+                                                {
+                                                    order.transaction
+                                                        .paymentMethod?.name
+                                                }
+                                            </span>
                                         </div>
-                                        {order.transaction.paymentMethod?.is_cod && (
-                                            <Badge variant="warning">Cash on Delivery</Badge>
+                                        {order.transaction.paymentMethod
+                                            ?.is_cod && (
+                                            <Badge variant="warning">
+                                                Cash on Delivery
+                                            </Badge>
                                         )}
                                     </>
                                 )}
@@ -313,7 +372,10 @@ export default function OrderShow({ order }: Props) {
             </div>
 
             {/* Status Update Dialog */}
-            <AlertDialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+            <AlertDialog
+                open={statusDialogOpen}
+                onOpenChange={setStatusDialogOpen}
+            >
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Update Order Status</AlertDialogTitle>
@@ -328,18 +390,33 @@ export default function OrderShow({ order }: Props) {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="confirmed">Confirmed</SelectItem>
-                                <SelectItem value="processing">Processing</SelectItem>
+                                <SelectItem value="confirmed">
+                                    Confirmed
+                                </SelectItem>
+                                <SelectItem value="processing">
+                                    Processing
+                                </SelectItem>
                                 <SelectItem value="shipped">Shipped</SelectItem>
-                                <SelectItem value="delivered">Delivered</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
-                                <SelectItem value="refunded">Refunded</SelectItem>
+                                <SelectItem value="delivered">
+                                    Delivered
+                                </SelectItem>
+                                <SelectItem value="cancelled">
+                                    Cancelled
+                                </SelectItem>
+                                <SelectItem value="refunded">
+                                    Refunded
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isUpdating}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleStatusUpdate} isLoading={isUpdating}>
+                        <AlertDialogCancel disabled={isUpdating}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleStatusUpdate}
+                            isLoading={isUpdating}
+                        >
                             Update
                         </AlertDialogAction>
                     </AlertDialogFooter>
@@ -352,13 +429,18 @@ export default function OrderShow({ order }: Props) {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Mark as Paid</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to mark this order as paid? This will also
-                            update the associated transaction.
+                            Are you sure you want to mark this order as paid?
+                            This will also update the associated transaction.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isUpdating}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleMarkPaid} isLoading={isUpdating}>
+                        <AlertDialogCancel disabled={isUpdating}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleMarkPaid}
+                            isLoading={isUpdating}
+                        >
                             Mark as Paid
                         </AlertDialogAction>
                     </AlertDialogFooter>

@@ -22,7 +22,7 @@ class StoreProductRequest extends FormRequest
         $rules = [
             'name_bn' => ['required', 'string', 'max:255'],
             'name_en' => ['nullable', 'string', 'max:255'],
-            'description' => ['required', 'string', 'min:50'],
+            'description' => ['nullable', 'string'],
             'price' => ['required', 'numeric', 'min:0.01', 'max:9999999.99'],
             'discount_type' => ['nullable', 'in:percentage,flat'],
             'discount_value' => ['nullable', 'numeric', 'min:0'],
@@ -53,9 +53,7 @@ class StoreProductRequest extends FormRequest
     {
         return [
             'name_bn.required' => 'Name (Bengali) is required.',
-            'description.required' => 'Description is required.',
-            'description.min' => 'Description must be at least 50 characters.',
-            'price.required' => 'Price is required.',
+                        'price.required' => 'Price is required.',
             'price.min' => 'Price must be greater than 0.',
             'discount_value.required_with' => 'Discount value is required when discount type is selected.',
             'discount_value.max' => 'Percentage discount cannot exceed 100%.',

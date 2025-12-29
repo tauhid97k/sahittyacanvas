@@ -68,6 +68,8 @@ class ProductController extends Controller
             $product->formatted_price = $product->formatted_price;
             $product->formatted_discounted_price = $product->formatted_discounted_price;
             $product->discount_percentage = $product->discount_percentage;
+            $product->average_rating = $product->average_rating;
+            $product->review_count = $product->review_count;
             return $product;
         });
 
@@ -183,33 +185,52 @@ class ProductController extends Controller
     /**
      * Display the specified product.
      */
-    public function show(Product $product): Response
+    public function show(Request $request, Product $product): Response
     {
         // Ensure user owns this product
-        if ($product->user_id !== auth()->id()) {
+        if ($product->user_id !== $request->user()->id) {
             abort(403);
         }
 
-        $product->load(['categories:id,name_bn,name_en,slug', 'media', 'moderator:id,name']);
+        $product->load(['categories:id,name_bn,name_en,slug', 'media', 'moderator:id,name', 'seller:id,name,username,avatar', 'seller.roles:id,name']);
+        
+        // Calculate total revenue from order items
+        $totalRevenue = $product->orderItems()->sum('total');
+        
         $product->featured_image_url = $product->featured_image_url;
         $product->image_urls = $product->image_urls;
         $product->price_in_taka = $product->price_in_taka;
         $product->discount_value_in_taka = $product->discount_value_in_taka;
+        $product->formatted_price = $product->formatted_price;
         $product->formatted_discounted_price = $product->formatted_discounted_price;
+        $product->formatted_discount_amount = $product->formatted_discount_amount;
         $product->discount_percentage = $product->discount_percentage;
+        $product->total_revenue = $totalRevenue;
+        $product->formatted_total_revenue = '৳' . number_format($totalRevenue / 100, 2);
+        $product->average_rating = $product->average_rating;
+        $product->review_count = $product->review_count;
+        $product->rating_distribution = $product->rating_distribution;
+
+        // Get paginated reviews
+        $reviews = $product->reviews()
+            ->with(['user:id,name,username,avatar', 'user.roles:id,name'])
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
 
         return Inertia::render('dashboard/products/show', [
             'product' => $product,
+            'reviews' => $reviews,
         ]);
     }
 
     /**
      * Show the form for editing the specified product.
      */
-    public function edit(Product $product): Response
+    public function edit(Request $request, Product $product): Response
     {
         // Ensure user owns this product
-        if ($product->user_id !== auth()->id()) {
+        if ($product->user_id !== $request->user()->id) {
             abort(403);
         }
 
@@ -225,7 +246,7 @@ class ProductController extends Controller
         // Get all images with IDs for removal
         $product->gallery_images = $product->getMedia('images')->map(fn($media) => [
             'id' => $media->id,
-            'url' => $media->getUrl('medium'),
+            'url' => $media->getUrl(),
         ])->toArray();
 
         $categories = ProductCategory::query()
@@ -246,7 +267,7 @@ class ProductController extends Controller
     public function update(UpdateProductRequest $request, Product $product): RedirectResponse
     {
         // Ensure user owns this product
-        if ($product->user_id !== auth()->id()) {
+        if ($product->user_id !== $request->user()->id) {
             abort(403);
         }
 
@@ -304,7 +325,12 @@ class ProductController extends Controller
             $product->categories()->sync($validated['category_ids']);
         }
 
-        // Remove specified images by index
+        // Handle featured image removal
+        if ($validated['remove_featured_image'] ?? false) {
+            $product->clearMediaCollection('featured');
+        }
+
+        // Remove specified gallery images by index
         if (!empty($validated['removed_images'])) {
             $allMedia = $product->getMedia('images');
             foreach ($validated['removed_images'] as $index) {
@@ -344,10 +370,10 @@ class ProductController extends Controller
     /**
      * Remove the specified product.
      */
-    public function destroy(Product $product): RedirectResponse
+    public function destroy(Request $request, Product $product): RedirectResponse
     {
         // Ensure user owns this product
-        if ($product->user_id !== auth()->id()) {
+        if ($product->user_id !== $request->user()->id) {
             abort(403);
         }
 

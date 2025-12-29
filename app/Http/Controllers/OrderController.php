@@ -142,10 +142,10 @@ class OrderController extends Controller
     /**
      * Display order details for seller.
      */
-    public function show(Order $order): Response
+    public function show(Request $request, Order $order): Response
     {
         // Ensure user is the seller
-        if ($order->seller_id !== auth()->id()) {
+        if ($order->seller_id !== $request->user()->id) {
             abort(403);
         }
 
@@ -189,10 +189,10 @@ class OrderController extends Controller
     /**
      * Display buyer's order details.
      */
-    public function buyerShow(Order $order): Response
+    public function buyerShow(Request $request, Order $order): Response
     {
         // Ensure user is the buyer
-        if ($order->user_id !== auth()->id()) {
+        if ($order->user_id !== $request->user()->id) {
             abort(403);
         }
 
@@ -351,7 +351,7 @@ class OrderController extends Controller
     public function updateStatus(UpdateOrderStatusRequest $request, Order $order): RedirectResponse
     {
         // Ensure user is the seller
-        if ($order->seller_id !== auth()->id()) {
+        if ($order->seller_id !== $request->user()->id) {
             abort(403);
         }
 
@@ -398,7 +398,7 @@ class OrderController extends Controller
     public function markPaid(Request $request, Order $order): RedirectResponse
     {
         // Ensure user is the seller
-        if ($order->seller_id !== auth()->id()) {
+        if ($order->seller_id !== $request->user()->id) {
             abort(403);
         }
 
@@ -417,7 +417,7 @@ class OrderController extends Controller
     public function cancel(Request $request, Order $order): RedirectResponse
     {
         // Ensure user is the buyer
-        if ($order->user_id !== auth()->id()) {
+        if ($order->user_id !== $request->user()->id) {
             abort(403);
         }
 

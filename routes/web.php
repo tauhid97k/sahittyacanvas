@@ -14,9 +14,11 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\PostPageController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\PaymentMethodController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -131,6 +133,10 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
     Route::put('products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
 
+    // Product Reviews (Admin)
+    Route::get('product-reviews', [ProductReviewController::class, 'index'])->name('product-reviews.index');
+    Route::delete('product-reviews/{product_review}', [ProductReviewController::class, 'destroy'])->name('product-reviews.destroy');
+
     // Seller Orders
     Route::get('orders', [OrderController::class, 'sellerIndex'])->name('seller.orders.index');
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('seller.orders.show');
@@ -142,6 +148,12 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
     Route::get('transactions/{transaction}', [TransactionController::class, 'show'])->name('seller.transactions.show');
     Route::post('transactions/{transaction}/paid', [TransactionController::class, 'markPaid'])->name('seller.transactions.paid');
     Route::post('transactions/{transaction}/refund', [TransactionController::class, 'refund'])->name('seller.transactions.refund');
+
+    // Payment Methods (Admin)
+    Route::get('payment-methods', [PaymentMethodController::class, 'index'])->name('payment-methods.index');
+    Route::post('payment-methods', [PaymentMethodController::class, 'store'])->name('payment-methods.store');
+    Route::put('payment-methods/{paymentMethod}', [PaymentMethodController::class, 'update'])->name('payment-methods.update');
+    Route::delete('payment-methods/{paymentMethod}', [PaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
 });
 
 // Cart Routes (authenticated users)

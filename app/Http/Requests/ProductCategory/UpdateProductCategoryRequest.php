@@ -30,6 +30,7 @@ class UpdateProductCategoryRequest extends FormRequest
             'parent_id' => ['nullable', 'exists:product_categories,id', Rule::notIn([$categoryId])],
             'is_active' => ['boolean'],
             'image' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:2048'],
+            'remove_image' => ['nullable', 'boolean'],
         ];
     }
 

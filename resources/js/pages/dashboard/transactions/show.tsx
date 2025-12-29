@@ -53,7 +53,10 @@ export default function TransactionShow({ transaction }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
         { title: 'Transactions', href: '/dashboard/transactions' },
-        { title: `#${transaction.id}`, href: `/dashboard/transactions/${transaction.id}` },
+        {
+            title: `#${transaction.id}`,
+            href: `/dashboard/transactions/${transaction.id}`,
+        },
     ];
 
     const handleMarkPaid = () => {
@@ -109,24 +112,20 @@ export default function TransactionShow({ transaction }: Props) {
                         </Link>
                     </Button>
                     <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-semibold">
-                                Transaction #{transaction.id}
-                            </h1>
-                            <Badge
-                                variant={statusColors[transaction.status] as 'default' | 'warning' | 'success' | 'destructive' | 'secondary'}
-                            >
-                                {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
-                            </Badge>
-                        </div>
+                        <h1 className="text-2xl font-semibold">
+                            Transaction #{transaction.id}
+                        </h1>
                         <p className="text-sm text-muted-foreground">
-                            Created on {new Date(transaction.created_at).toLocaleDateString()}
+                            Created on{' '}
+                            {new Date(
+                                transaction.created_at,
+                            ).toLocaleDateString()}
                         </p>
                     </div>
                     <div className="flex gap-2">
                         {transaction.status === 'pending' && (
                             <Button onClick={() => setPaidDialogOpen(true)}>
-                                <CheckCircle className="mr-2 size-4" />
+                                <CheckCircle />
                                 Mark as Paid
                             </Button>
                         )}
@@ -135,7 +134,7 @@ export default function TransactionShow({ transaction }: Props) {
                                 variant="outline"
                                 onClick={() => setRefundDialogOpen(true)}
                             >
-                                <RefreshCcw className="mr-2 size-4" />
+                                <RefreshCcw />
                                 Refund
                             </Button>
                         )}
@@ -158,13 +157,17 @@ export default function TransactionShow({ transaction }: Props) {
                         <CardContent className="space-y-4">
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div>
-                                    <div className="text-sm text-muted-foreground">Amount</div>
+                                    <div className="text-sm text-muted-foreground">
+                                        Amount
+                                    </div>
                                     <div className="text-2xl font-bold">
                                         {transaction.formatted_amount}
                                     </div>
                                 </div>
                                 <div>
-                                    <div className="text-sm text-muted-foreground">Currency</div>
+                                    <div className="text-sm text-muted-foreground">
+                                        Currency
+                                    </div>
                                     <div className="text-lg font-medium">
                                         {transaction.currency}
                                     </div>
@@ -175,12 +178,24 @@ export default function TransactionShow({ transaction }: Props) {
 
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div>
-                                    <div className="text-sm text-muted-foreground">Status</div>
+                                    <div className="text-sm text-muted-foreground">
+                                        Status
+                                    </div>
                                     <Badge
-                                        variant={statusColors[transaction.status] as 'default' | 'warning' | 'success' | 'destructive' | 'secondary'}
+                                        variant={
+                                            statusColors[transaction.status] as
+                                                | 'default'
+                                                | 'warning'
+                                                | 'success'
+                                                | 'destructive'
+                                                | 'secondary'
+                                        }
                                         className="mt-1"
                                     >
-                                        {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                                        {transaction.status
+                                            .charAt(0)
+                                            .toUpperCase() +
+                                            transaction.status.slice(1)}
                                     </Badge>
                                 </div>
                                 <div>
@@ -188,7 +203,8 @@ export default function TransactionShow({ transaction }: Props) {
                                         Transaction Reference
                                     </div>
                                     <div className="font-mono text-sm">
-                                        {transaction.gateway_transaction_id || '—'}
+                                        {transaction.gateway_transaction_id ||
+                                            '—'}
                                     </div>
                                 </div>
                             </div>
@@ -197,9 +213,13 @@ export default function TransactionShow({ transaction }: Props) {
                                 <>
                                     <Separator />
                                     <div>
-                                        <div className="text-sm text-muted-foreground">Paid At</div>
+                                        <div className="text-sm text-muted-foreground">
+                                            Paid At
+                                        </div>
                                         <div className="font-medium">
-                                            {new Date(transaction.paid_at).toLocaleString()}
+                                            {new Date(
+                                                transaction.paid_at,
+                                            ).toLocaleString()}
                                         </div>
                                     </div>
                                 </>
@@ -209,9 +229,13 @@ export default function TransactionShow({ transaction }: Props) {
                                 <>
                                     <Separator />
                                     <div>
-                                        <div className="text-sm text-muted-foreground">Refunded At</div>
+                                        <div className="text-sm text-muted-foreground">
+                                            Refunded At
+                                        </div>
                                         <div className="font-medium">
-                                            {new Date(transaction.refunded_at).toLocaleString()}
+                                            {new Date(
+                                                transaction.refunded_at,
+                                            ).toLocaleString()}
                                         </div>
                                     </div>
                                 </>
@@ -231,7 +255,9 @@ export default function TransactionShow({ transaction }: Props) {
                             </CardHeader>
                             <CardContent className="space-y-2">
                                 <div>
-                                    <div className="font-medium">{transaction.payer?.name}</div>
+                                    <div className="font-medium">
+                                        {transaction.payer?.name}
+                                    </div>
                                     <div className="text-sm text-muted-foreground">
                                         {transaction.payer?.email}
                                     </div>
@@ -254,17 +280,23 @@ export default function TransactionShow({ transaction }: Props) {
                                             {transaction.paymentMethod.name}
                                         </div>
                                         {transaction.paymentMethod.is_cod && (
-                                            <Badge variant="warning">Cash on Delivery</Badge>
+                                            <Badge variant="warning">
+                                                Cash on Delivery
+                                            </Badge>
                                         )}
                                     </>
                                 ) : (
-                                    <div className="text-muted-foreground">Not specified</div>
+                                    <div className="text-muted-foreground">
+                                        Not specified
+                                    </div>
                                 )}
                             </CardContent>
                         </Card>
 
                         {/* Related Order */}
-                        {transaction.transactionable_type?.includes('Order') && (
+                        {transaction.transactionable_type?.includes(
+                            'Order',
+                        ) && (
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
@@ -273,8 +305,14 @@ export default function TransactionShow({ transaction }: Props) {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <Button variant="outline" asChild className="w-full">
-                                        <Link href={`/dashboard/orders/${transaction.transactionable_id}`}>
+                                    <Button
+                                        variant="outline"
+                                        asChild
+                                        className="w-full"
+                                    >
+                                        <Link
+                                            href={`/dashboard/orders/${transaction.transactionable_id}`}
+                                        >
                                             View Order
                                         </Link>
                                     </Button>
@@ -291,12 +329,18 @@ export default function TransactionShow({ transaction }: Props) {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Mark as Paid</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to mark this transaction as paid?
+                            Are you sure you want to mark this transaction as
+                            paid?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isUpdating}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleMarkPaid} isLoading={isUpdating}>
+                        <AlertDialogCancel disabled={isUpdating}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleMarkPaid}
+                            isLoading={isUpdating}
+                        >
                             Mark as Paid
                         </AlertDialogAction>
                     </AlertDialogFooter>
@@ -304,17 +348,22 @@ export default function TransactionShow({ transaction }: Props) {
             </AlertDialog>
 
             {/* Refund Dialog */}
-            <AlertDialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
+            <AlertDialog
+                open={refundDialogOpen}
+                onOpenChange={setRefundDialogOpen}
+            >
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Refund Transaction</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to refund this transaction? This action
-                            cannot be undone.
+                            Are you sure you want to refund this transaction?
+                            This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isUpdating}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isUpdating}>
+                            Cancel
+                        </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleRefund}
                             isLoading={isUpdating}

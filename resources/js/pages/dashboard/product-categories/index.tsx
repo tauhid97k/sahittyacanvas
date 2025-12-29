@@ -154,7 +154,9 @@ export default function ProductCategoriesIndex({ categories, filters }: Props) {
             accessorKey: 'is_active',
             header: 'Status',
             cell: ({ row }) => (
-                <Badge variant={row.original.is_active ? 'default' : 'secondary'}>
+                <Badge
+                    variant={row.original.is_active ? 'default' : 'secondary'}
+                >
                     {row.original.is_active ? 'Active' : 'Inactive'}
                 </Badge>
             ),
@@ -204,7 +206,9 @@ export default function ProductCategoriesIndex({ categories, filters }: Props) {
                         </Link>
                     </Button>
                     <div className="flex-1">
-                        <h1 className="text-2xl font-semibold">Product Categories</h1>
+                        <h1 className="text-2xl font-semibold">
+                            Product Categories
+                        </h1>
                         <p className="text-sm text-muted-foreground">
                             Manage your product categories
                         </p>
@@ -258,8 +262,9 @@ export default function ProductCategoriesIndex({ categories, filters }: Props) {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Delete Category</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete "{selectedCategory?.name_bn}"?
-                            This action cannot be undone.
+                            Are you sure you want to delete "
+                            {selectedCategory?.name_bn}"? This action cannot be
+                            undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

@@ -145,14 +145,17 @@ export default function CreateProduct({ categories }: Props) {
                                 <CardHeader>
                                     <CardTitle>Product Images</CardTitle>
                                     <CardDescription>
-                                        Upload product images. The first image will be used as the featured image.
+                                        Upload product images. The first image
+                                        will be used as the featured image.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <ProductImageUploader
                                         value={form.data.images}
-                                        onChange={(files) => form.setData('images', files)}
-                                        maxFiles={10}
+                                        onChange={(files) =>
+                                            form.setData('images', files)
+                                        }
+                                        maxFiles={6}
                                         error={form.errors.images}
                                     />
                                 </CardContent>
@@ -165,7 +168,9 @@ export default function CreateProduct({ categories }: Props) {
                                     {/* Product Information Card */}
                                     <Card>
                                         <CardHeader>
-                                            <CardTitle>Product Information</CardTitle>
+                                            <CardTitle>
+                                                Product Information
+                                            </CardTitle>
                                             <CardDescription>
                                                 Basic details about the product
                                             </CardDescription>
@@ -173,35 +178,61 @@ export default function CreateProduct({ categories }: Props) {
                                         <CardContent>
                                             <FieldGroup>
                                                 {/* Name English */}
-                                                <Field data-invalid={!!form.errors.name_en}>
+                                                <Field
+                                                    data-invalid={
+                                                        !!form.errors.name_en
+                                                    }
+                                                >
                                                     <FieldLabel htmlFor="name_en">
                                                         Name (English){' '}
-                                                        <span className="text-destructive">*</span>
+                                                        <span className="text-destructive">
+                                                            *
+                                                        </span>
                                                     </FieldLabel>
                                                     <Input
                                                         id="name_en"
-                                                        value={form.data.name_en}
+                                                        value={
+                                                            form.data.name_en
+                                                        }
                                                         onChange={(e) =>
-                                                            form.setData('name_en', e.target.value)
+                                                            form.setData(
+                                                                'name_en',
+                                                                e.target.value,
+                                                            )
                                                         }
                                                     />
-                                                    <FieldError>{form.errors.name_en}</FieldError>
+                                                    <FieldError>
+                                                        {form.errors.name_en}
+                                                    </FieldError>
                                                 </Field>
 
                                                 {/* Name Bengali */}
-                                                <Field data-invalid={!!form.errors.name_bn}>
+                                                <Field
+                                                    data-invalid={
+                                                        !!form.errors.name_bn
+                                                    }
+                                                >
                                                     <FieldLabel htmlFor="name_bn">
                                                         Name (Bengali){' '}
-                                                        <span className="text-destructive">*</span>
+                                                        <span className="text-destructive">
+                                                            *
+                                                        </span>
                                                     </FieldLabel>
                                                     <Input
                                                         id="name_bn"
-                                                        value={form.data.name_bn}
+                                                        value={
+                                                            form.data.name_bn
+                                                        }
                                                         onChange={(e) =>
-                                                            form.setData('name_bn', e.target.value)
+                                                            form.setData(
+                                                                'name_bn',
+                                                                e.target.value,
+                                                            )
                                                         }
                                                     />
-                                                    <FieldError>{form.errors.name_bn}</FieldError>
+                                                    <FieldError>
+                                                        {form.errors.name_bn}
+                                                    </FieldError>
                                                 </Field>
 
                                                 {/* Slug Preview */}
@@ -219,62 +250,121 @@ export default function CreateProduct({ categories }: Props) {
                                                 </Field>
 
                                                 {/* Description */}
-                                                <Field data-invalid={!!form.errors.description}>
+                                                <Field
+                                                    data-invalid={
+                                                        !!form.errors
+                                                            .description
+                                                    }
+                                                >
                                                     <FieldLabel htmlFor="description">
-                                                        Description{' '}
-                                                        <span className="text-destructive">*</span>
+                                                        Description
                                                     </FieldLabel>
                                                     <Textarea
                                                         id="description"
-                                                        value={form.data.description}
+                                                        value={
+                                                            form.data
+                                                                .description
+                                                        }
                                                         onChange={(e) =>
-                                                            form.setData('description', e.target.value)
+                                                            form.setData(
+                                                                'description',
+                                                                e.target.value,
+                                                            )
                                                         }
                                                         rows={5}
+                                                        placeholder="Optional product description"
                                                     />
-                                                    <FieldError>{form.errors.description}</FieldError>
+                                                    <FieldError>
+                                                        {
+                                                            form.errors
+                                                                .description
+                                                        }
+                                                    </FieldError>
                                                 </Field>
 
                                                 {/* Inventory Section */}
-                                                <div className="border-t pt-4 mt-2">
-                                                    <h4 className="text-sm font-medium mb-3">Inventory</h4>
+                                                <div className="mt-2 border-t pt-4">
+                                                    <h4 className="mb-3 text-sm font-medium">
+                                                        Inventory
+                                                    </h4>
                                                     <div className="grid gap-4 sm:grid-cols-3">
                                                         {/* SKU */}
-                                                        <Field data-invalid={!!form.errors.sku}>
-                                                            <FieldLabel htmlFor="sku">SKU</FieldLabel>
+                                                        <Field
+                                                            data-invalid={
+                                                                !!form.errors
+                                                                    .sku
+                                                            }
+                                                        >
+                                                            <FieldLabel htmlFor="sku">
+                                                                SKU
+                                                            </FieldLabel>
                                                             <Input
                                                                 id="sku"
-                                                                value={form.data.sku}
+                                                                value={
+                                                                    form.data
+                                                                        .sku
+                                                                }
                                                                 onChange={(e) =>
-                                                                    form.setData('sku', e.target.value)
+                                                                    form.setData(
+                                                                        'sku',
+                                                                        e.target
+                                                                            .value,
+                                                                    )
                                                                 }
                                                                 placeholder="PRD-001"
                                                             />
-                                                            <FieldError>{form.errors.sku}</FieldError>
+                                                            <FieldError>
+                                                                {
+                                                                    form.errors
+                                                                        .sku
+                                                                }
+                                                            </FieldError>
                                                         </Field>
 
                                                         {/* Stock Count */}
-                                                        <Field data-invalid={!!form.errors.stock_count}>
+                                                        <Field
+                                                            data-invalid={
+                                                                !!form.errors
+                                                                    .stock_count
+                                                            }
+                                                        >
                                                             <FieldLabel htmlFor="stock_count">
                                                                 Stock Count{' '}
-                                                                <span className="text-destructive">*</span>
+                                                                <span className="text-destructive">
+                                                                    *
+                                                                </span>
                                                             </FieldLabel>
                                                             <Input
                                                                 id="stock_count"
                                                                 type="number"
                                                                 min="0"
-                                                                value={form.data.stock_count}
+                                                                value={
+                                                                    form.data
+                                                                        .stock_count
+                                                                }
                                                                 onChange={(e) =>
-                                                                    form.setData('stock_count', e.target.value)
+                                                                    form.setData(
+                                                                        'stock_count',
+                                                                        e.target
+                                                                            .value,
+                                                                    )
                                                                 }
                                                                 placeholder="0"
                                                             />
-                                                            <FieldError>{form.errors.stock_count}</FieldError>
+                                                            <FieldError>
+                                                                {
+                                                                    form.errors
+                                                                        .stock_count
+                                                                }
+                                                            </FieldError>
                                                         </Field>
 
                                                         {/* Stock Alert Threshold */}
                                                         <Field
-                                                            data-invalid={!!form.errors.stock_alert_threshold}
+                                                            data-invalid={
+                                                                !!form.errors
+                                                                    .stock_alert_threshold
+                                                            }
                                                         >
                                                             <FieldLabel htmlFor="stock_alert_threshold">
                                                                 Low Stock Alert
@@ -283,20 +373,28 @@ export default function CreateProduct({ categories }: Props) {
                                                                 id="stock_alert_threshold"
                                                                 type="number"
                                                                 min="0"
-                                                                value={form.data.stock_alert_threshold}
+                                                                value={
+                                                                    form.data
+                                                                        .stock_alert_threshold
+                                                                }
                                                                 onChange={(e) =>
                                                                     form.setData(
                                                                         'stock_alert_threshold',
-                                                                        e.target.value,
+                                                                        e.target
+                                                                            .value,
                                                                     )
                                                                 }
                                                                 placeholder="10"
                                                             />
                                                             <p className="text-xs text-muted-foreground">
-                                                                Alert when stock falls below this
+                                                                Alert when stock
+                                                                falls below this
                                                             </p>
                                                             <FieldError>
-                                                                {form.errors.stock_alert_threshold}
+                                                                {
+                                                                    form.errors
+                                                                        .stock_alert_threshold
+                                                                }
                                                             </FieldError>
                                                         </Field>
                                                     </div>
@@ -319,10 +417,16 @@ export default function CreateProduct({ categories }: Props) {
                                         <CardContent>
                                             <FieldGroup>
                                                 {/* Price */}
-                                                <Field data-invalid={!!form.errors.price}>
+                                                <Field
+                                                    data-invalid={
+                                                        !!form.errors.price
+                                                    }
+                                                >
                                                     <FieldLabel htmlFor="price">
                                                         Price (৳){' '}
-                                                        <span className="text-destructive">*</span>
+                                                        <span className="text-destructive">
+                                                            *
+                                                        </span>
                                                     </FieldLabel>
                                                     <Input
                                                         id="price"
@@ -331,26 +435,62 @@ export default function CreateProduct({ categories }: Props) {
                                                         min="0"
                                                         value={form.data.price}
                                                         onChange={(e) => {
-                                                            form.setData('price', e.target.value);
+                                                            form.setData(
+                                                                'price',
+                                                                e.target.value,
+                                                            );
                                                             // Reset discount if price becomes invalid
-                                                            if (!e.target.value || parseFloat(e.target.value) <= 0) {
-                                                                form.setData('discount_type', '');
-                                                                form.setData('discount_value', '');
+                                                            if (
+                                                                !e.target
+                                                                    .value ||
+                                                                parseFloat(
+                                                                    e.target
+                                                                        .value,
+                                                                ) <= 0
+                                                            ) {
+                                                                form.setData(
+                                                                    'discount_type',
+                                                                    '',
+                                                                );
+                                                                form.setData(
+                                                                    'discount_value',
+                                                                    '',
+                                                                );
                                                             }
                                                         }}
                                                         placeholder="0.00"
                                                     />
-                                                    <FieldError>{form.errors.price}</FieldError>
+                                                    <FieldError>
+                                                        {form.errors.price}
+                                                    </FieldError>
                                                 </Field>
 
                                                 {/* Discount Type */}
-                                                <Field data-invalid={!!form.errors.discount_type}>
-                                                    <FieldLabel>Discount Type</FieldLabel>
+                                                <Field
+                                                    data-invalid={
+                                                        !!form.errors
+                                                            .discount_type
+                                                    }
+                                                >
+                                                    <FieldLabel>
+                                                        Discount Type
+                                                    </FieldLabel>
                                                     <Select
-                                                        value={form.data.discount_type}
-                                                        onValueChange={(value) => {
-                                                            form.setData('discount_type', value);
-                                                            form.setData('discount_value', '');
+                                                        value={
+                                                            form.data
+                                                                .discount_type
+                                                        }
+                                                        onValueChange={(
+                                                            value,
+                                                        ) => {
+                                                            form.setData(
+                                                                'discount_type',
+                                                                value,
+                                                            );
+                                                            form.setData(
+                                                                'discount_value',
+                                                                '',
+                                                            );
                                                         }}
                                                         disabled={!isPriceValid}
                                                     >
@@ -366,59 +506,118 @@ export default function CreateProduct({ categories }: Props) {
                                                             </SelectItem>
                                                         </SelectContent>
                                                     </Select>
-                                                    <FieldError>{form.errors.discount_type}</FieldError>
+                                                    <FieldError>
+                                                        {
+                                                            form.errors
+                                                                .discount_type
+                                                        }
+                                                    </FieldError>
                                                 </Field>
 
                                                 {/* Discount Value */}
                                                 {form.data.discount_type && (
-                                                    <Field data-invalid={!!form.errors.discount_value}>
+                                                    <Field
+                                                        data-invalid={
+                                                            !!form.errors
+                                                                .discount_value
+                                                        }
+                                                    >
                                                         <FieldLabel htmlFor="discount_value">
-                                                            {form.data.discount_type === 'percentage'
+                                                            {form.data
+                                                                .discount_type ===
+                                                            'percentage'
                                                                 ? 'Discount Percentage (%)'
                                                                 : 'Discount Amount (৳)'}
                                                         </FieldLabel>
                                                         <Input
                                                             id="discount_value"
                                                             type="number"
-                                                            step={form.data.discount_type === 'percentage' ? '1' : '0.01'}
+                                                            step={
+                                                                form.data
+                                                                    .discount_type ===
+                                                                'percentage'
+                                                                    ? '1'
+                                                                    : '0.01'
+                                                            }
                                                             min="0"
                                                             max={
-                                                                form.data.discount_type === 'percentage'
+                                                                form.data
+                                                                    .discount_type ===
+                                                                'percentage'
                                                                     ? '100'
-                                                                    : form.data.price
+                                                                    : form.data
+                                                                          .price
                                                             }
-                                                            value={form.data.discount_value}
+                                                            value={
+                                                                form.data
+                                                                    .discount_value
+                                                            }
                                                             onChange={(e) =>
-                                                                form.setData('discount_value', e.target.value)
+                                                                form.setData(
+                                                                    'discount_value',
+                                                                    e.target
+                                                                        .value,
+                                                                )
                                                             }
                                                             placeholder={
-                                                                form.data.discount_type === 'percentage'
+                                                                form.data
+                                                                    .discount_type ===
+                                                                'percentage'
                                                                     ? '0'
                                                                     : '0.00'
                                                             }
-                                                            disabled={!isPriceValid}
+                                                            disabled={
+                                                                !isPriceValid
+                                                            }
                                                         />
-                                                        <FieldError>{form.errors.discount_value}</FieldError>
+                                                        <FieldError>
+                                                            {
+                                                                form.errors
+                                                                    .discount_value
+                                                            }
+                                                        </FieldError>
                                                     </Field>
                                                 )}
 
                                                 {/* Price Preview */}
-                                                {isPriceValid && discountAmount > 0 && (
-                                                    <div className="rounded-lg border bg-muted/50 p-3">
-                                                        <div className="flex justify-between text-sm">
-                                                            <span className="text-muted-foreground">Original:</span>
-                                                            <span className="line-through">৳{priceValue.toFixed(2)}</span>
+                                                {isPriceValid &&
+                                                    discountAmount > 0 && (
+                                                        <div className="rounded-lg border bg-muted/50 p-3">
+                                                            <div className="flex justify-between text-sm">
+                                                                <span className="text-muted-foreground">
+                                                                    Original:
+                                                                </span>
+                                                                <span className="line-through">
+                                                                    ৳
+                                                                    {priceValue.toFixed(
+                                                                        2,
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex justify-between text-sm">
+                                                                <span className="text-muted-foreground">
+                                                                    Discount:
+                                                                </span>
+                                                                <span className="text-destructive">
+                                                                    -৳
+                                                                    {discountAmount.toFixed(
+                                                                        2,
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                            <div className="mt-1 flex justify-between border-t pt-1 font-semibold">
+                                                                <span>
+                                                                    Final Price:
+                                                                </span>
+                                                                <span className="text-primary">
+                                                                    ৳
+                                                                    {discountedPrice.toFixed(
+                                                                        2,
+                                                                    )}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex justify-between text-sm">
-                                                            <span className="text-muted-foreground">Discount:</span>
-                                                            <span className="text-destructive">-৳{discountAmount.toFixed(2)}</span>
-                                                        </div>
-                                                        <div className="mt-1 flex justify-between border-t pt-1 font-semibold">
-                                                            <span>Final Price:</span>
-                                                            <span className="text-primary">৳{discountedPrice.toFixed(2)}</span>
-                                                        </div>
-                                                    </div>
-                                                )}
+                                                    )}
                                             </FieldGroup>
                                         </CardContent>
                                     </Card>
@@ -434,12 +633,23 @@ export default function CreateProduct({ categories }: Props) {
                                         <CardContent>
                                             <FieldGroup>
                                                 {/* Status */}
-                                                <Field data-invalid={!!form.errors.status}>
-                                                    <FieldLabel>Status</FieldLabel>
+                                                <Field
+                                                    data-invalid={
+                                                        !!form.errors.status
+                                                    }
+                                                >
+                                                    <FieldLabel>
+                                                        Status
+                                                    </FieldLabel>
                                                     <Select
                                                         value={form.data.status}
-                                                        onValueChange={(value) =>
-                                                            form.setData('status', value)
+                                                        onValueChange={(
+                                                            value,
+                                                        ) =>
+                                                            form.setData(
+                                                                'status',
+                                                                value,
+                                                            )
                                                         }
                                                     >
                                                         <SelectTrigger>
@@ -454,25 +664,50 @@ export default function CreateProduct({ categories }: Props) {
                                                             </SelectItem>
                                                         </SelectContent>
                                                     </Select>
-                                                    <FieldError>{form.errors.status}</FieldError>
+                                                    <FieldError>
+                                                        {form.errors.status}
+                                                    </FieldError>
                                                 </Field>
 
                                                 {/* Categories - Multi-select */}
-                                                <Field data-invalid={!!form.errors.category_ids}>
-                                                    <FieldLabel>Categories</FieldLabel>
+                                                <Field
+                                                    data-invalid={
+                                                        !!form.errors
+                                                            .category_ids
+                                                    }
+                                                >
+                                                    <FieldLabel>
+                                                        Categories
+                                                    </FieldLabel>
                                                     <MultiSelect
-                                                        options={categoryOptions}
-                                                        value={selectedCategories}
-                                                        onChange={(selected) => {
+                                                        options={
+                                                            categoryOptions
+                                                        }
+                                                        value={
+                                                            selectedCategories
+                                                        }
+                                                        onChange={(
+                                                            selected,
+                                                        ) => {
                                                             form.setData(
                                                                 'category_ids',
-                                                                selected.map((opt) => parseInt(opt.value)),
+                                                                selected.map(
+                                                                    (opt) =>
+                                                                        parseInt(
+                                                                            opt.value,
+                                                                        ),
+                                                                ),
                                                             );
                                                         }}
                                                         placeholder="Select categories"
                                                         emptyMessage="No categories found"
                                                     />
-                                                    <FieldError>{form.errors.category_ids}</FieldError>
+                                                    <FieldError>
+                                                        {
+                                                            form.errors
+                                                                .category_ids
+                                                        }
+                                                    </FieldError>
                                                 </Field>
                                             </FieldGroup>
                                         </CardContent>

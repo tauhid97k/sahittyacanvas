@@ -345,6 +345,14 @@ class Product extends Model implements HasMedia
         return $this->hasMany(CartItem::class);
     }
 
+    /**
+     * Get reviews for this product
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
     // ==================== HELPER METHODS ====================
 
     /**
@@ -427,17 +435,25 @@ class Product extends Model implements HasMedia
      */
     public function getFeaturedImageUrlAttribute(): ?string
     {
-        return $this->getFirstMediaUrl('featured', 'large')
-            ?: $this->getFirstMediaUrl('images', 'large')
-            ?: null;
+        $featured = $this->getFirstMedia('featured');
+        if ($featured) {
+            return $featured->getUrl();
+        }
+        
+        $firstImage = $this->getFirstMedia('images');
+        if ($firstImage) {
+            return $firstImage->getUrl();
+        }
+        
+        return null;
     }
 
     /**
-     * Get all image URLs
+     * Get all image URLs (gallery images only, excluding featured)
      */
     public function getImageUrlsAttribute(): array
     {
-        return $this->getMedia('images')->map(fn($media) => $media->getUrl('medium'))->toArray();
+        return $this->getMedia('images')->map(fn($media) => $media->getUrl())->toArray();
     }
 
     /**
@@ -499,5 +515,34 @@ class Product extends Model implements HasMedia
     public function incrementSales(int $quantity = 1): void
     {
         $this->increment('sales_count', $quantity);
+    }
+
+    /**
+     * Get average rating
+     */
+    public function getAverageRatingAttribute(): ?float
+    {
+        $avg = $this->reviews()->avg('rating');
+        return $avg ? round($avg, 1) : null;
+    }
+
+    /**
+     * Get review count
+     */
+    public function getReviewCountAttribute(): int
+    {
+        return $this->reviews()->count();
+    }
+
+    /**
+     * Get rating distribution (count per star)
+     */
+    public function getRatingDistributionAttribute(): array
+    {
+        $distribution = [];
+        for ($i = 5; $i >= 1; $i--) {
+            $distribution[$i] = $this->reviews()->where('rating', $i)->count();
+        }
+        return $distribution;
     }
 }

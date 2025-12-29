@@ -29,13 +29,12 @@ export function ProductImageUploader({
     onRemoveExisting,
     accept = 'image/jpeg,image/png,image/webp',
     maxSize = 2,
-    maxFiles = 10,
+    maxFiles = 6,
     className,
     disabled = false,
     error,
 }: ProductImageUploaderProps) {
     const [isDragging, setIsDragging] = React.useState(false);
-    const [loadingFiles, setLoadingFiles] = React.useState<Set<string>>(new Set());
     const [previews, setPreviews] = React.useState<Map<string, string>>(new Map());
     const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -185,7 +184,7 @@ export function ProductImageUploader({
                 ) : (
                     <div className="w-full">
                         {/* Images Grid */}
-                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                             {allImages.map((image, index) => (
                                 <div
                                     key={image.id}
@@ -261,7 +260,7 @@ export function ProductImageUploader({
 
                         {/* Helper Text */}
                         <p className="mt-4 text-center text-sm text-muted-foreground">
-                            The first image will be used as the featured image. Drag to reorder (coming soon).
+                            The first image will be used as the featured image.
                         </p>
                     </div>
                 )}

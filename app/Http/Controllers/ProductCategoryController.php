@@ -101,7 +101,7 @@ class ProductCategoryController extends Controller
 
         return redirect()
             ->route('product-categories.index')
-            ->with('success', 'পণ্য ক্যাটাগরি সফলভাবে তৈরি হয়েছে।');
+            ->with('success', 'Product category created successfully.');
     }
 
     /**
@@ -154,16 +154,18 @@ class ProductCategoryController extends Controller
             'is_active' => $validated['is_active'] ?? true,
         ]);
 
-        // Handle image upload
+        // Handle image: upload new or remove existing
         if ($request->hasFile('image')) {
             $productCategory->clearMediaCollection('image');
             $productCategory->addMediaFromRequest('image')
                 ->toMediaCollection('image');
+        } elseif ($validated['remove_image'] ?? false) {
+            $productCategory->clearMediaCollection('image');
         }
 
         return redirect()
             ->route('product-categories.index')
-            ->with('success', 'পণ্য ক্যাটাগরি সফলভাবে আপডেট হয়েছে।');
+            ->with('success', 'Product category updated successfully.');
     }
 
     /**
@@ -173,7 +175,9 @@ class ProductCategoryController extends Controller
     {
         // Check if category has products
         if ($productCategory->products()->exists()) {
-            return back()->with('error', 'এই ক্যাটাগরিতে পণ্য রয়েছে। প্রথমে পণ্যগুলো সরান বা অন্য ক্যাটাগরিতে স্থানান্তর করুন।');
+            return back()->withErrors([
+                'delete' => 'This category has products. Please remove or move the products first.',
+            ]);
         }
 
         // Reassign children to parent
@@ -186,6 +190,6 @@ class ProductCategoryController extends Controller
 
         return redirect()
             ->route('product-categories.index')
-            ->with('success', 'পণ্য ক্যাটাগরি সফলভাবে মুছে ফেলা হয়েছে।');
+            ->with('success', 'Product category deleted successfully.');
     }
 }

@@ -100,10 +100,10 @@ class TransactionController extends Controller
     /**
      * Display transaction details.
      */
-    public function show(Transaction $transaction): Response
+    public function show(Request $request, Transaction $transaction): Response
     {
         // Ensure user is the payee (seller)
-        if ($transaction->payee_id !== auth()->id()) {
+        if ($transaction->payee_id !== $request->user()->id) {
             abort(403);
         }
 
@@ -136,12 +136,12 @@ class TransactionController extends Controller
     public function markPaid(Request $request, Transaction $transaction): RedirectResponse
     {
         // Ensure user is the payee (seller)
-        if ($transaction->payee_id !== auth()->id()) {
+        if ($transaction->payee_id !== $request->user()->id) {
             abort(403);
         }
 
         if (!$transaction->canBeMarkedPaid()) {
-            return back()->with('error', 'এই লেনদেন পরিশোধিত হিসেবে চিহ্নিত করা যাবে না।');
+            return back()->with('error', 'This transaction cannot be marked as paid.');
         }
 
         $request->validate([
@@ -162,7 +162,7 @@ class TransactionController extends Controller
             ]);
         }
 
-        return back()->with('success', 'লেনদেন পরিশোধিত হিসেবে চিহ্নিত হয়েছে।');
+        return back()->with('success', 'Transaction marked as paid.');
     }
 
     /**
@@ -171,24 +171,24 @@ class TransactionController extends Controller
     public function refund(Request $request, Transaction $transaction): RedirectResponse
     {
         // Ensure user is the payee (seller)
-        if ($transaction->payee_id !== auth()->id()) {
+        if ($transaction->payee_id !== $request->user()->id) {
             abort(403);
         }
 
         if (!$transaction->canBeRefunded()) {
-            return back()->with('error', 'এই লেনদেন ফেরত দেওয়া যাবে না।');
+            return back()->with('error', 'This transaction cannot be refunded.');
         }
 
         $request->validate([
             'refund_amount' => ['nullable', 'numeric', 'min:0', 'max:' . $transaction->amount_in_taka],
-            'refund_reason' => ['required', 'string', 'max:500'],
+            'refund_reason' => ['nullable', 'string', 'max:500'],
         ]);
 
         $refundAmount = $request->refund_amount
             ? (int) round($request->refund_amount * 100)
             : $transaction->amount;
 
-        $transaction->refund($refundAmount, $request->refund_reason, auth()->id());
+        $transaction->refund($refundAmount, $request->refund_reason ?? 'Refund processed', $request->user()->id);
 
         // Also update the order's payment status if transactionable is an Order
         if ($transaction->transactionable_type === 'App\\Models\\Order') {
@@ -197,6 +197,6 @@ class TransactionController extends Controller
             ]);
         }
 
-        return back()->with('success', 'লেনদেন ফেরত দেওয়া হয়েছে।');
+        return back()->with('success', 'Transaction has been refunded.');
     }
 }

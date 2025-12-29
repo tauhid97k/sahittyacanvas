@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class PaymentMethod extends Model
+class PaymentMethod extends Model implements HasMedia
 {
-    use HasFactory;
+    use HasFactory, InteractsWithMedia;
 
     protected $fillable = [
         'name',
@@ -101,5 +103,25 @@ class PaymentMethod extends Model
     public function getConfigValue(string $key, mixed $default = null): mixed
     {
         return $this->config[$key] ?? $default;
+    }
+
+    // ==================== MEDIA ====================
+
+    /**
+     * Register media collections
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('icon')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']);
+    }
+
+    /**
+     * Get icon URL
+     */
+    public function getIconUrlAttribute(): ?string
+    {
+        return $this->getFirstMediaUrl('icon') ?: null;
     }
 }

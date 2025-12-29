@@ -29,6 +29,7 @@ import { type BreadcrumbItem } from '@/types';
 import { ProductCategory } from '@/types/models';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
 import slugify from 'slugify';
 import { toast } from 'sonner';
 
@@ -47,11 +48,18 @@ export default function EditProductCategory({ category, categories }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
         { title: 'Product Categories', href: '/dashboard/product-categories' },
-        { title: category.name_en || category.name_bn, href: `/dashboard/product-categories/${category.slug}/edit` },
+        {
+            title: category.name_en || category.name_bn,
+            href: `/dashboard/product-categories/${category.slug}/edit`,
+        },
     ];
+
+    // Track if user explicitly removed the existing image
+    const [removeImage, setRemoveImage] = useState(false);
 
     const form = useForm<{
         image: File | null;
+        remove_image: boolean;
         name_bn: string;
         name_en: string;
         description: string;
@@ -61,6 +69,7 @@ export default function EditProductCategory({ category, categories }: Props) {
         _method: string;
     }>({
         image: null,
+        remove_image: false,
         name_bn: category.name_bn,
         name_en: category.name_en || '',
         description: category.description || '',
@@ -103,7 +112,9 @@ export default function EditProductCategory({ category, categories }: Props) {
             <div className="flex flex-col gap-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-semibold">Edit Product Category</h1>
+                    <h1 className="text-2xl font-semibold">
+                        Edit Product Category
+                    </h1>
                     <Button variant="outline" asChild>
                         <Link href="/dashboard/product-categories">
                             <ArrowLeft />
@@ -135,14 +146,36 @@ export default function EditProductCategory({ category, categories }: Props) {
                                                     Category Image
                                                 </FieldLabel>
                                                 <ImageUploader
-                                                    value={form.data.image}
-                                                    onChange={(file) =>
+                                                    value={
+                                                        form.data.image ||
+                                                        (!removeImage &&
+                                                        category.image_url
+                                                            ? category.image_url
+                                                            : null)
+                                                    }
+                                                    onChange={(file) => {
                                                         form.setData(
                                                             'image',
                                                             file,
-                                                        )
-                                                    }
-                                                    existingUrl={category.image_url}
+                                                        );
+                                                        if (file) {
+                                                            setRemoveImage(
+                                                                false,
+                                                            );
+                                                            form.setData(
+                                                                'remove_image',
+                                                                false,
+                                                            );
+                                                        } else {
+                                                            setRemoveImage(
+                                                                true,
+                                                            );
+                                                            form.setData(
+                                                                'remove_image',
+                                                                true,
+                                                            );
+                                                        }
+                                                    }}
                                                     error={form.errors.image}
                                                 />
                                             </div>

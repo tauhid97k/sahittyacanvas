@@ -26,6 +26,7 @@ import {
     Shield,
     ShieldCheck,
     ShoppingCart,
+    Star,
     User,
 } from 'lucide-react';
 import { useMemo } from 'react';
@@ -111,6 +112,11 @@ export function AppSidebar() {
                 title: 'Products',
                 href: '/dashboard/products',
                 icon: Package,
+            },
+            {
+                title: 'Product Reviews',
+                href: '/dashboard/product-reviews',
+                icon: Star,
             },
             {
                 title: 'Orders',
