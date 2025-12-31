@@ -2,8 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Category;
+use App\Models\ProductCategory;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -47,6 +50,9 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'headerNotifications' => fn () => $this->getNotifications($request),
+            'blogCategories' => fn () => $this->getBlogCategories(),
+            'productCategories' => fn () => $this->getProductCategories(),
+            'cartCount' => fn () => $this->getCartCount($request),
         ];
     }
 
@@ -78,5 +84,75 @@ class HandleInertiaRequests extends Middleware
             'items' => $notifications,
             'unread_count' => $request->user()->unreadNotifications()->count(),
         ];
+    }
+
+    /**
+     * Get blog categories with children for navigation.
+     */
+    protected function getBlogCategories(): array
+    {
+        return Cache::remember('public_blog_categories', 3600, function () {
+            return Category::query()
+                ->active()
+                ->root()
+                ->with(['children' => fn ($q) => $q->active()->ordered()])
+                ->ordered()
+                ->get()
+                ->map(fn ($cat) => [
+                    'id' => $cat->id,
+                    'name_bn' => $cat->name_bn,
+                    'name_en' => $cat->name_en,
+                    'slug' => $cat->slug,
+                    'children' => $cat->children->map(fn ($child) => [
+                        'id' => $child->id,
+                        'name_bn' => $child->name_bn,
+                        'name_en' => $child->name_en,
+                        'slug' => $child->slug,
+                    ])->toArray(),
+                ])
+                ->toArray();
+        });
+    }
+
+    /**
+     * Get product categories with children for navigation.
+     */
+    protected function getProductCategories(): array
+    {
+        return Cache::remember('public_product_categories', 3600, function () {
+            return ProductCategory::query()
+                ->active()
+                ->root()
+                ->with(['children' => fn ($q) => $q->active()->ordered()])
+                ->ordered()
+                ->get()
+                ->map(fn ($cat) => [
+                    'id' => $cat->id,
+                    'name_bn' => $cat->name_bn,
+                    'name_en' => $cat->name_en,
+                    'slug' => $cat->slug,
+                    'children' => $cat->children->map(fn ($child) => [
+                        'id' => $child->id,
+                        'name_bn' => $child->name_bn,
+                        'name_en' => $child->name_en,
+                        'slug' => $child->slug,
+                    ])->toArray(),
+                ])
+                ->toArray();
+        });
+    }
+
+    /**
+     * Get cart item count for the current user.
+     */
+    protected function getCartCount(Request $request): int
+    {
+        if (! $request->user()) {
+            return 0;
+        }
+
+        $cart = $request->user()->cart;
+
+        return $cart ? $cart->items()->sum('quantity') : 0;
     }
 }

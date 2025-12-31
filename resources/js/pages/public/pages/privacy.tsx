@@ -1,0 +1,74 @@
+import PublicLayout from '@/components/public/layout/PublicLayout';
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
+import { Card, CardContent } from '@/components/ui/card';
+
+interface Section {
+    heading: string;
+    content: string;
+}
+
+interface Props {
+    sections: Section[];
+}
+
+export default function PrivacyPage({ sections }: Props) {
+    return (
+        <PublicLayout
+            title="গোপনীয়তা নীতি"
+            description="সাহিত্য ক্যানভাসের গোপনীয়তা নীতি"
+        >
+            <div className="container py-8">
+                <Breadcrumb className="mb-6">
+                    <BreadcrumbList>
+                        <BreadcrumbItem>
+                            <BreadcrumbLink href="/">হোম</BreadcrumbLink>
+                        </BreadcrumbItem>
+                        <BreadcrumbSeparator />
+                        <BreadcrumbItem>
+                            <BreadcrumbPage>গোপনীয়তা নীতি</BreadcrumbPage>
+                        </BreadcrumbItem>
+                    </BreadcrumbList>
+                </Breadcrumb>
+
+                <div className="mx-auto max-w-3xl">
+                    <h1 className="mb-8 text-3xl font-bold">গোপনীয়তা নীতি</h1>
+
+                    {sections && sections.length > 0 ? (
+                        <div className="space-y-6">
+                            {sections.map((section, index) => (
+                                <Card key={index}>
+                                    <CardContent className="p-6">
+                                        <h2 className="mb-4 text-xl font-semibold">
+                                            {section.heading}
+                                        </h2>
+                                        <div
+                                            className="prose dark:prose-invert max-w-none"
+                                            dangerouslySetInnerHTML={{
+                                                __html: section.content,
+                                            }}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    ) : (
+                        <Card>
+                            <CardContent className="p-6">
+                                <p className="text-muted-foreground">
+                                    গোপনীয়তা নীতি শীঘ্রই প্রকাশিত হবে।
+                                </p>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+            </div>
+        </PublicLayout>
+    );
+}

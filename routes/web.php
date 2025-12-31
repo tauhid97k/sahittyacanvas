@@ -17,6 +17,11 @@ use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PlatformSettingsController;
 use App\Http\Controllers\ProductReviewController;
+use App\Http\Controllers\Public\AuthorController as PublicAuthorController;
+use App\Http\Controllers\Public\HomeController;
+use App\Http\Controllers\Public\PostController as PublicPostController;
+use App\Http\Controllers\Public\PageController;
+use App\Http\Controllers\Public\ShopController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RulesController;
 use App\Http\Controllers\TransactionController;
@@ -26,11 +31,32 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
-Route::get('/', function () {
-    return Inertia::render('welcome', [
-        'canRegister' => Features::enabled(Features::registration()),
-    ]);
-})->name('home');
+// Public Routes
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// Blog Routes
+Route::get('/posts', [PublicPostController::class, 'index'])->name('public.posts.index');
+Route::get('/post/{slug}', [PublicPostController::class, 'show'])->name('public.posts.show');
+Route::get('/category/{slug}', [PublicPostController::class, 'category'])->name('public.category.show');
+
+// Authors Routes
+Route::get('/authors', [PublicAuthorController::class, 'index'])->name('public.authors.index');
+Route::get('/author/{slug}', [PublicAuthorController::class, 'show'])->name('public.authors.show');
+Route::get('/@{username}', [PublicAuthorController::class, 'userProfile'])->name('public.users.profile');
+
+// Shop Routes
+Route::get('/shop', [ShopController::class, 'index'])->name('public.shop.index');
+Route::get('/product/{slug}', [ShopController::class, 'show'])->name('public.shop.show');
+Route::get('/product-category/{slug}', [ShopController::class, 'category'])->name('public.product-category.show');
+
+// Static Pages
+Route::get('/about', [PageController::class, 'about'])->name('public.about');
+Route::get('/contact', [PageController::class, 'contact'])->name('public.contact');
+Route::post('/contact', [PageController::class, 'submitContact'])->name('public.contact.submit');
+Route::get('/terms', [PageController::class, 'terms'])->name('public.terms');
+Route::get('/privacy', [PageController::class, 'privacy'])->name('public.privacy');
+Route::get('/seller-rules', [PageController::class, 'sellerRules'])->name('public.seller-rules');
+Route::get('/author-rules', [PageController::class, 'authorRules'])->name('public.author-rules');
 
 Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
