@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            $table->string('name_bn')->unique();
-            $table->string('name_en')->unique();
+            $table->string('name_bn');
+            $table->string('name_en')->nullable();
             $table->string('slug')->unique();
             $table->text('description')->nullable();
-            $table->text('meta_description')->nullable();
+            $table->string('meta_description', 160)->nullable();
             $table->foreignId('parent_id')->nullable()->constrained('categories')->nullOnDelete();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
@@ -25,6 +25,7 @@ return new class extends Migration
             $table->index('slug');
             $table->index('parent_id');
             $table->index('is_active');
+            $table->index(['is_active', 'parent_id']);
         });
     }
 

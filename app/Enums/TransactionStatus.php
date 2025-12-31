@@ -15,10 +15,10 @@ enum TransactionStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::PENDING => 'পেমেন্ট বাকি',
-            self::PAID => 'পরিশোধিত',
-            self::REFUNDED => 'ফেরত',
-            self::FAILED => 'ব্যর্থ',
+            self::PENDING => 'Pending',
+            self::PAID => 'Paid',
+            self::REFUNDED => 'Refunded',
+            self::FAILED => 'Failed',
         };
     }
 

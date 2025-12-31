@@ -307,6 +307,14 @@ class Post extends Model implements HasMedia, CanVisit
     }
 
     /**
+     * Get title (prefers Bengali)
+     */
+    public function getTitleAttribute(): string
+    {
+        return $this->title_bn ?: $this->title_en;
+    }
+
+    /**
      * Get featured image URL
      */
     public function getFeaturedImageUrlAttribute(): ?string
