@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Comment;
 use App\Models\ModerationSetting;
 use App\Models\Post;
+use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -63,9 +64,39 @@ class ModerationController extends Controller
             ->paginate(10, ['*'], 'comments_page')
             ->withQueryString();
 
+        // Pending products
+        $pendingProducts = Product::query()
+            ->select([
+                'id', 'user_id', 'name_bn', 'name_en', 'slug', 'price',
+                'status', 'moderation_status', 'moderated_at', 'created_at',
+            ])
+            ->with([
+                'user:id,name,email',
+                'categories:id,name_bn,name_en',
+            ])
+            ->where('moderation_status', 'pending')
+            ->when($request->filled('search') && $tab === 'products', function ($query) use ($request) {
+                $search = $request->get('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('name_bn', 'like', "%{$search}%")
+                        ->orWhere('name_en', 'like', "%{$search}%");
+                });
+            })
+            ->latest()
+            ->paginate(10, ['*'], 'products_page')
+            ->withQueryString();
+
+        // Add featured image URL to products
+        $pendingProducts->through(function ($product) {
+            $product->featured_image_url = $product->getFirstMediaUrl('images') ?: null;
+            $product->formatted_price = $product->formatted_price;
+            return $product;
+        });
+
         return Inertia::render('dashboard/moderation/index', [
             'pendingPosts' => $pendingPosts,
             'pendingComments' => $pendingComments,
+            'pendingProducts' => $pendingProducts,
             'filters' => [
                 'tab' => $tab,
                 'search' => $request->get('search', ''),
@@ -73,10 +104,12 @@ class ModerationController extends Controller
             'counts' => [
                 'posts' => Post::where('moderation_status', 'pending')->count(),
                 'comments' => Comment::where('moderation_status', 'pending')->count(),
+                'products' => Product::where('moderation_status', 'pending')->count(),
             ],
             'settings' => [
                 'posts_require_approval' => ModerationSetting::postsRequireApproval(),
                 'comments_require_approval' => ModerationSetting::commentsRequireApproval(),
+                'products_require_approval' => ModerationSetting::productsRequireApproval(),
             ],
         ]);
     }
@@ -135,6 +168,34 @@ class ModerationController extends Controller
         ]);
 
         return back()->with('success', 'Comment rejected.');
+    }
+
+    /**
+     * Approve a product.
+     */
+    public function approveProduct(Request $request, Product $product): RedirectResponse
+    {
+        $product->update([
+            'moderation_status' => 'approved',
+            'moderated_at' => now(),
+            'moderated_by' => $request->user()->id,
+        ]);
+
+        return back()->with('success', 'Product approved successfully.');
+    }
+
+    /**
+     * Reject a product.
+     */
+    public function rejectProduct(Request $request, Product $product): RedirectResponse
+    {
+        $product->update([
+            'moderation_status' => 'rejected',
+            'moderated_at' => now(),
+            'moderated_by' => $request->user()->id,
+        ]);
+
+        return back()->with('success', 'Product rejected.');
     }
 
     /**

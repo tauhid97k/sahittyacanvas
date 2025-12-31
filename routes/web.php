@@ -94,6 +94,8 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
     Route::post('moderation/posts/{post}/reject', [ModerationController::class, 'rejectPost'])->name('moderation.posts.reject');
     Route::post('moderation/comments/{comment}/approve', [ModerationController::class, 'approveComment'])->name('moderation.comments.approve');
     Route::post('moderation/comments/{comment}/reject', [ModerationController::class, 'rejectComment'])->name('moderation.comments.reject');
+    Route::post('moderation/products/{product}/approve', [ModerationController::class, 'approveProduct'])->name('moderation.products.approve');
+    Route::post('moderation/products/{product}/reject', [ModerationController::class, 'rejectProduct'])->name('moderation.products.reject');
     Route::post('moderation/settings', [ModerationController::class, 'updateSettings'])->name('moderation.settings.update');
 
     // Users

@@ -32,6 +32,7 @@ import {
     FileText,
     MessageCircle,
     MoreVertical,
+    Package,
     Settings,
     X,
 } from 'lucide-react';
@@ -90,9 +91,35 @@ interface PendingComment {
     };
 }
 
+interface PendingProduct {
+    id: number;
+    user_id: number;
+    name_bn: string;
+    name_en: string | null;
+    slug: string;
+    price: number;
+    status: string;
+    moderation_status: 'auto' | 'pending' | 'approved' | 'rejected';
+    moderated_at: string | null;
+    created_at: string;
+    featured_image_url: string | null;
+    formatted_price: string;
+    user: {
+        id: number;
+        name: string;
+        email: string;
+    };
+    categories?: {
+        id: number;
+        name_bn: string;
+        name_en: string | null;
+    }[];
+}
+
 interface Props {
     pendingPosts: PaginatedData<PendingPost>;
     pendingComments: PaginatedData<PendingComment>;
+    pendingProducts: PaginatedData<PendingProduct>;
     filters: {
         tab: string;
         search: string;
@@ -100,10 +127,12 @@ interface Props {
     counts: {
         posts: number;
         comments: number;
+        products: number;
     };
     settings: {
         posts_require_approval: boolean;
         comments_require_approval: boolean;
+        products_require_approval: boolean;
     };
 }
 
@@ -115,6 +144,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function ModerationIndex({
     pendingPosts,
     pendingComments,
+    pendingProducts,
     filters,
     counts,
     settings,
@@ -126,6 +156,9 @@ export default function ModerationIndex({
     );
     const [commentModeration, setCommentModeration] = useState(
         settings.comments_require_approval,
+    );
+    const [productModeration, setProductModeration] = useState(
+        settings.products_require_approval,
     );
 
     // Debounced search
@@ -154,11 +187,19 @@ export default function ModerationIndex({
                 onSuccess: () => {
                     if (key === 'posts_require_approval') {
                         setPostModeration(value);
-                    } else {
+                    } else if (key === 'comments_require_approval') {
                         setCommentModeration(value);
+                    } else if (key === 'products_require_approval') {
+                        setProductModeration(value);
                     }
+                    const typeLabel =
+                        key === 'posts_require_approval'
+                            ? 'Post'
+                            : key === 'comments_require_approval'
+                              ? 'Comment'
+                              : 'Product';
                     toast.success(
-                        `Moderation ${value ? 'turned on' : 'turned off'} for ${key === 'posts_require_approval' ? 'Post' : 'Comment'}`,
+                        `Moderation ${value ? 'turned on' : 'turned off'} for ${typeLabel}`,
                     );
                 },
                 onError: () => {
@@ -240,6 +281,46 @@ export default function ModerationIndex({
                 },
                 onError: () => {
                     toast.error('Failed to reject comment');
+                },
+                onFinish: () => {
+                    setIsProcessing(false);
+                },
+            },
+        );
+    };
+
+    const handleApproveProduct = (product: PendingProduct) => {
+        setIsProcessing(true);
+        router.post(
+            `/dashboard/moderation/products/${product.id}/approve`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success('Product approved');
+                },
+                onError: () => {
+                    toast.error('Failed to approve product');
+                },
+                onFinish: () => {
+                    setIsProcessing(false);
+                },
+            },
+        );
+    };
+
+    const handleRejectProduct = (product: PendingProduct) => {
+        setIsProcessing(true);
+        router.post(
+            `/dashboard/moderation/products/${product.id}/reject`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success('Product rejected');
+                },
+                onError: () => {
+                    toast.error('Failed to reject product');
                 },
                 onFinish: () => {
                     setIsProcessing(false);
@@ -445,6 +526,108 @@ export default function ModerationIndex({
         },
     ];
 
+    const productColumns: ColumnDef<PendingProduct>[] = [
+        {
+            accessorKey: 'name',
+            header: 'Product',
+            cell: ({ row }) => (
+                <div className="flex items-center gap-3">
+                    {row.original.featured_image_url ? (
+                        <img
+                            src={row.original.featured_image_url}
+                            alt={row.original.name_bn}
+                            className="size-10 rounded-md object-cover"
+                        />
+                    ) : (
+                        <div className="flex size-10 items-center justify-center rounded-md bg-muted">
+                            <Package className="size-5 text-muted-foreground" />
+                        </div>
+                    )}
+                    <div className="max-w-md">
+                        <p className="line-clamp-1 font-medium">
+                            {row.original.name_en || row.original.name_bn}
+                        </p>
+                        {row.original.name_en && (
+                            <p className="line-clamp-1 text-sm text-muted-foreground">
+                                {row.original.name_bn}
+                            </p>
+                        )}
+                    </div>
+                </div>
+            ),
+        },
+        {
+            accessorKey: 'user',
+            header: 'Seller',
+            cell: ({ row }) => (
+                <div>
+                    <p className="font-medium">{row.original.user.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                        {row.original.user.email}
+                    </p>
+                </div>
+            ),
+        },
+        {
+            accessorKey: 'price',
+            header: 'Price',
+            cell: ({ row }) => (
+                <span className="font-medium">
+                    {row.original.formatted_price}
+                </span>
+            ),
+        },
+        {
+            accessorKey: 'created_at',
+            header: 'Submitted',
+            cell: ({ row }) => (
+                <span className="text-muted-foreground">
+                    {formatDistanceToNow(new Date(row.original.created_at), {
+                        addSuffix: true,
+                    })}
+                </span>
+            ),
+        },
+        {
+            id: 'actions',
+            header: 'Actions',
+            cell: ({ row }) => (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="icon">
+                            <MoreVertical />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                            <Link
+                                href={`/dashboard/products/${row.original.slug}`}
+                            >
+                                <Eye />
+                                View Product
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={() => handleApproveProduct(row.original)}
+                            disabled={isProcessing}
+                        >
+                            <Check />
+                            Approve
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => handleRejectProduct(row.original)}
+                            disabled={isProcessing}
+                        >
+                            <X />
+                            Reject
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            ),
+        },
+    ];
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Moderation" />
@@ -519,6 +702,28 @@ export default function ModerationIndex({
                             </Badge>
                         )}
                     </Button>
+                    <Button
+                        variant={
+                            filters.tab === 'products' ? 'default' : 'outline'
+                        }
+                        onClick={() => handleTabChange('products')}
+                        className="gap-2"
+                    >
+                        <Package className="size-4" />
+                        Products
+                        {counts.products > 0 && (
+                            <Badge
+                                variant={
+                                    filters.tab === 'products'
+                                        ? 'secondary'
+                                        : 'outline'
+                                }
+                                className="ml-1 h-5 min-w-5 px-1"
+                            >
+                                {counts.products}
+                            </Badge>
+                        )}
+                    </Button>
                 </div>
 
                 {/* Card Wrapper */}
@@ -530,7 +735,9 @@ export default function ModerationIndex({
                                 placeholder={
                                     filters.tab === 'posts'
                                         ? 'Search posts...'
-                                        : 'Search comments...'
+                                        : filters.tab === 'comments'
+                                          ? 'Search comments...'
+                                          : 'Search products...'
                                 }
                                 defaultValue={filters.search || ''}
                                 onChange={(e) =>
@@ -541,7 +748,7 @@ export default function ModerationIndex({
                         </div>
 
                         {/* Content based on tab */}
-                        {filters.tab === 'posts' ? (
+                        {filters.tab === 'posts' && (
                             <>
                                 <DataTable
                                     columns={postColumns}
@@ -556,7 +763,8 @@ export default function ModerationIndex({
                                     currentPath="/dashboard/moderation"
                                 />
                             </>
-                        ) : (
+                        )}
+                        {filters.tab === 'comments' && (
                             <>
                                 <DataTable
                                     columns={commentColumns}
@@ -572,6 +780,22 @@ export default function ModerationIndex({
                                 />
                             </>
                         )}
+                        {filters.tab === 'products' && (
+                            <>
+                                <DataTable
+                                    columns={productColumns}
+                                    data={pendingProducts.data}
+                                />
+                                <Pagination
+                                    links={pendingProducts.links}
+                                    from={pendingProducts.from}
+                                    to={pendingProducts.to}
+                                    total={pendingProducts.total}
+                                    perPage={pendingProducts.per_page}
+                                    currentPath="/dashboard/moderation"
+                                />
+                            </>
+                        )}
                     </CardContent>
                 </Card>
             </div>
@@ -582,8 +806,8 @@ export default function ModerationIndex({
                     <DialogHeader>
                         <DialogTitle>Moderation Settings</DialogTitle>
                         <DialogDescription>
-                            Configure moderation requirements for posts and
-                            comments.
+                            Configure moderation requirements for posts,
+                            comments, and products.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-6 py-4">
@@ -622,6 +846,26 @@ export default function ModerationIndex({
                                 onCheckedChange={(checked) =>
                                     handleSettingChange(
                                         'comments_require_approval',
+                                        checked,
+                                    )
+                                }
+                            />
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                                <Label htmlFor="product-moderation">
+                                    Product Moderation
+                                </Label>
+                                <p className="text-sm text-muted-foreground">
+                                    Require approval before publishing products
+                                </p>
+                            </div>
+                            <Switch
+                                id="product-moderation"
+                                checked={productModeration}
+                                onCheckedChange={(checked) =>
+                                    handleSettingChange(
+                                        'products_require_approval',
                                         checked,
                                     )
                                 }
