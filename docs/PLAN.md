@@ -1,58 +1,76 @@
-# Sahittyacanvas Blogging System - Master Plan
+# Sahittyacanvas - Master Plan
 
 ## Project Overview
 
-**Sahittyacanvas** is a comprehensive Bengali literature blogging platform designed to host various types of literary content including poetry, stories, multi-page novels, and works attributed to famous writers like Rabindranath Tagore.
+**Sahittyacanvas** (সাহিত্য ক্যানভাস) is a comprehensive Bengali literature platform combining:
+
+1. **Blogging System** - Poetry, stories, multi-page novels, works attributed to famous writers
+2. **E-commerce Marketplace** - Products sold by sellers with cart, checkout, and order management
 
 ## Current Status
 
-### ✅ Already Implemented
+### ✅ Dashboard Complete
 
-- Laravel 12 with Inertia.js (React 19)
-- User authentication (Laravel Fortify with 2FA)
+- **Backend Stack**: Laravel 12.39.0, PHP 8.4.16, PostgreSQL
+- **Frontend Stack**: React 19, Inertia.js SSR, TypeScript, TailwindCSS 4, shadcn/ui
+- **Authentication**: Laravel Fortify with 2FA
 - **All packages installed and configured**:
     - Spatie Laravel Permission (roles & permissions)
-    - Spatie Media Library (file uploads)
-    - Laravisit (visit tracking)
+    - Spatie Media Library (file uploads with conversions)
+    - Laravisit (visit tracking for posts)
     - Laravel Adjacency List (nested comments & categories)
     - Spatie Laravel Sitemap (SEO sitemap)
-    - Laravel SEO (meta tags, OpenGraph, JSON-LD)
+    - Laravel SEO (meta tags, OpenGraph, JSON-LD, Article schema)
     - Spatie Laravel Activitylog (audit trail)
-- **Database migrations completed**:
-    - post_types, authors, categories
-    - users (profile columns), posts, post_pages
-    - comments, likes, bookmarks
-    - follows, reading_lists, reading_list_items
-    - notifications, notification_settings
-    - reports, contact_submissions, moderation_settings
-    - activity_log (with event & batch_uuid)
 
-### 🚧 Needs Implementation
+- **Database Complete**:
+    - Users with profiles, roles, permissions
+    - Blog: posts, post_pages, categories, authors, comments, likes, bookmarks
+    - E-commerce: products, product_categories, orders, order_items, carts, cart_items, transactions, payment_methods, product_reviews
+    - Platform: platform_settings, moderation_settings, notifications, reports, contact_submissions
 
-- Eloquent Models with traits and relationships
-- Controllers and API routes
-- Frontend React components
-- See detailed plans in respective documentation files.
+- **Dashboard Features Complete**:
+    - Posts CRUD with multi-page support
+    - Categories & Authors management
+    - Products CRUD with images, stock, pricing
+    - Product Categories (nested)
+    - Orders management (seller & buyer views)
+    - Transactions tracking
+    - User management with ban/unban
+    - Roles & Permissions management
+    - Moderation queue (posts, comments, products)
+    - Activity logs
+    - Notifications system
+    - Platform settings (commission, rules, terms, privacy)
+    - Payment methods configuration
+
+### 🚧 In Progress: Public Pages
+
+- See [PUBLIC_PAGES.md](./PUBLIC_PAGES.md) for detailed implementation plan
+- Home page, blog pages, shop pages, cart, checkout
+- SEO optimization with structured data
 
 ## Documentation Structure
 
 This plan is split into multiple focused documents:
 
-1. **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - Complete database design with all tables, relationships, and migrations
-2. **[FEATURES.md](./FEATURES.md)** - Detailed feature specifications and requirements
-3. **[IMPLEMENTATION_PHASES.md](./IMPLEMENTATION_PHASES.md)** - Step-by-step implementation roadmap
-4. **[NOTIFICATION_SYSTEM.md](./NOTIFICATION_SYSTEM.md)** - Notification architecture with Laravel Broadcasting
-5. **[MEDIA_MANAGEMENT.md](./MEDIA_MANAGEMENT.md)** - Spatie Media Library integration strategy
-6. **[CONTENT_EDITOR.md](./CONTENT_EDITOR.md)** - Rich text editor and multi-page content strategy
-7. **[REVIEW_MODERATION.md](./REVIEW_MODERATION.md)** - Content moderation and approval workflows
+1. **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - Complete database design (needs update for e-commerce tables)
+2. **[FEATURES.md](./FEATURES.md)** - Detailed feature specifications
+3. **[IMPLEMENTATION_PHASES.md](./IMPLEMENTATION_PHASES.md)** - Original implementation roadmap (dashboard phases complete)
+4. **[PUBLIC_PAGES.md](./PUBLIC_PAGES.md)** - **NEW** Public pages implementation plan
+5. **[NOTIFICATION_SYSTEM.md](./NOTIFICATION_SYSTEM.md)** - Notification architecture
+6. **[MEDIA_MANAGEMENT.md](./MEDIA_MANAGEMENT.md)** - Spatie Media Library integration
+7. **[CONTENT_EDITOR.md](./CONTENT_EDITOR.md)** - Rich text editor (Tiptap) and multi-page content
+8. **[REVIEW_MODERATION.md](./REVIEW_MODERATION.md)** - Content moderation workflows
+9. **[POST_MULTIPAGE.md](./POST_MULTIPAGE.md)** - Multi-page post system details
 
 ## Technology Stack
 
 ### Backend
 
 - **Framework**: Laravel 12.39.0
-- **PHP**: 8.4.14
-- **Database**: MySQL
+- **PHP**: 8.4.16
+- **Database**: PostgreSQL
 - **Authentication**: Laravel Fortify (with 2FA)
 - **Permissions**: Spatie Laravel Permission ✅ - [GitHub](https://github.com/spatie/laravel-permission)
 - **Media**: Spatie Media Library ✅ - [GitHub](https://github.com/spatie/laravel-medialibrary)
@@ -68,115 +86,118 @@ This plan is split into multiple focused documents:
 ### Frontend
 
 - **Framework**: React 19.2.0
-- **Router**: Inertia.js 2.1.4
-- **Styling**: TailwindCSS 4.1.12
+- **Router**: Inertia.js 2.x with SSR
+- **Styling**: TailwindCSS 4.x
 - **Components**: shadcn/ui
 - **Icons**: Lucide React
-- **Rich Editor**: Novel.sh or Tiptap (MDX support)
-- **Forms**: Inertia.js useForm / Form component (built-in)
+- **Rich Editor**: Tiptap with custom extensions
+- **Forms**: Inertia.js useForm hook
+- **Font**: QuickSand
+- **Theme**: Green primary (`oklch(0.6 0.13 163)`), Dark/Light mode
 
 ## Core Features Summary
 
-### 1. User Management
+### 1. User Management ✅
 
-- Multi-role system (Admin, Moderator, Author, User)
+- Multi-role system (Super Admin, Admin, Moderator, Author, Seller, User)
 - Profile management with avatar/banner
-- User verification and reputation system
+- User ban/unban functionality
+- Role-based dashboard access
 
-### 2. Role & Permissions
+### 2. Role & Permissions ✅
 
 - Dynamic permission system using Spatie
 - Role-based access control (RBAC)
 - Custom permissions per feature
+- Role enum for type safety
 
-### 3. Notification System
+### 3. Notification System ✅
 
-- Real-time notifications via Laravel Broadcasting
-- Multiple channels (database, broadcast, mail)
-- User preference controls
-- Notification types: posts, comments, likes, system alerts
+- Database notifications with Inertia
+- Commission change notifications for sellers
+- Notification types: posts, comments, likes, system alerts, orders
+- Mark as read/unread functionality
 
-### 4. Blog Management
+### 4. Blog Management ✅
 
-- Multiple content types: Poetry, Story, Literature, Multi-page Novel
+- Multiple content types via categories
 - Author attribution (user-written vs famous writer)
-- **Multi-page post system** (see [POST_MULTIPAGE.md](./POST_MULTIPAGE.md)):
-    - Page 1 content stored in `posts.content`
-    - Additional pages in `post_pages` table with `order` field
-    - Page navigation with actual page orders from database
-    - Content validation before creating new pages
-    - Race condition protection with `lockForUpdate()`
+- **Multi-page post system** (see [POST_MULTIPAGE.md](./POST_MULTIPAGE.md))
 - Draft, pending, published, archived states
-- Scheduled publishing with queue jobs (future)
+- Moderation workflow with approval/rejection
+- SEO integration with Laravel SEO package
 
-### 5. Category Management
+### 5. Category Management ✅
 
-- Infinite nested categories
+- Infinite nested categories (blog & product)
 - Category images, descriptions, SEO
-- Hierarchical navigation
+- Hierarchical navigation with Laravel Adjacency List
+- Separate tables: `categories` (blog), `product_categories` (shop)
 
-### 6. Engagement Features
+### 6. Engagement Features ✅
 
-- **Views tracking via Laravisit**:
-    - IP-based + user-based tracking
-    - Popular posts by timeframe (today, week, month, year, all-time)
-    - Unique visits with configurable intervals (hourly, daily, weekly, monthly)
-    - Custom data tracking (region, referrer, etc.)
-- Likes system
-- Bookmarks/Reading lists
-- **Nested comments via Laravel Adjacency List**:
-    - Efficient recursive queries using CTEs (Common Table Expressions)
-    - Get all ancestors, descendants, siblings in single query
-    - Tree traversal without N+1 queries
-    - Depth limiting for performance
+- **Views tracking via Laravisit** for posts
+- **Product views** via `views_count` column
+- Likes system for posts
+- Bookmarks for posts
+- **Nested comments via Laravel Adjacency List**
+- **Product reviews** with ratings
 
-### 7. Report System
+### 7. Report System ✅
 
-- Report types: Author, Post, Comment, Website
-- Contextual reporting (in-page report buttons)
+- Polymorphic reports for any model
+- Report types: spam, inappropriate, copyright, harassment, misinformation
 - Admin moderation dashboard
-- Report status tracking
+- Report status tracking (pending, reviewing, resolved, dismissed)
 
-### 8. Review/Moderation System
+### 8. Review/Moderation System ✅
 
-- Toggle-based approval for posts/comments
-- Moderation queue
-- Bulk actions
-- Auto-approval rules
+- Toggle-based approval for posts/comments/products
+- Unified moderation queue
+- Moderation settings per content type
+- Auto-approval for trusted users
 
-### 9. Static Pages Management
+### 9. Platform Settings ✅
 
-- About Us (already implemented)
-- Terms & Conditions
-- Privacy Policy
-- Contact Page
-- Dynamic page builder
+- Platform commission percentage
+- Seller rules, Author rules
+- Terms of Service, Privacy Policy
+- Configurable via admin dashboard
 
-### 10. Media Management
+### 10. Media Management ✅
 
 - Spatie Media Library integration
-- Image optimization
-- Multiple collections (avatars, banners, post images)
-- CDN-ready
+- Image conversions (thumb, medium, large)
+- Collections: avatars, banners, featured images, product images
+- WebP support
 
-### 11. Activity Logging
+### 11. Activity Logging ✅
 
-- **Spatie Laravel Activitylog** for audit trails:
-    - Track all model changes (create, update, delete)
-    - Log user actions (login, logout, profile updates)
-    - Admin actions logging (approvals, bans, content moderation)
-    - Custom activity logging for business events
-    - Store old/new values for change tracking
-    - Causer tracking (who performed the action)
+- Spatie Laravel Activitylog on all models
+- Track create, update, delete operations
+- Causer tracking (who performed the action)
+- Activity log viewer in dashboard
 
-### 12. SEO & Sitemap
+### 12. E-commerce ✅
 
-- **Spatie Laravel Sitemap** for SEO:
-    - Auto-generate sitemap.xml
-    - Include posts, categories, authors, static pages
-    - Configurable change frequency and priority
-    - Sitemap index for large sites
-    - Scheduled regeneration via queue
+- Products with pricing (stored in paisa), stock, SKU
+- Product categories (nested)
+- Shopping cart system
+- Checkout with shipping info
+- Orders with status workflow
+- Transactions tracking
+- Payment methods configuration
+- Product reviews with ratings
+- Seller dashboard
+
+### 13. SEO
+
+- Laravel SEO package integration
+- Dynamic SEO data on models
+- Article schema for posts
+- Product schema for products
+- BreadcrumbList schema
+- Sitemap generation (to be implemented)
 
 ## Development Principles
 
@@ -220,13 +241,13 @@ This plan is split into multiple focused documents:
 
 ## Next Steps
 
-1. ✅ Review this master plan
-2. 📖 Read DATABASE_SCHEMA.md for database design
-3. 📋 Review FEATURES.md for detailed requirements
-4. 🚀 Follow IMPLEMENTATION_PHASES.md for execution
+1. ✅ Dashboard complete
+2. 🚧 Implement public pages (see [PUBLIC_PAGES.md](./PUBLIC_PAGES.md))
+3. 📋 Add permission-based visibility to dashboard (later)
+4. 🚀 Payment gateway integration (future)
 
 ---
 
-**Last Updated**: December 5, 2025  
-**Version**: 1.2.0  
-**Status**: Post Edit UI Complete
+**Last Updated**: December 31, 2025  
+**Version**: 2.0.0  
+**Status**: Dashboard Complete, Public Pages In Progress

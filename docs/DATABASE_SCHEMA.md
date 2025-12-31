@@ -517,19 +517,287 @@ Global moderation toggles.
 
 ---
 
+## E-commerce Tables (NEW)
+
+### 19. product_categories
+
+Nested product categories for e-commerce.
+
+| Column           | Type            | Constraints                          | Description             |
+| ---------------- | --------------- | ------------------------------------ | ----------------------- |
+| id               | BIGINT UNSIGNED | PK, AUTO_INCREMENT                   |                         |
+| name_bn          | VARCHAR(255)    | NOT NULL                             | Bengali name            |
+| name_en          | VARCHAR(255)    | NULLABLE                             | English name            |
+| slug             | VARCHAR(255)    | UNIQUE, NOT NULL                     | URL-friendly identifier |
+| description      | TEXT            | NULLABLE                             |                         |
+| meta_description | VARCHAR(160)    | NULLABLE                             | SEO description         |
+| parent_id        | BIGINT UNSIGNED | FK → product_categories.id, NULLABLE | Self-referencing        |
+| is_active        | BOOLEAN         | DEFAULT TRUE                         |                         |
+| created_at       | TIMESTAMP       | NULLABLE                             |                         |
+| updated_at       | TIMESTAMP       | NULLABLE                             |                         |
+
+**Indexes**: `slug`, `parent_id`, `is_active`, `(is_active, parent_id)`
+
+---
+
+### 20. products
+
+E-commerce products sold by sellers.
+
+| Column            | Type            | Constraints             | Description                 |
+| ----------------- | --------------- | ----------------------- | --------------------------- |
+| id                | BIGINT UNSIGNED | PK, AUTO_INCREMENT      |                             |
+| user_id           | BIGINT UNSIGNED | FK → users.id, NOT NULL | Seller                      |
+| name              | VARCHAR(255)    | NOT NULL                | Product name                |
+| slug              | VARCHAR(255)    | UNIQUE, NOT NULL        | URL-friendly identifier     |
+| description       | LONGTEXT        | NULLABLE                | Rich text description       |
+| meta_description  | VARCHAR(160)    | NULLABLE                | SEO description             |
+| sku               | VARCHAR(100)    | UNIQUE, NULLABLE        | Stock keeping unit          |
+| price             | BIGINT UNSIGNED | NOT NULL                | Price in paisa (cents)      |
+| discount_price    | BIGINT UNSIGNED | NULLABLE                | Discounted price in paisa   |
+| discount_ends_at  | TIMESTAMP       | NULLABLE                | Discount expiry             |
+| stock             | INT UNSIGNED    | DEFAULT 0               | Available quantity          |
+| moderation_status | ENUM            | DEFAULT 'pending'       | pending, approved, rejected |
+| moderated_by      | BIGINT UNSIGNED | FK → users.id, NULLABLE | Admin who moderated         |
+| published_at      | TIMESTAMP       | NULLABLE                |                             |
+| sales_count       | INT UNSIGNED    | DEFAULT 0               | Cached counter              |
+| views_count       | INT UNSIGNED    | DEFAULT 0               | Cached counter              |
+| created_at        | TIMESTAMP       | NULLABLE                |                             |
+| updated_at        | TIMESTAMP       | NULLABLE                |                             |
+| deleted_at        | TIMESTAMP       | NULLABLE                | Soft delete                 |
+
+**Indexes**: `slug`, `user_id`, `moderation_status`, `published_at`, `(user_id, moderation_status)`
+
+---
+
+### 21. category_product (pivot)
+
+Many-to-many relationship between products and product_categories.
+
+| Column              | Type            | Constraints                         |
+| ------------------- | --------------- | ----------------------------------- |
+| id                  | BIGINT UNSIGNED | PK, AUTO_INCREMENT                  |
+| product_id          | BIGINT UNSIGNED | FK → products.id, CASCADE           |
+| product_category_id | BIGINT UNSIGNED | FK → product_categories.id, CASCADE |
+| created_at          | TIMESTAMP       | NULLABLE                            |
+| updated_at          | TIMESTAMP       | NULLABLE                            |
+
+---
+
+### 22. carts
+
+Shopping carts for users.
+
+| Column     | Type            | Constraints           |
+| ---------- | --------------- | --------------------- |
+| id         | BIGINT UNSIGNED | PK, AUTO_INCREMENT    |
+| user_id    | BIGINT UNSIGNED | FK → users.id, UNIQUE |
+| created_at | TIMESTAMP       | NULLABLE              |
+| updated_at | TIMESTAMP       | NULLABLE              |
+
+---
+
+### 23. cart_items
+
+Items in shopping carts.
+
+| Column     | Type            | Constraints               |
+| ---------- | --------------- | ------------------------- |
+| id         | BIGINT UNSIGNED | PK, AUTO_INCREMENT        |
+| cart_id    | BIGINT UNSIGNED | FK → carts.id, CASCADE    |
+| product_id | BIGINT UNSIGNED | FK → products.id, CASCADE |
+| quantity   | INT UNSIGNED    | DEFAULT 1                 |
+| created_at | TIMESTAMP       | NULLABLE                  |
+| updated_at | TIMESTAMP       | NULLABLE                  |
+
+**Unique Constraints**: `(cart_id, product_id)`
+
+---
+
+### 24. orders
+
+Customer orders.
+
+| Column              | Type            | Constraints            | Description             |
+| ------------------- | --------------- | ---------------------- | ----------------------- |
+| id                  | BIGINT UNSIGNED | PK, AUTO_INCREMENT     |                         |
+| order_number        | VARCHAR(255)    | UNIQUE, NOT NULL       | ORD-YYYYMMDD-XXXXX      |
+| user_id             | BIGINT UNSIGNED | FK → users.id, CASCADE | Buyer                   |
+| seller_id           | BIGINT UNSIGNED | FK → users.id, CASCADE | Seller                  |
+| subtotal            | BIGINT UNSIGNED | NOT NULL               | In paisa                |
+| shipping_cost       | BIGINT UNSIGNED | DEFAULT 0              | In paisa                |
+| total               | BIGINT UNSIGNED | NOT NULL               | In paisa                |
+| status              | ENUM            | DEFAULT 'pending'      | Order workflow status   |
+| payment_status      | ENUM            | DEFAULT 'unpaid'       | unpaid, paid, refunded  |
+| payment_method      | VARCHAR(255)    | NULLABLE               | bKash, Nagad, COD, etc. |
+| payment_note        | TEXT            | NULLABLE               | Transaction ID, etc.    |
+| shipping_name       | VARCHAR(255)    | NOT NULL               |                         |
+| shipping_phone      | VARCHAR(255)    | NOT NULL               |                         |
+| shipping_email      | VARCHAR(255)    | NULLABLE               |                         |
+| shipping_address    | TEXT            | NOT NULL               |                         |
+| shipping_city       | VARCHAR(255)    | NOT NULL               |                         |
+| shipping_area       | VARCHAR(255)    | NULLABLE               |                         |
+| shipping_postal     | VARCHAR(255)    | NULLABLE               |                         |
+| buyer_notes         | TEXT            | NULLABLE               |                         |
+| tracking_number     | VARCHAR(255)    | NULLABLE               |                         |
+| shipping_provider   | VARCHAR(255)    | NULLABLE               | Pathao, Steadfast, etc. |
+| shipped_at          | TIMESTAMP       | NULLABLE               |                         |
+| delivered_at        | TIMESTAMP       | NULLABLE               |                         |
+| seller_notes        | TEXT            | NULLABLE               |                         |
+| cancelled_at        | TIMESTAMP       | NULLABLE               |                         |
+| cancellation_reason | TEXT            | NULLABLE               |                         |
+| created_at          | TIMESTAMP       | NULLABLE               |                         |
+| updated_at          | TIMESTAMP       | NULLABLE               |                         |
+| deleted_at          | TIMESTAMP       | NULLABLE               | Soft delete             |
+
+**Order Status Enum**: `pending`, `confirmed`, `processing`, `shipped`, `delivered`, `cancelled`, `refunded`
+
+---
+
+### 25. order_items
+
+Line items in orders.
+
+| Column       | Type            | Constraints               | Description       |
+| ------------ | --------------- | ------------------------- | ----------------- |
+| id           | BIGINT UNSIGNED | PK, AUTO_INCREMENT        |                   |
+| order_id     | BIGINT UNSIGNED | FK → orders.id, CASCADE   |                   |
+| product_id   | BIGINT UNSIGNED | FK → products.id, NULLIFY | May be deleted    |
+| product_name | VARCHAR(255)    | NOT NULL                  | Snapshot          |
+| product_sku  | VARCHAR(255)    | NULLABLE                  | Snapshot          |
+| quantity     | INT UNSIGNED    | NOT NULL                  |                   |
+| unit_price   | BIGINT UNSIGNED | NOT NULL                  | Snapshot in paisa |
+| total        | BIGINT UNSIGNED | NOT NULL                  | In paisa          |
+| created_at   | TIMESTAMP       | NULLABLE                  |                   |
+| updated_at   | TIMESTAMP       | NULLABLE                  |                   |
+
+---
+
+### 26. payment_methods
+
+Available payment methods.
+
+| Column       | Type            | Constraints        | Description       |
+| ------------ | --------------- | ------------------ | ----------------- |
+| id           | BIGINT UNSIGNED | PK, AUTO_INCREMENT |                   |
+| name         | VARCHAR(255)    | NOT NULL           | bKash, Nagad, etc |
+| code         | VARCHAR(50)     | UNIQUE, NOT NULL   | Identifier        |
+| description  | TEXT            | NULLABLE           |                   |
+| instructions | TEXT            | NULLABLE           | Payment guide     |
+| is_active    | BOOLEAN         | DEFAULT TRUE       |                   |
+| position     | INT UNSIGNED    | DEFAULT 0          | Display order     |
+| created_at   | TIMESTAMP       | NULLABLE           |                   |
+| updated_at   | TIMESTAMP       | NULLABLE           |                   |
+
+---
+
+### 27. transactions
+
+Payment transactions (polymorphic).
+
+| Column                 | Type            | Constraints             | Description                     |
+| ---------------------- | --------------- | ----------------------- | ------------------------------- |
+| id                     | BIGINT UNSIGNED | PK, AUTO_INCREMENT      |                                 |
+| transaction_number     | VARCHAR(255)    | UNIQUE, NOT NULL        | TXN-YYYYMMDD-XXXXX              |
+| transactionable_type   | VARCHAR(255)    | NOT NULL                | Polymorphic (Order, etc)        |
+| transactionable_id     | BIGINT UNSIGNED | NOT NULL                |                                 |
+| payer_id               | BIGINT UNSIGNED | FK → users.id, CASCADE  | Buyer                           |
+| payee_id               | BIGINT UNSIGNED | FK → users.id, CASCADE  | Seller                          |
+| payment_method_id      | BIGINT UNSIGNED | FK, NULLABLE            |                                 |
+| amount                 | BIGINT UNSIGNED | NOT NULL                | In paisa                        |
+| currency               | VARCHAR(3)      | DEFAULT 'BDT'           |                                 |
+| status                 | ENUM            | DEFAULT 'pending'       | pending, paid, refunded, failed |
+| gateway_transaction_id | VARCHAR(255)    | NULLABLE                |                                 |
+| gateway_response       | JSON            | NULLABLE                |                                 |
+| note                   | TEXT            | NULLABLE                |                                 |
+| paid_at                | TIMESTAMP       | NULLABLE                |                                 |
+| refunded_at            | TIMESTAMP       | NULLABLE                |                                 |
+| failed_at              | TIMESTAMP       | NULLABLE                |                                 |
+| failure_reason         | TEXT            | NULLABLE                |                                 |
+| refund_amount          | BIGINT UNSIGNED | NULLABLE                | In paisa                        |
+| refund_reason          | TEXT            | NULLABLE                |                                 |
+| refunded_by            | BIGINT UNSIGNED | FK → users.id, NULLABLE |                                 |
+| created_at             | TIMESTAMP       | NULLABLE                |                                 |
+| updated_at             | TIMESTAMP       | NULLABLE                |                                 |
+
+---
+
+### 28. product_reviews
+
+Customer reviews for products.
+
+| Column      | Type            | Constraints               | Description    |
+| ----------- | --------------- | ------------------------- | -------------- |
+| id          | BIGINT UNSIGNED | PK, AUTO_INCREMENT        |                |
+| product_id  | BIGINT UNSIGNED | FK → products.id, CASCADE |                |
+| user_id     | BIGINT UNSIGNED | FK → users.id, CASCADE    | Reviewer       |
+| order_id    | BIGINT UNSIGNED | FK → orders.id, NULLABLE  | Verified buyer |
+| rating      | TINYINT         | NOT NULL, 1-5             |                |
+| title       | VARCHAR(255)    | NULLABLE                  |                |
+| comment     | TEXT            | NULLABLE                  |                |
+| is_verified | BOOLEAN         | DEFAULT FALSE             | Verified buyer |
+| created_at  | TIMESTAMP       | NULLABLE                  |                |
+| updated_at  | TIMESTAMP       | NULLABLE                  |                |
+| deleted_at  | TIMESTAMP       | NULLABLE                  | Soft delete    |
+
+**Unique Constraints**: `(product_id, user_id)` - One review per user per product
+
+---
+
+### 29. platform_settings
+
+Key-value store for platform configuration.
+
+| Column     | Type            | Constraints        | Description                |
+| ---------- | --------------- | ------------------ | -------------------------- |
+| id         | BIGINT UNSIGNED | PK, AUTO_INCREMENT |                            |
+| key        | VARCHAR(255)    | UNIQUE, NOT NULL   | Setting identifier         |
+| value      | TEXT            | NULLABLE           | Setting value              |
+| type       | VARCHAR(50)     | DEFAULT 'string'   | string, number, json, bool |
+| created_at | TIMESTAMP       | NULLABLE           |                            |
+| updated_at | TIMESTAMP       | NULLABLE           |                            |
+
+**Default Keys**:
+
+- `platform_commission_percentage` - Seller commission (number)
+- `seller_rules` - Rules for sellers (json)
+- `author_rules` - Rules for authors (json)
+- `terms_of_service` - Terms (json)
+- `privacy_policy` - Privacy policy (json)
+
+---
+
 ## Database Relationships Summary
 
 ### User
 
-- `hasMany`: posts, comments, likes, bookmarks, reports, reading_lists, follows (as follower)
+- `hasMany`: posts, comments, likes, bookmarks, reports, reading_lists, follows (as follower), products, orders (as buyer), orders (as seller), cart
 - `morphMany`: notifications
 - `belongsToMany`: roles, permissions (Spatie)
 
 ### Post
 
-- `belongsTo`: user, author, category, post_type, approved_by (user)
-- `hasMany`: pages, comments, likes, bookmarks, views
+- `belongsTo`: user, author, approved_by (user)
+- `hasMany`: pages, comments, likes, bookmarks
+- `belongsToMany`: categories
 - `morphMany`: reports, media
+
+### Product
+
+- `belongsTo`: user (seller), moderated_by (user)
+- `hasMany`: cart_items, order_items, reviews
+- `belongsToMany`: product_categories
+- `morphMany`: media
+
+### Order
+
+- `belongsTo`: user (buyer), seller (user)
+- `hasMany`: order_items, transactions
+
+### Transaction
+
+- `belongsTo`: payer (user), payee (user), payment_method
+- `morphTo`: transactionable (Order, etc.)
 
 ### PostPage
 
@@ -644,3 +912,8 @@ Create notification for each mentioned user (if mention notifications enabled)
 ---
 
 **Next**: See [FEATURES.md](./FEATURES.md) for detailed feature specifications.
+
+---
+
+**Last Updated**: December 31, 2025  
+**Version**: 2.0.0 (Added E-commerce tables)
