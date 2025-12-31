@@ -88,6 +88,7 @@
         "react-day-picker": "^9.12.0",
         "react-dom": "^19.2.0",
         "react-icons": "^5.5.0",
+        "recharts": "^3.6.0",
         "slugify": "^1.6.6",
         "sonner": "^2.0.7",
         "tailwind-merge": "^3.0.1",

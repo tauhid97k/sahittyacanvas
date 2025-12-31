@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\AuthorController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
@@ -14,8 +15,10 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\PostPageController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PlatformSettingsController;
 use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\RulesController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PaymentMethodController;
@@ -30,9 +33,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () {
-    Route::get('/', function () {
-        return Inertia::render('dashboard/index');
-    })->name('dashboard');
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     // Categories
     Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
@@ -156,6 +157,17 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
     Route::post('payment-methods', [PaymentMethodController::class, 'store'])->name('payment-methods.store');
     Route::put('payment-methods/{paymentMethod}', [PaymentMethodController::class, 'update'])->name('payment-methods.update');
     Route::delete('payment-methods/{paymentMethod}', [PaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
+
+    // Rules (Public - for all authenticated users)
+    Route::get('rules', [RulesController::class, 'index'])->name('rules.index');
+
+    // Platform Settings (Super Admin only)
+    Route::get('settings', [PlatformSettingsController::class, 'index'])->name('platform-settings.index');
+    Route::post('settings/commission', [PlatformSettingsController::class, 'updateCommission'])->name('platform-settings.commission');
+    Route::post('settings/seller-rules', [PlatformSettingsController::class, 'updateSellerRules'])->name('platform-settings.seller-rules');
+    Route::post('settings/author-rules', [PlatformSettingsController::class, 'updateAuthorRules'])->name('platform-settings.author-rules');
+    Route::post('settings/terms-of-service', [PlatformSettingsController::class, 'updateTermsOfService'])->name('platform-settings.terms-of-service');
+    Route::post('settings/privacy-policy', [PlatformSettingsController::class, 'updatePrivacyPolicy'])->name('platform-settings.privacy-policy');
 });
 
 // Cart Routes (authenticated users)

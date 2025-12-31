@@ -15,6 +15,7 @@ import {
     Activity,
     Banknote,
     Bell,
+    BookOpen,
     Feather,
     FolderTree,
     Heart,
@@ -23,6 +24,7 @@ import {
     MessageCircle,
     Package,
     PenBox,
+    Settings,
     Shield,
     ShieldCheck,
     ShoppingCart,
@@ -127,6 +129,17 @@ export function AppSidebar() {
                 title: 'Transactions',
                 href: '/dashboard/transactions',
                 icon: Banknote,
+            },
+            // Rules & Settings
+            {
+                title: 'Rules',
+                href: '/dashboard/rules',
+                icon: BookOpen,
+            },
+            {
+                title: 'Settings',
+                href: '/dashboard/settings',
+                icon: Settings,
             },
         ],
         [unreadCount],
