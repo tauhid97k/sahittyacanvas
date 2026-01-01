@@ -11,9 +11,39 @@ import {
     navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
 import { Link, usePage } from '@inertiajs/react';
-import { Menu, Search, ShoppingCart, X } from 'lucide-react';
+import { Heart, Menu, Search, ShoppingCart, X } from 'lucide-react';
 import { useState } from 'react';
+import CartDrawer from './CartDrawer';
 import MobileMenu from './MobileMenu';
+
+interface CartItem {
+    id: number;
+    product_id: number;
+    quantity: number;
+    unit_price: number;
+    total: number;
+    product: {
+        id: number;
+        name: string;
+        slug: string;
+        image: string | null;
+        stock: number;
+        seller: { id: number; name: string; username: string } | null;
+    } | null;
+}
+
+interface GroupedCart {
+    seller: { id: number; name: string; username: string } | null;
+    items: CartItem[];
+    subtotal: number;
+}
+
+interface CartItems {
+    items: CartItem[];
+    grouped: GroupedCart[];
+    subtotal: number;
+    formatted_subtotal: string;
+}
 
 interface Category {
     id: number;
@@ -29,26 +59,32 @@ export default function PublicHeader() {
         blogCategories = [],
         productCategories = [],
         cartCount = 0,
+        cartItems = {
+            items: [],
+            grouped: [],
+            subtotal: 0,
+            formatted_subtotal: '৳0.00',
+        },
     } = usePage<{
         auth: { user: { id: number; name: string } | null };
         blogCategories: Category[];
         productCategories: Category[];
         cartCount: number;
+        cartItems: CartItems;
     }>().props;
 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
+    const [cartOpen, setCartOpen] = useState(false);
 
     const user = auth?.user;
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container flex h-16 items-center justify-between">
+            <div className="container flex items-center justify-between py-2">
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-2">
-                    <div className="h-10 w-auto">
-                        <AppLogo />
-                    </div>
+                <Link href="/" className="flex shrink-0 items-center">
+                    <AppLogo />
                 </Link>
 
                 {/* Desktop Navigation */}
@@ -61,6 +97,16 @@ export default function PublicHeader() {
                                 className={navigationMenuTriggerStyle()}
                             >
                                 হোম
+                            </Link>
+                        </NavigationMenuItem>
+
+                        {/* Famous Writers */}
+                        <NavigationMenuItem>
+                            <Link
+                                href="/authors"
+                                className={navigationMenuTriggerStyle()}
+                            >
+                                খ্যাতিমান কবি/লেখক
                             </Link>
                         </NavigationMenuItem>
 
@@ -109,16 +155,6 @@ export default function PublicHeader() {
                                     </li>
                                 </ul>
                             </NavigationMenuContent>
-                        </NavigationMenuItem>
-
-                        {/* Famous Writers */}
-                        <NavigationMenuItem>
-                            <Link
-                                href="/authors"
-                                className={navigationMenuTriggerStyle()}
-                            >
-                                খ্যাতিমান কবি/লেখক
-                            </Link>
                         </NavigationMenuItem>
 
                         {/* Shop - কেনাকাটা করুন */}
@@ -193,22 +229,33 @@ export default function PublicHeader() {
                         <span className="sr-only">Search</span>
                     </Button>
 
-                    {/* Cart */}
-                    <Link href="/cart">
+                    {/* Wishlist */}
+                    <Link href="/wishlist">
                         <Button
                             variant="ghost"
                             size="icon"
                             className="relative h-9 w-9"
                         >
-                            <ShoppingCart className="h-5 w-5" />
-                            {cartCount > 0 && (
-                                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
-                                    {cartCount > 99 ? '99+' : cartCount}
-                                </span>
-                            )}
-                            <span className="sr-only">Cart</span>
+                            <Heart className="h-5 w-5" />
+                            <span className="sr-only">Wishlist</span>
                         </Button>
                     </Link>
+
+                    {/* Cart */}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="relative h-9 w-9"
+                        onClick={() => setCartOpen(true)}
+                    >
+                        <ShoppingCart className="h-5 w-5" />
+                        {cartCount > 0 && (
+                            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                                {cartCount > 99 ? '99+' : cartCount}
+                            </span>
+                        )}
+                        <span className="sr-only">Cart</span>
+                    </Button>
 
                     {/* Theme Toggle */}
                     <AppearanceToggleDropdown />
@@ -278,6 +325,13 @@ export default function PublicHeader() {
                 blogCategories={blogCategories}
                 productCategories={productCategories}
                 user={user}
+            />
+
+            {/* Cart Drawer */}
+            <CartDrawer
+                open={cartOpen}
+                onClose={() => setCartOpen(false)}
+                cartItems={cartItems}
             />
         </header>
     );

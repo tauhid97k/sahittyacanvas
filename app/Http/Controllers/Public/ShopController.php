@@ -61,10 +61,11 @@ class ShopController extends Controller
                 'id' => $product->user->id,
                 'name' => $product->user->name,
             ],
-            'category' => $product->categories->first() ? [
-                'name' => $product->categories->first()->name_bn,
-                'slug' => $product->categories->first()->slug,
-            ] : null,
+            'categories' => $product->categories->map(fn ($cat) => [
+                'id' => $cat->id,
+                'name' => $cat->name_bn,
+                'slug' => $cat->slug,
+            ]),
             'rating' => (float) ($product->reviews()->avg('rating') ?? 0),
             'reviews_count' => $product->reviews()->count(),
             'in_stock' => $product->stock > 0,
@@ -120,7 +121,7 @@ class ShopController extends Controller
             ->approved()
             ->whereNotNull('published_at')
             ->where('id', '!=', $product->id)
-            ->whereHas('categories', fn ($q) => $q->whereIn('id', $product->categories->pluck('id')))
+            ->whereHas('categories', fn ($q) => $q->whereIn('product_categories.id', $product->categories->pluck('id')))
             ->with(['user', 'media'])
             ->take(4)
             ->get()
@@ -197,6 +198,7 @@ class ShopController extends Controller
             ],
             'relatedProducts' => $relatedProducts,
             'breadcrumb' => $breadcrumb,
+            'seo' => $product->getDynamicSEOData(),
         ]);
     }
 
@@ -207,7 +209,7 @@ class ShopController extends Controller
         $products = Product::query()
             ->approved()
             ->whereNotNull('published_at')
-            ->whereHas('categories', fn ($q) => $q->where('id', $category->id))
+            ->whereHas('categories', fn ($q) => $q->where('product_categories.id', $category->id))
             ->with(['user', 'categories', 'media'])
             ->latest('published_at')
             ->paginate(12)
@@ -222,6 +224,11 @@ class ShopController extends Controller
                     'id' => $product->user->id,
                     'name' => $product->user->name,
                 ],
+                'categories' => $product->categories->map(fn ($cat) => [
+                    'id' => $cat->id,
+                    'name' => $cat->name_bn,
+                    'slug' => $cat->slug,
+                ]),
                 'rating' => (float) ($product->reviews()->avg('rating') ?? 0),
                 'reviews_count' => $product->reviews()->count(),
                 'in_stock' => $product->stock > 0,

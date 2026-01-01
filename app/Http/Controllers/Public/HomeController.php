@@ -59,6 +59,11 @@ class HomeController extends Controller
                     'id' => $product->user->id,
                     'name' => $product->user->name,
                 ],
+                'categories' => $product->categories->map(fn ($cat) => [
+                    'id' => $cat->id,
+                    'name' => $cat->name_bn,
+                    'slug' => $cat->slug,
+                ]),
                 'rating' => (float) ($product->reviews()->avg('rating') ?? 0),
                 'reviews_count' => $product->reviews()->count(),
             ]);

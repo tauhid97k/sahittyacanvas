@@ -82,7 +82,8 @@
 }
 
 @theme inline {
-    --font-family: 'QuickSand', sans-serif;
+    --font-family: 'Quicksand', 'Hind Siliguri', sans-serif;
+    --font-bengali: 'Hind Siliguri', sans-serif;
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);
     --radius-lg: var(--radius);
@@ -143,6 +144,11 @@
     body {
         @apply bg-background text-foreground;
     }
+}
+
+/* Bengali font utility class */
+.font-bengali {
+    font-family: 'Hind Siliguri', sans-serif;
 }
 
 .icon {

@@ -15,6 +15,7 @@ import {
     Activity,
     Banknote,
     Bell,
+    Bookmark,
     BookOpen,
     Feather,
     FolderTree,
@@ -82,6 +83,11 @@ export function AppSidebar() {
                 title: 'Likes',
                 href: '/dashboard/likes',
                 icon: Heart,
+            },
+            {
+                title: 'Wishlist',
+                href: '/dashboard/wishlist',
+                icon: Bookmark,
             },
             {
                 title: 'Comments',

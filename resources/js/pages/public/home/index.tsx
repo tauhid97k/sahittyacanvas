@@ -1,8 +1,9 @@
 import PublicLayout from '@/components/public/layout/PublicLayout';
+import ProductCard from '@/components/public/ProductCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from '@inertiajs/react';
-import { ArrowRight, Eye, Heart, Star } from 'lucide-react';
+import { ArrowRight, Eye, Heart, User } from 'lucide-react';
 
 interface Post {
     id: number;
@@ -31,11 +32,8 @@ interface Product {
     price: number;
     discount_price: number | null;
     image: string | null;
-    seller: {
-        id: number;
-        name: string;
-    };
-    rating: number;
+    categories?: { id: number; name: string; slug: string }[];
+    rating: number | null;
     reviews_count: number;
 }
 
@@ -61,10 +59,6 @@ interface Props {
     popularProducts: Product[];
     famousAuthors: Author[];
     categories: Category[];
-}
-
-function formatPrice(paisa: number): string {
-    return `৳${(paisa / 100).toLocaleString('bn-BD')}`;
 }
 
 function formatNumber(num: number): string {
@@ -281,59 +275,6 @@ function PostCard({ post }: { post: Post }) {
     );
 }
 
-function ProductCard({ product }: { product: Product }) {
-    const hasDiscount =
-        product.discount_price && product.discount_price < product.price;
-
-    return (
-        <Link href={`/product/${product.slug}`}>
-            <Card className="group h-full overflow-hidden transition-shadow hover:shadow-lg">
-                <div className="aspect-square overflow-hidden bg-muted">
-                    {product.image ? (
-                        <img
-                            src={product.image}
-                            alt={product.name}
-                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                        />
-                    ) : (
-                        <div className="flex h-full items-center justify-center text-4xl text-muted-foreground">
-                            📦
-                        </div>
-                    )}
-                </div>
-                <CardContent className="p-4">
-                    <h3 className="line-clamp-2 font-semibold group-hover:text-primary">
-                        {product.name}
-                    </h3>
-                    <div className="mt-2 flex items-center gap-2">
-                        <span className="text-lg font-bold text-primary">
-                            {formatPrice(
-                                hasDiscount
-                                    ? product.discount_price!
-                                    : product.price,
-                            )}
-                        </span>
-                        {hasDiscount && (
-                            <span className="text-sm text-muted-foreground line-through">
-                                {formatPrice(product.price)}
-                            </span>
-                        )}
-                    </div>
-                    {product.reviews_count > 0 && product.rating != null && (
-                        <div className="mt-2 flex items-center gap-1 text-sm">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                            <span>{Number(product.rating).toFixed(1)}</span>
-                            <span className="text-muted-foreground">
-                                ({product.reviews_count})
-                            </span>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-        </Link>
-    );
-}
-
 function AuthorAvatar({ author }: { author: Author }) {
     return (
         <Link
@@ -348,8 +289,8 @@ function AuthorAvatar({ author }: { author: Author }) {
                         className="h-full w-full object-cover"
                     />
                 ) : (
-                    <div className="flex h-full w-full items-center justify-center text-2xl">
-                        ✍️
+                    <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                        <User className="h-10 w-10" />
                     </div>
                 )}
             </div>

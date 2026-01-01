@@ -167,10 +167,9 @@ class Product extends Model implements HasMedia
     public function getDynamicSEOData(): SEOData
     {
         return new SEOData(
-            title: $this->name_bn,
+            title: $this->name,
             description: str()->limit(strip_tags($this->description), 160),
             image: $this->getFirstMediaUrl('images'),
-            schema: SchemaCollection::make()->addProduct(),
         );
     }
 

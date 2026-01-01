@@ -16,8 +16,11 @@ export default function PublicLayout({
 }: PublicLayoutProps) {
     return (
         <>
-            <Head>
-                {title && <title>{title} - সাহিত্য ক্যানভাস</title>}
+            <Head
+                title={
+                    title ? `${title} - সাহিত্য ক্যানভাস` : 'সাহিত্য ক্যানভাস'
+                }
+            >
                 {description && (
                     <meta name="description" content={description} />
                 )}

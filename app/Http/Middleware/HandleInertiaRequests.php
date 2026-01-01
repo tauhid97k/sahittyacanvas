@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Category;
 use App\Models\ProductCategory;
+use App\Models\Wishlist;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -53,6 +54,8 @@ class HandleInertiaRequests extends Middleware
             'blogCategories' => fn () => $this->getBlogCategories(),
             'productCategories' => fn () => $this->getProductCategories(),
             'cartCount' => fn () => $this->getCartCount($request),
+            'cartItems' => fn () => $this->getCartItems($request),
+            'wishlistIds' => fn () => $this->getWishlistIds($request),
         ];
     }
 
@@ -154,5 +157,84 @@ class HandleInertiaRequests extends Middleware
         $cart = $request->user()->cart;
 
         return $cart ? $cart->items()->sum('quantity') : 0;
+    }
+
+    /**
+     * Get wishlist product IDs for the current user.
+     */
+    protected function getWishlistIds(Request $request): array
+    {
+        if (! $request->user()) {
+            return [];
+        }
+
+        return Wishlist::where('user_id', $request->user()->id)
+            ->pluck('product_id')
+            ->toArray();
+    }
+
+    /**
+     * Get cart items grouped by seller for the cart drawer.
+     */
+    protected function getCartItems(Request $request): array
+    {
+        if (! $request->user()) {
+            return [
+                'items' => [],
+                'grouped' => [],
+                'subtotal' => 0,
+                'formatted_subtotal' => '৳0.00',
+            ];
+        }
+
+        $cart = $request->user()->cart;
+
+        if (! $cart) {
+            return [
+                'items' => [],
+                'grouped' => [],
+                'subtotal' => 0,
+                'formatted_subtotal' => '৳0.00',
+            ];
+        }
+
+        $cart->load(['items.product.user', 'items.product.media']);
+
+        $items = $cart->items->map(fn ($item) => [
+            'id' => $item->id,
+            'product_id' => $item->product_id,
+            'quantity' => $item->quantity,
+            'unit_price' => $item->unit_price,
+            'total' => $item->total,
+            'product' => $item->product ? [
+                'id' => $item->product->id,
+                'name' => $item->product->name,
+                'slug' => $item->product->slug,
+                'image' => $item->product->getFirstMediaUrl('images', 'thumb') ?: null,
+                'stock' => $item->product->stock,
+                'seller' => $item->product->user ? [
+                    'id' => $item->product->user->id,
+                    'name' => $item->product->user->name,
+                    'username' => $item->product->user->username,
+                ] : null,
+            ] : null,
+        ])->filter(fn ($item) => $item['product'] !== null);
+
+        // Group by seller
+        $grouped = $items->groupBy('product.seller.id')->map(function ($sellerItems, $sellerId) {
+            $seller = $sellerItems->first()['product']['seller'] ?? null;
+            return [
+                'seller' => $seller,
+                'items' => $sellerItems->values()->toArray(),
+                'subtotal' => $sellerItems->sum('total'),
+            ];
+        })->values()->toArray();
+
+        return [
+            'items' => $items->values()->toArray(),
+            'grouped' => $grouped,
+            'subtotal' => $cart->subtotal,
+            'formatted_subtotal' => $cart->formatted_subtotal,
+        ];
     }
 }

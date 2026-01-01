@@ -27,6 +27,7 @@ use App\Http\Controllers\RulesController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PaymentMethodController;
+use App\Http\Controllers\WishlistController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -104,6 +105,12 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
     Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
     Route::delete('notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+
+    // Wishlist
+    Route::get('wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('wishlist/{product}/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+    Route::delete('wishlist/{product}', [WishlistController::class, 'remove'])->name('wishlist.remove');
+    Route::get('wishlist/{product}/check', [WishlistController::class, 'check'])->name('wishlist.check');
 
     // Likes
     Route::get('likes', [LikeController::class, 'index'])->name('likes.index');

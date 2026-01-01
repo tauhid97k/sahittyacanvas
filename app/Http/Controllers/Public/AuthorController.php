@@ -102,6 +102,7 @@ class AuthorController extends Controller
                 ['title' => 'লেখক', 'href' => '/authors'],
                 ['title' => $author->name_bn, 'href' => "/author/{$author->slug}"],
             ],
+            'seo' => $author->getDynamicSEOData(),
         ]);
     }
 
@@ -142,7 +143,7 @@ class AuthorController extends Controller
             $products = Product::query()
                 ->approved()
                 ->where('user_id', $user->id)
-                ->with('media')
+                ->with(['media', 'categories'])
                 ->orderByDesc('sales_count')
                 ->take(8)
                 ->get()
@@ -153,6 +154,11 @@ class AuthorController extends Controller
                     'price' => $product->price,
                     'discount_price' => $product->discount_price,
                     'image' => $product->getFirstMediaUrl('images', 'medium') ?: null,
+                    'categories' => $product->categories->map(fn ($cat) => [
+                        'id' => $cat->id,
+                        'name' => $cat->name_bn,
+                        'slug' => $cat->slug,
+                    ]),
                     'rating' => (float) ($product->reviews()->avg('rating') ?? 0),
                     'reviews_count' => $product->reviews()->count(),
                 ]);

@@ -1,4 +1,5 @@
 import PublicLayout from '@/components/public/layout/PublicLayout';
+import ProductCard from '@/components/public/ProductCard';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -34,7 +35,8 @@ interface Product {
     price: number;
     discount_price: number | null;
     image: string | null;
-    rating: number;
+    categories?: { id: number; name: string; slug: string }[];
+    rating: number | null;
     reviews_count: number;
 }
 
@@ -79,10 +81,6 @@ function formatNumber(num: number): string {
         return `${(num / 1000).toFixed(1)}K`;
     }
     return num.toString();
-}
-
-function formatPrice(paisa: number): string {
-    return `৳${(paisa / 100).toLocaleString('bn-BD')}`;
 }
 
 function formatDate(dateString: string): string {
@@ -343,59 +341,6 @@ function PostCard({ post }: { post: Post }) {
                             </span>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
-        </Link>
-    );
-}
-
-function ProductCard({ product }: { product: Product }) {
-    const hasDiscount =
-        product.discount_price && product.discount_price < product.price;
-
-    return (
-        <Link href={`/product/${product.slug}`}>
-            <Card className="group h-full overflow-hidden transition-shadow hover:shadow-lg">
-                <div className="aspect-square overflow-hidden bg-muted">
-                    {product.image ? (
-                        <img
-                            src={product.image}
-                            alt={product.name}
-                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                        />
-                    ) : (
-                        <div className="flex h-full items-center justify-center text-4xl text-muted-foreground">
-                            📦
-                        </div>
-                    )}
-                </div>
-                <CardContent className="p-4">
-                    <h3 className="line-clamp-2 font-semibold group-hover:text-primary">
-                        {product.name}
-                    </h3>
-                    <div className="mt-2 flex items-center gap-2">
-                        <span className="text-lg font-bold text-primary">
-                            {formatPrice(
-                                hasDiscount
-                                    ? product.discount_price!
-                                    : product.price,
-                            )}
-                        </span>
-                        {hasDiscount && (
-                            <span className="text-sm text-muted-foreground line-through">
-                                {formatPrice(product.price)}
-                            </span>
-                        )}
-                    </div>
-                    {product.reviews_count > 0 && product.rating != null && (
-                        <div className="mt-2 flex items-center gap-1 text-sm">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                            <span>{Number(product.rating).toFixed(1)}</span>
-                            <span className="text-muted-foreground">
-                                ({product.reviews_count})
-                            </span>
-                        </div>
-                    )}
                 </CardContent>
             </Card>
         </Link>

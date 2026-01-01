@@ -200,7 +200,7 @@ class PostController extends Controller
 
         $posts = Post::query()
             ->published()
-            ->whereHas('categories', fn ($q) => $q->where('id', $category->id))
+            ->whereHas('categories', fn ($q) => $q->where('categories.id', $category->id))
             ->with(['user', 'categories', 'media', 'author'])
             ->withTotalVisitCount()
             ->latest('published_at')

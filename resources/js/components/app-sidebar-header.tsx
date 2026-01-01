@@ -1,7 +1,16 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { NotificationBell } from '@/components/notifications';
+import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
+import { Link } from '@inertiajs/react';
+import { Home } from 'lucide-react';
 
 export function AppSidebarHeader({
     breadcrumbs = [],
@@ -15,6 +24,21 @@ export function AppSidebarHeader({
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
             <div className="flex items-center gap-2">
+                <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" asChild>
+                                <Link href="/">
+                                    <Home className="h-5 w-5" />
+                                    <span className="sr-only">Go to Home</span>
+                                </Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Go to Home</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
                 <NotificationBell />
             </div>
         </header>
