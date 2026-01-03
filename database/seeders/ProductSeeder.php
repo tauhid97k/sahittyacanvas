@@ -44,104 +44,92 @@ class ProductSeeder extends Seeder
 
         $products = [
             [
-                'name_bn' => 'প্রিমিয়াম কটন শার্ট',
-                'name_en' => 'Premium Cotton Shirt',
-                'description' => '<p>High quality premium cotton shirt for men. Comfortable and stylish.</p>',
-                'price' => 150000, // 1500 taka in paisa
+                'name_bn' => 'গীতাঞ্জলি - রবীন্দ্রনাথ ঠাকুর',
+                'name_en' => 'Gitanjali - Rabindranath Tagore',
+                'description' => '<p>নোবেল পুরস্কার বিজয়ী কাব্যগ্রন্থ। বাংলা সাহিত্যের অমূল্য সম্পদ।</p>',
+                'price' => 35000,
                 'discount_type' => 'percentage',
                 'discount_value' => 10,
                 'stock_count' => 50,
                 'stock_alert_threshold' => 10,
+                'image' => 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop',
             ],
             [
-                'name_bn' => 'ক্যাজুয়াল ডেনিম প্যান্ট',
-                'name_en' => 'Casual Denim Pants',
-                'description' => '<p>Comfortable casual denim pants. Perfect for everyday wear.</p>',
-                'price' => 200000, // 2000 taka
+                'name_bn' => 'বিদ্রোহী - কাজী নজরুল ইসলাম',
+                'name_en' => 'Bidrohi - Kazi Nazrul Islam',
+                'description' => '<p>বাংলাদেশের জাতীয় কবির বিখ্যাত কবিতা সংকলন।</p>',
+                'price' => 28000,
                 'discount_type' => null,
                 'discount_value' => null,
                 'stock_count' => 30,
                 'stock_alert_threshold' => 5,
+                'image' => 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=400&h=400&fit=crop',
             ],
             [
-                'name_bn' => 'স্মার্টফোন কেস',
-                'name_en' => 'Smartphone Case',
-                'description' => '<p>Durable smartphone case with premium finish.</p>',
-                'price' => 50000, // 500 taka
+                'name_bn' => 'পথের পাঁচালী - বিভূতিভূষণ বন্দ্যোপাধ্যায়',
+                'name_en' => 'Pather Panchali',
+                'description' => '<p>বাংলা সাহিত্যের অন্যতম শ্রেষ্ঠ উপন্যাস।</p>',
+                'price' => 42000,
                 'discount_type' => 'flat',
-                'discount_value' => 5000, // 50 taka discount
+                'discount_value' => 5000,
                 'stock_count' => 100,
                 'stock_alert_threshold' => 20,
+                'image' => 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&h=400&fit=crop',
             ],
             [
-                'name_bn' => 'ওয়্যারলেস ইয়ারবাড',
-                'name_en' => 'Wireless Earbuds',
-                'description' => '<p>High quality wireless earbuds with noise cancellation.</p>',
-                'price' => 350000, // 3500 taka
+                'name_bn' => 'দেবদাস - শরৎচন্দ্র চট্টোপাধ্যায়',
+                'name_en' => 'Devdas - Sarat Chandra',
+                'description' => '<p>বাংলা সাহিত্যের চিরায়ত প্রেমের উপন্যাস।</p>',
+                'price' => 38000,
                 'discount_type' => 'percentage',
                 'discount_value' => 15,
                 'stock_count' => 25,
                 'stock_alert_threshold' => 5,
+                'image' => 'https://images.unsplash.com/photo-1589998059171-988d887df646?w=400&h=400&fit=crop',
             ],
             [
-                'name_bn' => 'বাংলা উপন্যাস সংকলন',
-                'name_en' => 'Bengali Novel Collection',
-                'description' => '<p>Collection of classic Bengali novels.</p>',
-                'price' => 80000, // 800 taka
+                'name_bn' => 'বাংলা কবিতা সংকলন',
+                'name_en' => 'Bengali Poetry Collection',
+                'description' => '<p>বাংলা কবিতার সেরা সংকলন।</p>',
+                'price' => 55000,
                 'discount_type' => null,
                 'discount_value' => null,
                 'stock_count' => 40,
                 'stock_alert_threshold' => 10,
+                'image' => 'https://images.unsplash.com/photo-1476275466078-4007374efbbe?w=400&h=400&fit=crop',
             ],
             [
-                'name_bn' => 'সিল্ক শাড়ি',
-                'name_en' => 'Silk Saree',
-                'description' => '<p>Beautiful silk saree with traditional design.</p>',
-                'price' => 500000, // 5000 taka
+                'name_bn' => 'শেষের কবিতা - রবীন্দ্রনাথ',
+                'name_en' => 'Shesher Kobita',
+                'description' => '<p>রবীন্দ্রনাথের বিখ্যাত উপন্যাস।</p>',
+                'price' => 32000,
                 'discount_type' => 'percentage',
                 'discount_value' => 20,
                 'stock_count' => 15,
                 'stock_alert_threshold' => 3,
+                'image' => 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=400&h=400&fit=crop',
             ],
             [
-                'name_bn' => 'স্টেইনলেস স্টিল ওয়াটার বটল',
-                'name_en' => 'Stainless Steel Water Bottle',
-                'description' => '<p>Eco-friendly stainless steel water bottle.</p>',
-                'price' => 45000, // 450 taka
+                'name_bn' => 'চোখের বালি',
+                'name_en' => 'Chokher Bali',
+                'description' => '<p>রবীন্দ্রনাথ ঠাকুরের সামাজিক উপন্যাস।</p>',
+                'price' => 45000,
                 'discount_type' => null,
                 'discount_value' => null,
                 'stock_count' => 80,
                 'stock_alert_threshold' => 15,
+                'image' => 'https://images.unsplash.com/photo-1524578271613-d550eacf6090?w=400&h=400&fit=crop',
             ],
             [
-                'name_bn' => 'লেদার ওয়ালেট',
-                'name_en' => 'Leather Wallet',
-                'description' => '<p>Genuine leather wallet with multiple card slots.</p>',
-                'price' => 120000, // 1200 taka
+                'name_bn' => 'ফেলুদা সমগ্র',
+                'name_en' => 'Feluda Samagra',
+                'description' => '<p>সত্যজিৎ রায়ের বিখ্যাত গোয়েন্দা সিরিজ।</p>',
+                'price' => 85000,
                 'discount_type' => 'flat',
-                'discount_value' => 10000, // 100 taka discount
+                'discount_value' => 10000,
                 'stock_count' => 35,
                 'stock_alert_threshold' => 8,
-            ],
-            [
-                'name_bn' => 'স্পোর্টস শু',
-                'name_en' => 'Sports Shoes',
-                'description' => '<p>Comfortable sports shoes for running and gym.</p>',
-                'price' => 280000, // 2800 taka
-                'discount_type' => 'percentage',
-                'discount_value' => 25,
-                'stock_count' => 20,
-                'stock_alert_threshold' => 5,
-            ],
-            [
-                'name_bn' => 'ব্লুটুথ স্পিকার',
-                'name_en' => 'Bluetooth Speaker',
-                'description' => '<p>Portable bluetooth speaker with powerful bass.</p>',
-                'price' => 180000, // 1800 taka
-                'discount_type' => null,
-                'discount_value' => null,
-                'stock_count' => 45,
-                'stock_alert_threshold' => 10,
+                'image' => 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=400&fit=crop',
             ],
         ];
 
@@ -155,6 +143,9 @@ class ProductSeeder extends Seeder
             while (Product::where('slug', $slug)->exists()) {
                 $slug = $originalSlug . '-' . $counter++;
             }
+
+            $imageUrl = $productData['image'] ?? null;
+            unset($productData['image']);
 
             $product = Product::create([
                 'user_id' => $seller->id,
@@ -175,6 +166,11 @@ class ProductSeeder extends Seeder
                 'sales_count' => rand(0, 100),
                 'views_count' => rand(50, 500),
             ]);
+
+            // Add image from URL
+            if ($imageUrl) {
+                $product->addMediaFromUrl($imageUrl)->toMediaCollection('images');
+            }
 
             // Attach to category
             $product->categories()->attach($category->id);

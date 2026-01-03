@@ -1,19 +1,12 @@
+import LoginModal from '@/components/public/LoginModal';
 import PublicLayout from '@/components/public/layout/PublicLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { Link, useForm, usePage } from '@inertiajs/react';
-import { Bookmark, Eye, Heart, MessageCircle, Share2 } from 'lucide-react';
+import { Link, router, useForm, usePage } from '@inertiajs/react';
+import { Bookmark, ChevronRight, Eye, Heart, MessageCircle, Share2 } from 'lucide-react';
 import { useState } from 'react';
 
 interface Author {
@@ -80,6 +73,13 @@ interface RelatedPost {
     views_count: number;
 }
 
+interface SharedProps {
+    auth: { user: User | null };
+    likedPostIds?: number[];
+    bookmarkedPostIds?: number[];
+    [key: string]: unknown;
+}
+
 interface Props {
     post: Post;
     relatedPosts: RelatedPost[];
@@ -101,8 +101,12 @@ function formatDate(dateString: string): string {
 }
 
 export default function PostShow({ post, relatedPosts }: Props) {
-    const { auth } = usePage<{ auth: { user: User | null } }>().props;
+    const { auth, likedPostIds = [], bookmarkedPostIds = [] } = usePage<SharedProps>().props;
     const [currentPage, setCurrentPage] = useState(0);
+    const [showLoginModal, setShowLoginModal] = useState(false);
+    const [isLiked, setIsLiked] = useState(likedPostIds.includes(post.id));
+    const [isBookmarked, setIsBookmarked] = useState(bookmarkedPostIds.includes(post.id));
+    const [likesCount, setLikesCount] = useState(post.likes_count);
     const totalPages = post.pages.length + 1;
 
     const getCurrentContent = () => {
@@ -112,37 +116,63 @@ export default function PostShow({ post, relatedPosts }: Props) {
         return post.pages[currentPage - 1]?.content || '';
     };
 
+    const handleLike = () => {
+        if (!auth?.user) {
+            setShowLoginModal(true);
+            return;
+        }
+        // Optimistic update
+        setIsLiked(!isLiked);
+        setLikesCount(isLiked ? likesCount - 1 : likesCount + 1);
+        router.post(`/post/${post.id}/like`, {}, { preserveScroll: true });
+    };
+
+    const handleBookmark = () => {
+        if (!auth?.user) {
+            setShowLoginModal(true);
+            return;
+        }
+        // Optimistic update
+        setIsBookmarked(!isBookmarked);
+        router.post(`/post/${post.id}/bookmark`, {}, { preserveScroll: true });
+    };
+
+    const handleShare = async () => {
+        const url = window.location.href;
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: post.title,
+                    text: post.excerpt,
+                    url: url,
+                });
+            } catch {
+                // User cancelled or error
+            }
+        } else {
+            // Fallback: copy to clipboard
+            await navigator.clipboard.writeText(url);
+            alert('লিংক কপি করা হয়েছে!');
+        }
+    };
+
     return (
         <PublicLayout title={post.title} description={post.excerpt}>
             <article className="container py-8">
-                {/* Breadcrumb */}
-                <Breadcrumb className="mb-6">
-                    <BreadcrumbList>
-                        <BreadcrumbItem>
-                            <BreadcrumbLink href="/">হোম</BreadcrumbLink>
-                        </BreadcrumbItem>
-                        <BreadcrumbSeparator />
-                        <BreadcrumbItem>
-                            <BreadcrumbLink href="/posts">লেখা</BreadcrumbLink>
-                        </BreadcrumbItem>
-                        {post.categories[0] && (
-                            <>
-                                <BreadcrumbSeparator />
-                                <BreadcrumbItem>
-                                    <BreadcrumbLink
-                                        href={`/category/${post.categories[0].slug}`}
-                                    >
-                                        {post.categories[0].name_bn}
-                                    </BreadcrumbLink>
-                                </BreadcrumbItem>
-                            </>
-                        )}
-                        <BreadcrumbSeparator />
-                        <BreadcrumbItem>
-                            <BreadcrumbPage>{post.title}</BreadcrumbPage>
-                        </BreadcrumbItem>
-                    </BreadcrumbList>
-                </Breadcrumb>
+                {/* Breadcrumb - Simple inline style */}
+                <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+                    <Link href="/" className="hover:text-primary">হোম</Link>
+                    <ChevronRight className="h-4 w-4" />
+                    <Link href="/posts" className="hover:text-primary">লেখা</Link>
+                    {post.categories[0] && (
+                        <>
+                            <ChevronRight className="h-4 w-4" />
+                            <Link href={`/category/${post.categories[0].slug}`} className="hover:text-primary">
+                                {post.categories[0].name_bn}
+                            </Link>
+                        </>
+                    )}
+                </nav>
 
                 <div className="mx-auto max-w-3xl">
                     {/* Header */}
@@ -213,7 +243,7 @@ export default function PostShow({ post, relatedPosts }: Props) {
                                 </span>
                                 <span className="flex items-center gap-1">
                                     <Heart className="h-4 w-4" />
-                                    {formatNumber(post.likes_count)}
+                                    {formatNumber(likesCount)}
                                 </span>
                                 <span className="flex items-center gap-1">
                                     <MessageCircle className="h-4 w-4" />
@@ -265,18 +295,33 @@ export default function PostShow({ post, relatedPosts }: Props) {
                     )}
 
                     {/* Actions */}
-                    <div className="mt-8 flex items-center justify-center gap-4">
-                        <Button variant="outline" size="lg" className="gap-2">
-                            <Heart className="h-5 w-5" />
-                            পছন্দ করুন
+                    <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                        <Button
+                            variant={isLiked ? 'default' : 'outline'}
+                            size="lg"
+                            className="gap-2"
+                            onClick={handleLike}
+                        >
+                            <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />
+                            {isLiked ? 'পছন্দ করেছেন' : 'পছন্দ করুন'}
                         </Button>
-                        <Button variant="outline" size="lg" className="gap-2">
-                            <Bookmark className="h-5 w-5" />
-                            সংরক্ষণ করুন
+                        <Button
+                            variant={isBookmarked ? 'default' : 'outline'}
+                            size="lg"
+                            className="gap-2"
+                            onClick={handleBookmark}
+                        >
+                            <Bookmark className={`h-5 w-5 ${isBookmarked ? 'fill-current' : ''}`} />
+                            {isBookmarked ? 'সংরক্ষিত' : 'সংরক্ষণ করুন'}
                         </Button>
-                        <Button variant="outline" size="lg" className="gap-2">
+                        <Button
+                            variant="outline"
+                            size="lg"
+                            className="gap-2"
+                            onClick={handleShare}
+                        >
                             <Share2 className="h-5 w-5" />
-                            শেয়ার করুন
+                            শেয়ার করুন
                         </Button>
                     </div>
 
@@ -391,6 +436,7 @@ export default function PostShow({ post, relatedPosts }: Props) {
                     </section>
                 )}
             </article>
+            <LoginModal open={showLoginModal} onClose={() => setShowLoginModal(false)} />
         </PublicLayout>
     );
 }

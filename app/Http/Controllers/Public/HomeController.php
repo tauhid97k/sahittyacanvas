@@ -17,10 +17,10 @@ class HomeController extends Controller
     {
         $recentPosts = Post::query()
             ->published()
-            ->with(['user', 'categories', 'media'])
+            ->with(['user', 'categories', 'media', 'author'])
             ->withTotalVisitCount()
             ->latest('published_at')
-            ->take(8)
+            ->take(9)
             ->get()
             ->map(fn ($post) => [
                 'id' => $post->id,
@@ -29,9 +29,11 @@ class HomeController extends Controller
                 'excerpt' => $post->excerpt,
                 'featured_image' => $post->getFirstMediaUrl('featured', 'medium') ?: null,
                 'author' => [
-                    'id' => $post->user->id,
-                    'name' => $post->user->name,
-                    'avatar' => $post->user->avatar,
+                    'id' => $post->author?->id ?? $post->user->id,
+                    'name' => $post->author?->name_bn ?? $post->user->name,
+                    'avatar' => $post->author 
+                        ? ($post->author->getFirstMediaUrl('avatar', 'thumb') ?: null)
+                        : $post->user->avatar,
                 ],
                 'category' => $post->categories->first() ? [
                     'name' => $post->categories->first()->name_bn,
@@ -46,7 +48,7 @@ class HomeController extends Controller
             ->approved()
             ->with(['user', 'categories', 'media'])
             ->orderByDesc('sales_count')
-            ->take(4)
+            ->take(8)
             ->get()
             ->map(fn ($product) => [
                 'id' => $product->id,
@@ -54,6 +56,8 @@ class HomeController extends Controller
                 'slug' => $product->slug,
                 'price' => $product->price,
                 'discount_price' => $product->discount_price,
+                'discount_type' => $product->discount_type,
+                'discount_value' => $product->discount_value,
                 'image' => $product->getFirstMediaUrl('images', 'medium') ?: null,
                 'seller' => [
                     'id' => $product->user->id,
@@ -66,6 +70,7 @@ class HomeController extends Controller
                 ]),
                 'rating' => (float) ($product->reviews()->avg('rating') ?? 0),
                 'reviews_count' => $product->reviews()->count(),
+                'in_stock' => $product->stock_count > 0,
             ]);
 
         $famousAuthors = Author::query()

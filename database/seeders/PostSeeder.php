@@ -32,6 +32,22 @@ class PostSeeder extends Seeder
             return;
         }
 
+        // Unsplash images for posts
+        $postImages = [
+            'https://images.unsplash.com/photo-1473186505569-9c61870c11f9?w=800&h=500&fit=crop',
+            'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&h=500&fit=crop',
+            'https://images.unsplash.com/photo-1476275466078-4007374efbbe?w=800&h=500&fit=crop',
+            'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800&h=500&fit=crop',
+            'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=800&h=500&fit=crop',
+            'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=800&h=500&fit=crop',
+            'https://images.unsplash.com/photo-1524578271613-d550eacf6090?w=800&h=500&fit=crop',
+            'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&h=500&fit=crop',
+            'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800&h=500&fit=crop',
+            'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=800&h=500&fit=crop',
+            'https://images.unsplash.com/photo-1589998059171-988d887df646?w=800&h=500&fit=crop',
+            'https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&h=500&fit=crop',
+        ];
+
         $posts = [
             [
                 'title_bn' => 'সোনার তরী',
@@ -149,13 +165,13 @@ class PostSeeder extends Seeder
                 'excerpt' => 'রবীন্দ্রনাথের সাহিত্যে প্রকৃতির ভূমিকা নিয়ে আলোচনা।',
                 'meta_description' => 'রবীন্দ্র সাহিত্যে প্রকৃতি - সাহিত্য সমালোচনা',
                 'content' => "রবীন্দ্রনাথ ঠাকুরের সাহিত্যে প্রকৃতি একটি গুরুত্বপূর্ণ উপাদান। তাঁর কবিতা, গান, ছোটগল্প সর্বত্রই প্রকৃতির উপস্থিতি লক্ষণীয়।\n\nশান্তিনিকেতনের প্রকৃতি তাঁর সৃষ্টিকে গভীরভাবে প্রভাবিত করেছে।",
-                'status' => 'draft',
+                'status' => 'published',
                 'author_name' => null,
                 'category_names' => ['Essays'],
             ],
         ];
 
-        foreach ($posts as $postData) {
+        foreach ($posts as $index => $postData) {
             // Find related models
             $author = $postData['author_name'] 
                 ? $authors->firstWhere('name_en', $postData['author_name']) 
@@ -173,14 +189,22 @@ class PostSeeder extends Seeder
                 'title_bn' => $postData['title_bn'],
                 'title_en' => $postData['title_en'],
                 'excerpt' => $postData['excerpt'],
-                'content' => $postData['content'], // Page 1 content in post itself
+                'content' => $postData['content'],
                 'meta_description' => $postData['meta_description'],
                 'status' => $postData['status'],
                 'user_id' => $user->id,
                 'author_id' => $author?->id,
                 'slug' => Str::slug($slugSource),
-                'published_at' => $postData['status'] === 'published' ? now() : null,
+                'published_at' => $postData['status'] === 'published' ? now()->subDays(rand(1, 30)) : null,
             ]);
+
+            // Add featured image from URL using Spatie MediaLibrary
+            $imageUrl = $postImages[$index % count($postImages)];
+            try {
+                $post->addMediaFromUrl($imageUrl)->toMediaCollection('featured');
+            } catch (\Exception $e) {
+                $this->command->warn("Could not add image for post: {$post->title_bn}");
+            }
 
             // Attach categories
             $post->categories()->attach($categoryIds);

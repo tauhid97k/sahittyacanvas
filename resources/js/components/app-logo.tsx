@@ -18,5 +18,5 @@ export default function AppLogo() {
             ? '/images/white-logo.png'
             : '/images/logo.png';
 
-    return <img src={logo} alt="Sahittyacanvas" key={computedTheme} />;
+    return <img src={logo} className='h-8 sm:h-auto' alt="Sahittyacanvas" key={computedTheme} />;
 }

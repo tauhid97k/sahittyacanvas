@@ -1,4 +1,5 @@
 import PublicLayout from '@/components/public/layout/PublicLayout';
+import PostCard from '@/components/public/PostCard';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -8,9 +9,7 @@ import {
     BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Link, router } from '@inertiajs/react';
-import { Eye, Heart } from 'lucide-react';
 
 interface Post {
     id: number;
@@ -18,8 +17,15 @@ interface Post {
     slug: string;
     excerpt: string;
     featured_image: string | null;
-    author: { id: number; name: string; slug: string } | null;
-    user: { id: number; name: string; avatar: string | null };
+    author: {
+        id: number;
+        name: string;
+        avatar: string | null;
+    };
+    category?: {
+        name: string;
+        slug: string;
+    } | null;
     views_count: number;
     likes_count: number;
     published_at: string;
@@ -58,20 +64,6 @@ interface Props {
     breadcrumb: BreadcrumbItem[];
 }
 
-function formatNumber(num: number): string {
-    if (num >= 1000) {
-        return `${(num / 1000).toFixed(1)}K`;
-    }
-    return num.toString();
-}
-
-function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('bn-BD', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
-}
 
 export default function CategoryPage({
     category,
@@ -192,48 +184,3 @@ export default function CategoryPage({
     );
 }
 
-function PostCard({ post }: { post: Post }) {
-    return (
-        <Link href={`/post/${post.slug}`}>
-            <Card className="group h-full overflow-hidden transition-shadow hover:shadow-lg">
-                <div className="aspect-[16/10] overflow-hidden bg-muted">
-                    {post.featured_image ? (
-                        <img
-                            src={post.featured_image}
-                            alt={post.title}
-                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                        />
-                    ) : (
-                        <div className="flex h-full items-center justify-center text-4xl text-muted-foreground">
-                            📝
-                        </div>
-                    )}
-                </div>
-                <CardContent className="p-4">
-                    <h3 className="line-clamp-2 font-semibold group-hover:text-primary">
-                        {post.title}
-                    </h3>
-                    <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-                        {post.excerpt}
-                    </p>
-                    <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{post.author?.name ?? post.user.name}</span>
-                        <div className="flex items-center gap-3">
-                            <span className="flex items-center gap-1">
-                                <Eye className="h-3 w-3" />
-                                {formatNumber(post.views_count)}
-                            </span>
-                            <span className="flex items-center gap-1">
-                                <Heart className="h-3 w-3" />
-                                {formatNumber(post.likes_count)}
-                            </span>
-                        </div>
-                    </div>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                        {formatDate(post.published_at)}
-                    </p>
-                </CardContent>
-            </Card>
-        </Link>
-    );
-}

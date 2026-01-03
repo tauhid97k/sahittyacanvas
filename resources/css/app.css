@@ -228,3 +228,23 @@
 .tiptap img.editor-image.ProseMirror-selectednode {
     @apply border-2 border-primary;
 }
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* Category scroll - hide scrollbar only for this section */
+.category-scroll {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.category-scroll::-webkit-scrollbar {
+    display: none;
+}

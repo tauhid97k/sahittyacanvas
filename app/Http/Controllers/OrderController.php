@@ -230,14 +230,111 @@ class OrderController extends Controller
     }
 
     /**
+     * Show checkout page.
+     */
+    public function showCheckout(Request $request): Response
+    {
+        $cart = $this->getCart($request);
+
+        if (!$cart || $cart->isEmpty()) {
+            return Inertia::render('checkout/index', [
+                'cart' => [
+                    'items' => [],
+                    'grouped' => [],
+                    'subtotal' => 0,
+                    'formatted_subtotal' => '৳0',
+                ],
+                'user' => $request->user(),
+            ]);
+        }
+
+        $cart->load(['items.product.user', 'items.product.media']);
+
+        $items = $cart->items->map(fn ($item) => [
+            'id' => $item->id,
+            'product_id' => $item->product_id,
+            'quantity' => $item->quantity,
+            'unit_price' => $item->unit_price,
+            'total' => $item->total,
+            'product' => $item->product ? [
+                'id' => $item->product->id,
+                'name' => $item->product->name,
+                'slug' => $item->product->slug,
+                'image' => $item->product->getFirstMediaUrl('images', 'thumb') ?: null,
+                'stock' => $item->product->stock_count,
+                'seller' => $item->product->user ? [
+                    'id' => $item->product->user->id,
+                    'name' => $item->product->user->name,
+                    'username' => $item->product->user->username,
+                ] : null,
+            ] : null,
+        ])->filter(fn ($item) => $item['product'] !== null);
+
+        // Group by seller
+        $grouped = $items->groupBy('product.seller.id')->map(function ($sellerItems) {
+            $seller = $sellerItems->first()['product']['seller'] ?? null;
+            return [
+                'seller' => $seller,
+                'items' => $sellerItems->values()->toArray(),
+                'subtotal' => $sellerItems->sum('total'),
+            ];
+        })->values()->toArray();
+
+        return Inertia::render('checkout/index', [
+            'cart' => [
+                'items' => $items->values()->toArray(),
+                'grouped' => $grouped,
+                'subtotal' => $cart->subtotal,
+                'formatted_subtotal' => $cart->formatted_subtotal,
+            ],
+            'user' => $request->user() ? [
+                'id' => $request->user()->id,
+                'name' => $request->user()->name,
+                'email' => $request->user()->email,
+            ] : null,
+        ]);
+    }
+
+    /**
      * Checkout - create orders from cart.
      */
-    public function checkout(CheckoutRequest $request): RedirectResponse
+    public function checkout(Request $request): RedirectResponse
     {
-        $user = $request->user();
-        $validated = $request->validated();
+        // Validate request
+        $rules = [
+            'shipping_name' => ['required', 'string', 'max:255'],
+            'shipping_phone' => ['required', 'string', 'max:20', 'regex:/^(\+88)?01[3-9]\d{8}$/'],
+            'shipping_email' => ['nullable', 'email', 'max:255'],
+            'shipping_address' => ['required', 'string', 'max:500'],
+            'shipping_city' => ['required', 'string', 'max:100'],
+            'shipping_area' => ['nullable', 'string', 'max:100'],
+            'shipping_postal_code' => ['nullable', 'string', 'max:10'],
+            'buyer_notes' => ['nullable', 'string', 'max:500'],
+            'payment_method' => ['required', 'string', 'in:cod,bkash,nagad,bank'],
+        ];
 
-        $cart = Cart::where('user_id', $user->id)->first();
+        // Add guest registration rules if not authenticated
+        if (!$request->user()) {
+            $rules['email'] = ['required', 'email', 'max:255'];
+            $rules['password'] = ['required', 'string', 'min:8', 'confirmed'];
+        }
+
+        $validated = $request->validate($rules, [
+            'shipping_name.required' => 'নাম আবশ্যক।',
+            'shipping_phone.required' => 'ফোন নম্বর আবশ্যক।',
+            'shipping_phone.regex' => 'সঠিক বাংলাদেশি ফোন নম্বর দিন।',
+            'shipping_address.required' => 'ঠিকানা আবশ্যক।',
+            'shipping_city.required' => 'শহর আবশ্যক।',
+            'payment_method.required' => 'পেমেন্ট পদ্ধতি নির্বাচন করুন।',
+            'email.required' => 'ইমেইল আবশ্যক।',
+            'email.email' => 'সঠিক ইমেইল দিন।',
+            'password.required' => 'পাসওয়ার্ড আবশ্যক।',
+            'password.min' => 'পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।',
+            'password.confirmed' => 'পাসওয়ার্ড মিলছে না।',
+        ]);
+
+        $user = $request->user();
+        $cart = $this->getCart($request);
 
         if (!$cart || $cart->isEmpty()) {
             return back()->with('error', 'আপনার কার্ট খালি।');
@@ -263,6 +360,28 @@ class OrderController extends Controller
         DB::beginTransaction();
 
         try {
+            // Handle guest registration
+            if (!$user) {
+                // Check if email already exists
+                $existingUser = \App\Models\User::where('email', $validated['email'])->first();
+                if ($existingUser) {
+                    return back()->with('error', 'এই ইমেইল দিয়ে ইতিমধ্যে অ্যাকাউন্ট আছে। অনুগ্রহ করে লগইন করুন।');
+                }
+
+                // Create new user
+                $user = \App\Models\User::create([
+                    'name' => $validated['shipping_name'],
+                    'email' => $validated['email'],
+                    'password' => bcrypt($validated['password']),
+                ]);
+
+                // Transfer guest cart to new user
+                $cart->update(['user_id' => $user->id, 'session_id' => null]);
+
+                // Log in the new user
+                \Illuminate\Support\Facades\Auth::login($user);
+            }
+
             $orderNumbers = [];
 
             foreach ($itemsBySeller as $sellerId => $items) {
@@ -432,5 +551,19 @@ class OrderController extends Controller
         $order->cancel($request->reason);
 
         return back()->with('success', 'অর্ডার বাতিল হয়েছে।');
+    }
+
+    /**
+     * Get cart for current user or guest session.
+     */
+    private function getCart(Request $request): ?Cart
+    {
+        if ($request->user()) {
+            return Cart::where('user_id', $request->user()->id)->first();
+        }
+
+        // Guest cart via session
+        $sessionId = $request->session()->getId();
+        return Cart::where('session_id', $sessionId)->first();
     }
 }

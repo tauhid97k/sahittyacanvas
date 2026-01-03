@@ -56,6 +56,8 @@ class HandleInertiaRequests extends Middleware
             'cartCount' => fn () => $this->getCartCount($request),
             'cartItems' => fn () => $this->getCartItems($request),
             'wishlistIds' => fn () => $this->getWishlistIds($request),
+            'wishlistCount' => fn () => $this->getWishlistCount($request),
+            'wishlistItems' => fn () => $this->getWishlistItems($request),
         ];
     }
 
@@ -146,17 +148,27 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * Get cart item count for the current user.
+     * Get cart item count for the current user or guest.
      */
     protected function getCartCount(Request $request): int
     {
-        if (! $request->user()) {
-            return 0;
-        }
-
-        $cart = $request->user()->cart;
+        $cart = $this->getCartForRequest($request);
 
         return $cart ? $cart->items()->sum('quantity') : 0;
+    }
+
+    /**
+     * Get cart for current user or guest session.
+     */
+    protected function getCartForRequest(Request $request): ?\App\Models\Cart
+    {
+        if ($request->user()) {
+            return $request->user()->cart;
+        }
+
+        // Guest cart via session
+        $sessionId = $request->session()->getId();
+        return \App\Models\Cart::where('session_id', $sessionId)->first();
     }
 
     /**
@@ -174,20 +186,53 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
+     * Get wishlist count for the current user.
+     */
+    protected function getWishlistCount(Request $request): int
+    {
+        if (! $request->user()) {
+            return 0;
+        }
+
+        return Wishlist::where('user_id', $request->user()->id)->count();
+    }
+
+    /**
+     * Get wishlist items for the wishlist drawer.
+     */
+    protected function getWishlistItems(Request $request): array
+    {
+        if (! $request->user()) {
+            return [];
+        }
+
+        return Wishlist::where('user_id', $request->user()->id)
+            ->with(['product.media'])
+            ->get()
+            ->map(fn ($item) => [
+                'id' => $item->id,
+                'product_id' => $item->product_id,
+                'product' => $item->product ? [
+                    'id' => $item->product->id,
+                    'name' => $item->product->name,
+                    'slug' => $item->product->slug,
+                    'image' => $item->product->getFirstMediaUrl('images', 'thumb') ?: null,
+                    'price' => $item->product->price,
+                    'discount_price' => $item->product->discount_price,
+                    'in_stock' => $item->product->stock_count > 0,
+                ] : null,
+            ])
+            ->filter(fn ($item) => $item['product'] !== null)
+            ->values()
+            ->toArray();
+    }
+
+    /**
      * Get cart items grouped by seller for the cart drawer.
      */
     protected function getCartItems(Request $request): array
     {
-        if (! $request->user()) {
-            return [
-                'items' => [],
-                'grouped' => [],
-                'subtotal' => 0,
-                'formatted_subtotal' => '৳0.00',
-            ];
-        }
-
-        $cart = $request->user()->cart;
+        $cart = $this->getCartForRequest($request);
 
         if (! $cart) {
             return [

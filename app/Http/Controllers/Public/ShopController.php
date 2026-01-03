@@ -120,9 +120,10 @@ class ShopController extends Controller
         $relatedProducts = Product::query()
             ->approved()
             ->whereNotNull('published_at')
-            ->where('id', '!=', $product->id)
+            ->where('products.id', '!=', $product->id)
             ->whereHas('categories', fn ($q) => $q->whereIn('product_categories.id', $product->categories->pluck('id')))
             ->with(['user', 'media'])
+            ->withCount('reviews')
             ->take(4)
             ->get()
             ->map(fn ($p) => [
@@ -133,6 +134,8 @@ class ShopController extends Controller
                 'discount_price' => $p->discount_price,
                 'image' => $p->getFirstMediaUrl('images', 'medium') ?: null,
                 'rating' => (float) ($p->reviews()->avg('rating') ?? 0),
+                'reviews_count' => $p->reviews_count ?? 0,
+                'in_stock' => $p->stock > 0,
             ]);
 
         // Breadcrumb

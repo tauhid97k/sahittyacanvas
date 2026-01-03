@@ -38,6 +38,13 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // Blog Routes
 Route::get('/posts', [PublicPostController::class, 'index'])->name('public.posts.index');
 Route::get('/post/{slug}', [PublicPostController::class, 'show'])->name('public.posts.show');
+
+// Post Interactions (authenticated)
+Route::middleware(['auth'])->group(function () {
+    Route::post('/post/{post}/like', [PublicPostController::class, 'toggleLike'])->name('public.posts.like');
+    Route::post('/post/{post}/bookmark', [PublicPostController::class, 'toggleBookmark'])->name('public.posts.bookmark');
+    Route::post('/post/{post}/comments', [PublicPostController::class, 'storeComment'])->name('public.posts.comment');
+});
 Route::get('/category/{slug}', [PublicPostController::class, 'category'])->name('public.category.show');
 
 // Authors Routes
@@ -203,19 +210,20 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
     Route::post('settings/privacy-policy', [PlatformSettingsController::class, 'updatePrivacyPolicy'])->name('platform-settings.privacy-policy');
 });
 
-// Cart Routes (authenticated users)
+// Cart Routes (guest and authenticated users)
+Route::get('cart', [CartController::class, 'index'])->name('cart.index');
+Route::post('cart', [CartController::class, 'store'])->name('cart.store');
+Route::put('cart/{cartItem}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('cart/{cartItem}', [CartController::class, 'destroy'])->name('cart.destroy');
+Route::delete('cart', [CartController::class, 'clear'])->name('cart.clear');
+Route::get('cart/count', [CartController::class, 'count'])->name('cart.count');
+
+// Checkout (guest and authenticated users)
+Route::get('checkout', [OrderController::class, 'showCheckout'])->name('checkout.show');
+Route::post('checkout', [OrderController::class, 'checkout'])->name('checkout');
+
+// Orders (authenticated users)
 Route::middleware(['auth'])->group(function () {
-    Route::get('cart', [CartController::class, 'index'])->name('cart.index');
-    Route::post('cart', [CartController::class, 'store'])->name('cart.store');
-    Route::put('cart/{cartItem}', [CartController::class, 'update'])->name('cart.update');
-    Route::delete('cart/{cartItem}', [CartController::class, 'destroy'])->name('cart.destroy');
-    Route::delete('cart', [CartController::class, 'clear'])->name('cart.clear');
-    Route::get('cart/count', [CartController::class, 'count'])->name('cart.count');
-
-    // Checkout
-    Route::post('checkout', [OrderController::class, 'checkout'])->name('checkout');
-
-    // Buyer Orders
     Route::get('my-orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('my-orders/{order}', [OrderController::class, 'buyerShow'])->name('orders.show');
     Route::post('my-orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');

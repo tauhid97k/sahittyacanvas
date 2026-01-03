@@ -3,9 +3,14 @@
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bookmark;
 use App\Models\Category;
+use App\Models\Comment;
+use App\Models\Like;
 use App\Models\Post;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -46,15 +51,12 @@ class PostController extends Controller
             'slug' => $post->slug,
             'excerpt' => $post->excerpt,
             'featured_image' => $post->getFirstMediaUrl('featured', 'medium') ?: null,
-            'author' => $post->author ? [
-                'id' => $post->author->id,
-                'name' => $post->author->name_bn,
-                'slug' => $post->author->slug,
-            ] : null,
-            'user' => [
-                'id' => $post->user->id,
-                'name' => $post->user->name,
-                'avatar' => $post->user->avatar,
+            'author' => [
+                'id' => $post->author?->id ?? $post->user->id,
+                'name' => $post->author?->name_bn ?? $post->user->name,
+                'avatar' => $post->author 
+                    ? ($post->author->getFirstMediaUrl('avatar', 'thumb') ?: null)
+                    : $post->user->avatar,
             ],
             'category' => $post->categories->first() ? [
                 'name' => $post->categories->first()->name_bn,
@@ -100,10 +102,10 @@ class PostController extends Controller
                 'author',
                 'categories',
                 'media',
-                'pages' => fn ($q) => $q->published()->ordered(),
-                'comments' => fn ($q) => $q->approved()->whereNull('parent_id')->with([
+                'pages' => fn ($q) => $q->ordered(),
+                'comments' => fn ($q) => $q->visible()->whereNull('parent_id')->with([
                     'user',
-                    'children' => fn ($q) => $q->approved()->with('user'),
+                    'children' => fn ($q) => $q->visible()->with('user'),
                 ]),
             ])
             ->withTotalVisitCount()
@@ -113,11 +115,20 @@ class PostController extends Controller
         // Record visit
         $post->visit();
 
+        // Get user's liked and bookmarked post IDs
+        $likedPostIds = [];
+        $bookmarkedPostIds = [];
+        if (Auth::check()) {
+            $userId = Auth::id();
+            $likedPostIds = Like::where('user_id', $userId)->pluck('post_id')->toArray();
+            $bookmarkedPostIds = Bookmark::where('user_id', $userId)->pluck('post_id')->toArray();
+        }
+
         // Get related posts
         $relatedPosts = Post::query()
             ->published()
-            ->where('id', '!=', $post->id)
-            ->whereHas('categories', fn ($q) => $q->whereIn('id', $post->categories->pluck('id')))
+            ->where('posts.id', '!=', $post->id)
+            ->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $post->categories->pluck('id')))
             ->with(['user', 'categories', 'media'])
             ->withTotalVisitCount()
             ->take(4)
@@ -190,6 +201,8 @@ class PostController extends Controller
                 'published_at' => $post->published_at?->toISOString(),
             ],
             'relatedPosts' => $relatedPosts,
+            'likedPostIds' => $likedPostIds,
+            'bookmarkedPostIds' => $bookmarkedPostIds,
             'seo' => $post->getDynamicSEOData(),
         ]);
     }
@@ -211,16 +224,17 @@ class PostController extends Controller
                 'slug' => $post->slug,
                 'excerpt' => $post->excerpt,
                 'featured_image' => $post->getFirstMediaUrl('featured', 'medium') ?: null,
-                'author' => $post->author ? [
-                    'id' => $post->author->id,
-                    'name' => $post->author->name_bn,
-                    'slug' => $post->author->slug,
-                ] : null,
-                'user' => [
-                    'id' => $post->user->id,
-                    'name' => $post->user->name,
-                    'avatar' => $post->user->avatar,
+                'author' => [
+                    'id' => $post->author?->id ?? $post->user->id,
+                    'name' => $post->author?->name_bn ?? $post->user->name,
+                    'avatar' => $post->author 
+                        ? ($post->author->getFirstMediaUrl('avatar', 'thumb') ?: null)
+                        : $post->user->avatar,
                 ],
+                'category' => $post->categories->first() ? [
+                    'name' => $post->categories->first()->name_bn,
+                    'slug' => $post->categories->first()->slug,
+                ] : null,
                 'views_count' => $post->visit_count_total ?? 0,
                 'likes_count' => $post->likes_count,
                 'published_at' => $post->published_at?->toISOString(),
@@ -263,5 +277,76 @@ class PostController extends Controller
             'subcategories' => $subcategories,
             'breadcrumb' => $breadcrumb,
         ]);
+    }
+
+    /**
+     * Toggle like on a post
+     */
+    public function toggleLike(Request $request, Post $post): RedirectResponse
+    {
+        $userId = $request->user()->id;
+        
+        $like = Like::where('user_id', $userId)
+            ->where('post_id', $post->id)
+            ->first();
+
+        if ($like) {
+            $like->delete();
+            $message = 'পছন্দ সরানো হয়েছে';
+        } else {
+            Like::create([
+                'user_id' => $userId,
+                'post_id' => $post->id,
+            ]);
+            $message = 'পছন্দ করা হয়েছে';
+        }
+
+        return back()->with('success', $message);
+    }
+
+    /**
+     * Toggle bookmark on a post
+     */
+    public function toggleBookmark(Request $request, Post $post): RedirectResponse
+    {
+        $userId = $request->user()->id;
+        
+        $bookmark = Bookmark::where('user_id', $userId)
+            ->where('post_id', $post->id)
+            ->first();
+
+        if ($bookmark) {
+            $bookmark->delete();
+            $message = 'সংরক্ষণ সরানো হয়েছে';
+        } else {
+            Bookmark::create([
+                'user_id' => $userId,
+                'post_id' => $post->id,
+            ]);
+            $message = 'সংরক্ষণ করা হয়েছে';
+        }
+
+        return back()->with('success', $message);
+    }
+
+    /**
+     * Store a comment on a post
+     */
+    public function storeComment(Request $request, Post $post): RedirectResponse
+    {
+        $validated = $request->validate([
+            'content' => 'required|string|max:5000',
+            'parent_id' => 'nullable|exists:comments,id',
+        ]);
+
+        Comment::create([
+            'post_id' => $post->id,
+            'user_id' => $request->user()->id,
+            'content' => $validated['content'],
+            'parent_id' => $validated['parent_id'] ?? null,
+            'moderation_status' => 'auto', // Auto-approve for now
+        ]);
+
+        return back()->with('success', 'মন্তব্য সফলভাবে যোগ করা হয়েছে');
     }
 }

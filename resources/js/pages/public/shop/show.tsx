@@ -1,19 +1,13 @@
+import LoginModal from '@/components/public/LoginModal';
 import PublicLayout from '@/components/public/layout/PublicLayout';
+import ProductCard from '@/components/public/ProductCard';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Link, useForm, usePage } from '@inertiajs/react';
-import { Minus, Plus, ShoppingCart, Star } from 'lucide-react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { ChevronRight, Heart, Minus, Plus, ShoppingBag, ShoppingCart, Star } from 'lucide-react';
 import { useState } from 'react';
 
 interface Image {
@@ -73,7 +67,15 @@ interface RelatedProduct {
     price: number;
     discount_price: number | null;
     image: string | null;
-    rating: number;
+    rating: number | null;
+    reviews_count: number;
+    in_stock?: boolean;
+}
+
+interface SharedProps {
+    auth: { user: { id: number; name: string } | null };
+    wishlistIds?: number[];
+    [key: string]: unknown;
 }
 
 interface BreadcrumbItemType {
@@ -104,14 +106,12 @@ export default function ProductShow({
     relatedProducts,
     breadcrumb,
 }: Props) {
-    const { auth } = usePage<{ auth: { user: { id: number } | null } }>().props;
+    const { auth, wishlistIds = [] } = usePage<SharedProps>().props;
     const [selectedImage, setSelectedImage] = useState(0);
     const [quantity, setQuantity] = useState(1);
-
-    const { post, processing } = useForm({
-        product_id: product.id,
-        quantity: 1,
-    });
+    const [processing, setProcessing] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
+    const isInWishlist = wishlistIds.includes(product.id);
 
     const hasDiscount =
         product.discount_price && product.discount_price < product.price;
@@ -122,7 +122,28 @@ export default function ProductShow({
     const inStock = product.stock > 0;
 
     const handleAddToCart = () => {
-        post('/cart');
+        setProcessing(true);
+        router.post('/cart', { product_id: product.id, quantity }, {
+            preserveScroll: true,
+            onFinish: () => setProcessing(false),
+        });
+    };
+
+    const handleBuyNow = () => {
+        setProcessing(true);
+        router.post('/cart', { product_id: product.id, quantity }, {
+            preserveScroll: true,
+            onSuccess: () => router.visit('/checkout'),
+            onFinish: () => setProcessing(false),
+        });
+    };
+
+    const handleWishlistToggle = () => {
+        if (!auth?.user) {
+            setShowLoginModal(true);
+            return;
+        }
+        router.post(`/dashboard/wishlist/${product.id}/toggle`, {}, { preserveScroll: true });
     };
 
     return (
@@ -131,27 +152,21 @@ export default function ProductShow({
             description={product.description || undefined}
         >
             <div className="container py-8">
-                {/* Breadcrumb */}
-                <Breadcrumb className="mb-6">
-                    <BreadcrumbList>
-                        {breadcrumb.map((item, index) => (
-                            <BreadcrumbItem key={index}>
-                                {index === breadcrumb.length - 1 ? (
-                                    <BreadcrumbPage>
-                                        {item.title}
-                                    </BreadcrumbPage>
-                                ) : (
-                                    <>
-                                        <BreadcrumbLink href={item.href}>
-                                            {item.title}
-                                        </BreadcrumbLink>
-                                        <BreadcrumbSeparator />
-                                    </>
-                                )}
-                            </BreadcrumbItem>
-                        ))}
-                    </BreadcrumbList>
-                </Breadcrumb>
+                {/* Breadcrumb - Simple inline style */}
+                <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+                    {breadcrumb.map((item, index) => (
+                        <span key={index} className="flex items-center gap-2">
+                            {index > 0 && <ChevronRight className="h-4 w-4" />}
+                            {index === breadcrumb.length - 1 ? (
+                                <span className="text-foreground">{item.title}</span>
+                            ) : (
+                                <Link href={item.href} className="hover:text-primary">
+                                    {item.title}
+                                </Link>
+                            )}
+                        </span>
+                    ))}
+                </nav>
 
                 {/* Product Details */}
                 <div className="grid gap-8 lg:grid-cols-2">
@@ -305,27 +320,33 @@ export default function ProductShow({
                                 </div>
                                 <Button
                                     size="lg"
+                                    variant="outline"
                                     className="gap-2"
                                     onClick={handleAddToCart}
-                                    disabled={processing || !auth?.user}
+                                    disabled={processing}
                                 >
                                     <ShoppingCart className="h-5 w-5" />
                                     কার্টে যোগ করুন
                                 </Button>
-                            </div>
-                        )}
-
-                        {!auth?.user && (
-                            <p className="mt-4 text-sm text-muted-foreground">
-                                কার্টে যোগ করতে{' '}
-                                <Link
-                                    href="/login"
-                                    className="text-primary hover:underline"
+                                <Button
+                                    size="lg"
+                                    className="gap-2"
+                                    onClick={handleBuyNow}
+                                    disabled={processing}
                                 >
-                                    লগইন
-                                </Link>{' '}
-                                করুন
-                            </p>
+                                    <ShoppingBag className="h-5 w-5" />
+                                    এখনই কিনুন
+                                </Button>
+                                <Button
+                                    size="lg"
+                                    variant={isInWishlist ? 'default' : 'outline'}
+                                    className="gap-2"
+                                    onClick={handleWishlistToggle}
+                                >
+                                    <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-current' : ''}`} />
+                                    {isInWishlist ? 'পছন্দে আছে' : 'পছন্দে যোগ করুন'}
+                                </Button>
+                            </div>
                         )}
 
                         <Separator className="my-6" />
@@ -402,12 +423,26 @@ export default function ProductShow({
                         </h2>
                         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                             {relatedProducts.map((p) => (
-                                <RelatedProductCard key={p.id} product={p} />
+                                <ProductCard
+                                    key={p.id}
+                                    product={{
+                                        id: p.id,
+                                        name: p.name,
+                                        slug: p.slug,
+                                        price: p.price,
+                                        discount_price: p.discount_price,
+                                        image: p.image,
+                                        rating: p.rating,
+                                        reviews_count: p.reviews_count,
+                                        in_stock: p.in_stock,
+                                    }}
+                                />
                             ))}
                         </div>
                     </div>
                 )}
             </div>
+            <LoginModal open={showLoginModal} onClose={() => setShowLoginModal(false)} />
         </PublicLayout>
     );
 }
@@ -466,46 +501,3 @@ function ReviewCard({ review }: { review: Review }) {
     );
 }
 
-function RelatedProductCard({ product }: { product: RelatedProduct }) {
-    const hasDiscount =
-        product.discount_price && product.discount_price < product.price;
-
-    return (
-        <Link href={`/product/${product.slug}`}>
-            <Card className="group h-full overflow-hidden transition-shadow hover:shadow-lg">
-                <div className="aspect-square overflow-hidden bg-muted">
-                    {product.image ? (
-                        <img
-                            src={product.image}
-                            alt={product.name}
-                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                        />
-                    ) : (
-                        <div className="flex h-full items-center justify-center text-4xl text-muted-foreground">
-                            📦
-                        </div>
-                    )}
-                </div>
-                <CardContent className="p-4">
-                    <h3 className="line-clamp-2 font-semibold group-hover:text-primary">
-                        {product.name}
-                    </h3>
-                    <div className="mt-2 flex items-center gap-2">
-                        <span className="font-bold text-primary">
-                            {formatPrice(
-                                hasDiscount
-                                    ? product.discount_price!
-                                    : product.price,
-                            )}
-                        </span>
-                        {hasDiscount && (
-                            <span className="text-sm text-muted-foreground line-through">
-                                {formatPrice(product.price)}
-                            </span>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-        </Link>
-    );
-}

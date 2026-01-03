@@ -1,3 +1,5 @@
+import AppLogo from '@/components/app-logo';
+import { Button } from '@/components/ui/button';
 import {
     Collapsible,
     CollapsibleContent,
@@ -11,7 +13,7 @@ import {
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
-import { ChevronDown } from 'lucide-react';
+import { BookOpen, ChevronDown, Home, LayoutDashboard, LogIn, Package, ShoppingBag, UserPlus, Users } from 'lucide-react';
 import { useState } from 'react';
 
 interface Category {
@@ -42,169 +44,181 @@ export default function MobileMenu({
 
     return (
         <Sheet open={open} onOpenChange={onClose}>
-            <SheetContent side="left" className="w-[300px] sm:w-[350px]">
-                <SheetHeader>
-                    <SheetTitle className="text-left">মেনু</SheetTitle>
+            <SheetContent side="left" className="flex w-[300px] flex-col p-0 sm:w-[350px]">
+                {/* Header with Logo */}
+                <SheetHeader className="border-b bg-muted/30 px-4 py-4">
+                    <SheetTitle className="flex items-center gap-3">
+                        <AppLogo />
+                    </SheetTitle>
                 </SheetHeader>
-                <nav className="mt-6 flex flex-col gap-1">
-                    {/* Home */}
-                    <Link
-                        href="/"
-                        onClick={onClose}
-                        className="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
-                    >
-                        হোম
-                    </Link>
 
-                    {/* Blog Categories */}
-                    <Collapsible open={blogOpen} onOpenChange={setBlogOpen}>
-                        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium hover:bg-accent">
-                            লেখালেখি
-                            <ChevronDown
-                                className={cn(
-                                    'h-4 w-4 transition-transform',
-                                    blogOpen && 'rotate-180',
-                                )}
-                            />
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="ml-3 border-l pl-3">
-                            {blogCategories.map((category) => (
-                                <div key={category.id}>
-                                    <Link
-                                        href={`/category/${category.slug}`}
-                                        onClick={onClose}
-                                        className="block rounded-md px-3 py-2 text-sm hover:bg-accent"
-                                    >
-                                        {category.name_bn}
-                                    </Link>
-                                    {category.children &&
-                                        category.children.length > 0 && (
-                                            <div className="ml-3 border-l pl-3">
-                                                {category.children.map(
-                                                    (child) => (
-                                                        <Link
-                                                            key={child.id}
-                                                            href={`/category/${child.slug}`}
-                                                            onClick={onClose}
-                                                            className="block rounded-md px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
-                                                        >
-                                                            {child.name_bn}
-                                                        </Link>
-                                                    ),
-                                                )}
-                                            </div>
-                                        )}
-                                </div>
-                            ))}
-                            <Link
-                                href="/posts"
-                                onClick={onClose}
-                                className="block rounded-md px-3 py-2 text-sm font-medium text-primary hover:bg-accent"
-                            >
-                                সব লেখা দেখুন →
-                            </Link>
-                        </CollapsibleContent>
-                    </Collapsible>
-
-                    {/* Famous Writers */}
-                    <Link
-                        href="/authors"
-                        onClick={onClose}
-                        className="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
-                    >
-                        খ্যাতিমান কবি/লেখক
-                    </Link>
-
-                    {/* Shop Categories */}
-                    <Collapsible open={shopOpen} onOpenChange={setShopOpen}>
-                        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium hover:bg-accent">
-                            কেনাকাটা করুন
-                            <ChevronDown
-                                className={cn(
-                                    'h-4 w-4 transition-transform',
-                                    shopOpen && 'rotate-180',
-                                )}
-                            />
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="ml-3 border-l pl-3">
-                            {productCategories.map((category) => (
-                                <div key={category.id}>
-                                    <Link
-                                        href={`/product-category/${category.slug}`}
-                                        onClick={onClose}
-                                        className="block rounded-md px-3 py-2 text-sm hover:bg-accent"
-                                    >
-                                        {category.name_bn}
-                                    </Link>
-                                    {category.children &&
-                                        category.children.length > 0 && (
-                                            <div className="ml-3 border-l pl-3">
-                                                {category.children.map(
-                                                    (child) => (
-                                                        <Link
-                                                            key={child.id}
-                                                            href={`/product-category/${child.slug}`}
-                                                            onClick={onClose}
-                                                            className="block rounded-md px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
-                                                        >
-                                                            {child.name_bn}
-                                                        </Link>
-                                                    ),
-                                                )}
-                                            </div>
-                                        )}
-                                </div>
-                            ))}
-                            <Link
-                                href="/shop"
-                                onClick={onClose}
-                                className="block rounded-md px-3 py-2 text-sm font-medium text-primary hover:bg-accent"
-                            >
-                                সব পণ্য দেখুন →
-                            </Link>
-                        </CollapsibleContent>
-                    </Collapsible>
-
-                    {/* About Us */}
-                    <Link
-                        href="/about"
-                        onClick={onClose}
-                        className="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
-                    >
-                        আমাদের সম্পর্কে
-                    </Link>
-
-                    {/* Divider */}
-                    <div className="my-4 border-t" />
-
-                    {/* Auth */}
-                    {user ? (
+                {/* Navigation */}
+                <nav className="flex-1 overflow-y-auto px-3 py-4">
+                    <div className="space-y-1">
+                        {/* Home */}
                         <Link
-                            href="/dashboard"
+                            href="/"
                             onClick={onClose}
-                            className="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
+                            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
                         >
-                            ড্যাশবোর্ড
+                            <Home className="h-4 w-4 text-muted-foreground" />
+                            হোম
                         </Link>
-                    ) : (
-                        <>
-                            <Link
-                                href="/login"
-                                onClick={onClose}
-                                className="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
-                            >
-                                লগইন
-                            </Link>
-                            <Link
-                                href="/register"
-                                onClick={onClose}
-                                className="rounded-md bg-primary px-3 py-2 text-center text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                            >
-                                নিবন্ধন
-                            </Link>
-                        </>
-                    )}
+
+                        {/* Blog Categories */}
+                        <Collapsible open={blogOpen} onOpenChange={setBlogOpen}>
+                            <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent">
+                                <span className="flex items-center gap-3">
+                                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                                    লেখালেখি
+                                </span>
+                                <ChevronDown
+                                    className={cn(
+                                        'h-4 w-4 text-muted-foreground transition-transform',
+                                        blogOpen && 'rotate-180',
+                                    )}
+                                />
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-1 ml-4 space-y-1 border-l-2 border-primary/20 pl-4">
+                                {blogCategories.map((category) => (
+                                    <div key={category.id}>
+                                        <Link
+                                            href={`/category/${category.slug}`}
+                                            onClick={onClose}
+                                            className="block rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent"
+                                        >
+                                            {category.name_bn}
+                                        </Link>
+                                        {category.children &&
+                                            category.children.length > 0 && (
+                                                <div className="ml-3 space-y-0.5 border-l border-border/50 pl-3">
+                                                    {category.children.map(
+                                                        (child) => (
+                                                            <Link
+                                                                key={child.id}
+                                                                href={`/category/${child.slug}`}
+                                                                onClick={onClose}
+                                                                className="block rounded-md px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                                                            >
+                                                                {child.name_bn}
+                                                            </Link>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            )}
+                                    </div>
+                                ))}
+                                <Link
+                                    href="/posts"
+                                    onClick={onClose}
+                                    className="block rounded-md px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+                                >
+                                    সব লেখা দেখুন →
+                                </Link>
+                            </CollapsibleContent>
+                        </Collapsible>
+
+                        {/* Famous Writers */}
+                        <Link
+                            href="/authors"
+                            onClick={onClose}
+                            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
+                        >
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            খ্যাতিমান কবি/লেখক
+                        </Link>
+
+                        {/* Shop Categories */}
+                        <Collapsible open={shopOpen} onOpenChange={setShopOpen}>
+                            <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent">
+                                <span className="flex items-center gap-3">
+                                    <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                                    কেনাকাটা করুন
+                                </span>
+                                <ChevronDown
+                                    className={cn(
+                                        'h-4 w-4 text-muted-foreground transition-transform',
+                                        shopOpen && 'rotate-180',
+                                    )}
+                                />
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-1 ml-4 space-y-1 border-l-2 border-primary/20 pl-4">
+                                {productCategories.map((category) => (
+                                    <div key={category.id}>
+                                        <Link
+                                            href={`/product-category/${category.slug}`}
+                                            onClick={onClose}
+                                            className="block rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent"
+                                        >
+                                            {category.name_bn}
+                                        </Link>
+                                        {category.children &&
+                                            category.children.length > 0 && (
+                                                <div className="ml-3 space-y-0.5 border-l border-border/50 pl-3">
+                                                    {category.children.map(
+                                                        (child) => (
+                                                            <Link
+                                                                key={child.id}
+                                                                href={`/product-category/${child.slug}`}
+                                                                onClick={onClose}
+                                                                className="block rounded-md px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                                                            >
+                                                                {child.name_bn}
+                                                            </Link>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            )}
+                                    </div>
+                                ))}
+                                <Link
+                                    href="/shop"
+                                    onClick={onClose}
+                                    className="block rounded-md px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+                                >
+                                    সব পণ্য দেখুন →
+                                </Link>
+                            </CollapsibleContent>
+                        </Collapsible>
+
+                        {/* About Us */}
+                        <Link
+                            href="/about"
+                            onClick={onClose}
+                            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
+                        >
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                            আমাদের সম্পর্কে
+                        </Link>
+                    </div>
                 </nav>
+
+                {/* Footer with Auth */}
+                <div className="border-t bg-muted/30 px-4 py-4">
+                    {user ? (
+                        <Button asChild variant="outline" className="w-full gap-2">
+                            <Link href="/dashboard" onClick={onClose}>
+                                <LayoutDashboard className="h-4 w-4" />
+                                ড্যাশবোর্ড
+                            </Link>
+                        </Button>
+                    ) : (
+                        <div className="flex flex-col gap-2">
+                            <Button asChild variant="outline" className="w-full gap-2">
+                                <Link href="/login" onClick={onClose}>
+                                    <LogIn className="h-4 w-4" />
+                                    লগইন
+                                </Link>
+                            </Button>
+                            <Button asChild className="w-full gap-2">
+                                <Link href="/register" onClick={onClose}>
+                                    <UserPlus className="h-4 w-4" />
+                                    নিবন্ধন
+                                </Link>
+                            </Button>
+                        </div>
+                    )}
+                </div>
             </SheetContent>
         </Sheet>
     );

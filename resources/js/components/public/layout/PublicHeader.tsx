@@ -11,10 +11,11 @@ import {
     navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
 import { Link, usePage } from '@inertiajs/react';
-import { Heart, Menu, Search, ShoppingCart, X } from 'lucide-react';
+import { BookOpen, Heart, Menu, Package, Search, ShoppingCart, X } from 'lucide-react';
 import { useState } from 'react';
 import CartDrawer from './CartDrawer';
 import MobileMenu from './MobileMenu';
+import WishlistDrawer from './WishlistDrawer';
 
 interface CartItem {
     id: number;
@@ -45,6 +46,20 @@ interface CartItems {
     formatted_subtotal: string;
 }
 
+interface WishlistItem {
+    id: number;
+    product_id: number;
+    product: {
+        id: number;
+        name: string;
+        slug: string;
+        image: string | null;
+        price: number;
+        discount_price: number | null;
+        in_stock: boolean;
+    } | null;
+}
+
 interface Category {
     id: number;
     name_bn: string;
@@ -65,17 +80,22 @@ export default function PublicHeader() {
             subtotal: 0,
             formatted_subtotal: '৳0.00',
         },
+        wishlistCount = 0,
+        wishlistItems = [],
     } = usePage<{
         auth: { user: { id: number; name: string } | null };
         blogCategories: Category[];
         productCategories: Category[];
         cartCount: number;
         cartItems: CartItems;
+        wishlistCount: number;
+        wishlistItems: WishlistItem[];
     }>().props;
 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [cartOpen, setCartOpen] = useState(false);
+    const [wishlistOpen, setWishlistOpen] = useState(false);
 
     const user = auth?.user;
 
@@ -116,34 +136,31 @@ export default function PublicHeader() {
                                 লেখালেখি
                             </NavigationMenuTrigger>
                             <NavigationMenuContent>
-                                <ul className="grid w-[400px] gap-1 p-2 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                                    {blogCategories.map((category) => (
-                                        <li key={category.id}>
+                                <div className="grid w-[400px] gap-x-4 p-2 md:w-[500px] md:grid-cols-[1fr_1px_1fr] lg:w-[600px]">
+                                    <div className="hidden md:col-start-2 md:row-span-full md:block md:w-px md:bg-border/40" />
+                                    {blogCategories.map((category, index) => (
+                                        <div key={category.id} className={index % 2 === 0 ? 'md:col-start-1' : 'md:col-start-3'}>
                                             <NavigationMenuLink asChild>
                                                 <Link
                                                     href={`/category/${category.slug}`}
-                                                    className="block rounded-md p-3 leading-none no-underline transition-colors outline-none select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    className="flex items-start gap-3 rounded-md p-3 leading-none no-underline transition-colors outline-none select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                                                 >
-                                                    <div className="text-sm leading-none font-medium">
-                                                        {category.name_bn}
+                                                    <BookOpen className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+                                                    <div>
+                                                        <div className="text-sm leading-none font-medium">
+                                                            {category.name_bn}
+                                                        </div>
+                                                        <p className="mt-1.5 line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                                            {category.children && category.children.length > 0
+                                                                ? category.children.map((c) => c.name_bn).join(', ')
+                                                                : `${category.name_bn} বিভাগের সকল লেখা`}
+                                                        </p>
                                                     </div>
-                                                    {category.children &&
-                                                        category.children
-                                                            .length > 0 && (
-                                                            <p className="mt-1 line-clamp-2 text-xs leading-snug text-muted-foreground">
-                                                                {category.children
-                                                                    .map(
-                                                                        (c) =>
-                                                                            c.name_bn,
-                                                                    )
-                                                                    .join(', ')}
-                                                            </p>
-                                                        )}
                                                 </Link>
                                             </NavigationMenuLink>
-                                        </li>
+                                        </div>
                                     ))}
-                                    <li className="col-span-full border-t pt-2">
+                                    <div className="md:col-span-3 border-t border-border/30 pt-2 mt-1">
                                         <NavigationMenuLink asChild>
                                             <Link
                                                 href="/posts"
@@ -152,8 +169,8 @@ export default function PublicHeader() {
                                                 সব লেখা দেখুন →
                                             </Link>
                                         </NavigationMenuLink>
-                                    </li>
-                                </ul>
+                                    </div>
+                                </div>
                             </NavigationMenuContent>
                         </NavigationMenuItem>
 
@@ -163,34 +180,31 @@ export default function PublicHeader() {
                                 কেনাকাটা করুন
                             </NavigationMenuTrigger>
                             <NavigationMenuContent>
-                                <ul className="grid w-[400px] gap-1 p-2 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                                    {productCategories.map((category) => (
-                                        <li key={category.id}>
+                                <div className="grid w-[400px] gap-x-4 p-2 md:w-[500px] md:grid-cols-[1fr_1px_1fr] lg:w-[600px]">
+                                    <div className="hidden md:col-start-2 md:row-span-full md:block md:w-px md:bg-border/40" />
+                                    {productCategories.map((category, index) => (
+                                        <div key={category.id} className={index % 2 === 0 ? 'md:col-start-1' : 'md:col-start-3'}>
                                             <NavigationMenuLink asChild>
                                                 <Link
                                                     href={`/product-category/${category.slug}`}
-                                                    className="block rounded-md p-3 leading-none no-underline transition-colors outline-none select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    className="flex items-start gap-3 rounded-md p-3 leading-none no-underline transition-colors outline-none select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                                                 >
-                                                    <div className="text-sm leading-none font-medium">
-                                                        {category.name_bn}
+                                                    <Package className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+                                                    <div>
+                                                        <div className="text-sm leading-none font-medium">
+                                                            {category.name_bn}
+                                                        </div>
+                                                        <p className="mt-1.5 line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                                            {category.children && category.children.length > 0
+                                                                ? category.children.map((c) => c.name_bn).join(', ')
+                                                                : `${category.name_bn} বিভাগের সকল পণ্য`}
+                                                        </p>
                                                     </div>
-                                                    {category.children &&
-                                                        category.children
-                                                            .length > 0 && (
-                                                            <p className="mt-1 line-clamp-2 text-xs leading-snug text-muted-foreground">
-                                                                {category.children
-                                                                    .map(
-                                                                        (c) =>
-                                                                            c.name_bn,
-                                                                    )
-                                                                    .join(', ')}
-                                                            </p>
-                                                        )}
                                                 </Link>
                                             </NavigationMenuLink>
-                                        </li>
+                                        </div>
                                     ))}
-                                    <li className="col-span-full border-t pt-2">
+                                    <div className="md:col-span-3 border-t border-border/30 pt-2 mt-1">
                                         <NavigationMenuLink asChild>
                                             <Link
                                                 href="/shop"
@@ -199,8 +213,8 @@ export default function PublicHeader() {
                                                 সব পণ্য দেখুন →
                                             </Link>
                                         </NavigationMenuLink>
-                                    </li>
-                                </ul>
+                                    </div>
+                                </div>
                             </NavigationMenuContent>
                         </NavigationMenuItem>
 
@@ -230,16 +244,20 @@ export default function PublicHeader() {
                     </Button>
 
                     {/* Wishlist */}
-                    <Link href="/wishlist">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="relative h-9 w-9"
-                        >
-                            <Heart className="h-5 w-5" />
-                            <span className="sr-only">Wishlist</span>
-                        </Button>
-                    </Link>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="relative h-9 w-9"
+                        onClick={() => setWishlistOpen(true)}
+                    >
+                        <Heart className="h-5 w-5" />
+                        {wishlistCount > 0 && (
+                            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                                {wishlistCount > 99 ? '99+' : wishlistCount}
+                            </span>
+                        )}
+                        <span className="sr-only">Wishlist</span>
+                    </Button>
 
                     {/* Cart */}
                     <Button
@@ -260,15 +278,15 @@ export default function PublicHeader() {
                     {/* Theme Toggle */}
                     <AppearanceToggleDropdown />
 
-                    {/* Auth Buttons */}
+                    {/* Auth Buttons - hidden on mobile, shown on md+ */}
                     {user ? (
-                        <Link href="/dashboard">
+                        <Link href="/dashboard" className="hidden md:block">
                             <Button variant="outline" size="sm">
                                 ড্যাশবোর্ড
                             </Button>
                         </Link>
                     ) : (
-                        <div className="hidden items-center gap-2 sm:flex">
+                        <div className="hidden items-center gap-2 md:flex">
                             <Link href="/login">
                                 <Button variant="ghost" size="sm">
                                     লগইন
@@ -332,6 +350,13 @@ export default function PublicHeader() {
                 open={cartOpen}
                 onClose={() => setCartOpen(false)}
                 cartItems={cartItems}
+            />
+
+            {/* Wishlist Drawer */}
+            <WishlistDrawer
+                open={wishlistOpen}
+                onClose={() => setWishlistOpen(false)}
+                wishlistItems={wishlistItems}
             />
         </header>
     );
