@@ -71,16 +71,30 @@ stderr_logfile=/var/log/worker-phpfpm.log
 "worker-laravel.conf" = '''
 [program:worker-laravel]
 process_name=%(program_name)s_%(process_num)02d
-command=bash -c 'exec php /app/artisan queue:work --sleep=3 --tries=3 --max-time=3600'
+command=bash -c 'sleep 5 && exec php /app/artisan queue:work --sleep=3 --tries=3 --max-time=3600'
 autostart=true
 autorestart=true
 stopasgroup=true
 killasgroup=true
 numprocs=2
-startsecs=0
+startsecs=5
 stopwaitsecs=3600
 stdout_logfile=/var/log/worker-laravel.log
 stderr_logfile=/var/log/worker-laravel.log
+'''
+
+"worker-reverb.conf" = '''
+[program:worker-reverb]
+process_name=%(program_name)s_%(process_num)02d
+command=bash -c 'sleep 5 && exec php /app/artisan reverb:start --host=0.0.0.0 --port=8080'
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+numprocs=1
+startsecs=5
+stdout_logfile=/var/log/worker-reverb.log
+stderr_logfile=/var/log/worker-reverb.log
 '''
 
 "worker-inertia-ssr.conf" = '''
@@ -181,6 +195,32 @@ http {
 
     location ~ /\.(?!well-known).* {
         deny all;
+    }
+
+    location /app {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+        proxy_send_timeout 60s;
+    }
+
+    location /apps {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+        proxy_send_timeout 60s;
     }
   }
 }
