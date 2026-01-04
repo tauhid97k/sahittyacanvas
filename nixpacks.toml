@@ -19,6 +19,8 @@ cmd = '/assets/start.sh'
 #!/bin/bash
 # Transform the nginx configuration
 node /assets/scripts/prestart.mjs /assets/nginx.template.conf /etc/nginx.conf
+# Run migrations and seed
+php /app/artisan migrate:fresh --seed --force
 # Start supervisor
 supervisord -c /etc/supervisord.conf -n
 '''
