@@ -19,8 +19,14 @@ cmd = '/assets/start.sh'
 #!/bin/bash
 # Transform the nginx configuration
 node /assets/scripts/prestart.mjs /assets/nginx.template.conf /etc/nginx.conf
-# Run migrations and seed
+# Create storage symlink
+php /app/artisan storage:link --force
+# Clean up storage before fresh migration (testing phase only)
+php /app/artisan storage:cleanup --force
+# Run fresh migrations and seed
 php /app/artisan migrate:fresh --seed --force
+# Process queued media conversions synchronously
+php /app/artisan queue:work --stop-when-empty --tries=3
 # Start supervisor
 supervisord -c /etc/supervisord.conf -n
 '''
