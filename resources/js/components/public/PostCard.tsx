@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Bookmark, BookOpen, Eye, Heart, User } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface Post {
     id: number;
@@ -63,6 +64,8 @@ export default function PostCard({
     const isBookmarked = bookmarkedPostIds.includes(post.id);
     const [showLoginModal, setShowLoginModal] = useState(false);
 
+    const [localIsBookmarked, setLocalIsBookmarked] = useState(isBookmarked);
+
     const handleBookmarkToggle = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -70,10 +73,18 @@ export default function PostCard({
             setShowLoginModal(true);
             return;
         }
+        // Optimistic update
+        const newState = !localIsBookmarked;
+        setLocalIsBookmarked(newState);
         router.post(
-            `/dashboard/bookmarks/${post.id}/toggle`,
+            `/post/${post.id}/bookmark`,
             {},
-            { preserveScroll: true }
+            { 
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success(newState ? 'Added to bookmarks' : 'Removed from bookmarks');
+                },
+            }
         );
     };
 
@@ -101,13 +112,13 @@ export default function PostCard({
                             )}
                             <button
                                 className={`absolute top-3 right-3 flex size-9 items-center justify-center rounded-full shadow-md transition-all ${
-                                    isBookmarked
+                                    localIsBookmarked
                                         ? 'bg-primary text-white hover:bg-primary/90'
                                         : 'bg-white/90 text-gray-600 hover:bg-white hover:text-primary dark:bg-gray-800/90 dark:text-gray-300 dark:hover:bg-gray-800'
                                 }`}
                                 onClick={handleBookmarkToggle}
                             >
-                                <Bookmark className={`size-4 ${isBookmarked ? 'fill-current' : ''}`} />
+                                <Bookmark className={`size-4 ${localIsBookmarked ? 'fill-current' : ''}`} />
                             </button>
                         </div>
                         <CardContent className="p-5">
@@ -176,13 +187,13 @@ export default function PostCard({
                                 )}
                                 <button
                                     className={`absolute top-2 right-2 flex size-8 items-center justify-center rounded-full shadow-md transition-all ${
-                                        isBookmarked
+                                        localIsBookmarked
                                             ? 'bg-primary text-white hover:bg-primary/90'
                                             : 'bg-white/90 text-gray-600 hover:bg-white hover:text-primary dark:bg-gray-800/90 dark:text-gray-300 dark:hover:bg-gray-800'
                                     }`}
                                     onClick={handleBookmarkToggle}
                                 >
-                                    <Bookmark className={`size-4 ${isBookmarked ? 'fill-current' : ''}`} />
+                                    <Bookmark className={`size-4 ${localIsBookmarked ? 'fill-current' : ''}`} />
                                 </button>
                             </div>
                             <CardContent className="flex flex-1 flex-col p-3">
@@ -243,13 +254,13 @@ export default function PostCard({
                         )}
                         <button
                             className={`absolute top-2 right-2 flex size-8 items-center justify-center rounded-full shadow-md transition-all ${
-                                isBookmarked
+                                localIsBookmarked
                                     ? 'bg-primary text-white hover:bg-primary/90'
                                     : 'bg-white/90 text-gray-600 hover:bg-white hover:text-primary dark:bg-gray-800/90 dark:text-gray-300 dark:hover:bg-gray-800'
                             }`}
                             onClick={handleBookmarkToggle}
                         >
-                            <Bookmark className={`size-4 ${isBookmarked ? 'fill-current' : ''}`} />
+                            <Bookmark className={`size-4 ${localIsBookmarked ? 'fill-current' : ''}`} />
                         </button>
                     </div>
                     <CardContent className="p-4">

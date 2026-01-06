@@ -144,7 +144,6 @@ class ProductSeeder extends Seeder
                 $slug = $originalSlug . '-' . $counter++;
             }
 
-            $imageUrl = $productData['image'] ?? null;
             unset($productData['image']);
 
             $product = Product::create([
@@ -167,9 +166,13 @@ class ProductSeeder extends Seeder
                 'views_count' => rand(50, 500),
             ]);
 
-            // Add image from URL
-            if ($imageUrl) {
+            // Add product image from picsum.photos (reliable placeholder service)
+            // Using seed parameter for consistent but random images
+            $imageUrl = "https://picsum.photos/seed/product{$index}/400/400";
+            try {
                 $product->addMediaFromUrl($imageUrl)->toMediaCollection('images');
+            } catch (\Exception $e) {
+                $this->command->warn("Could not add image for product: {$product->name_bn} - {$e->getMessage()}");
             }
 
             // Attach to category

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\AuthorController;
+use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
@@ -41,9 +42,9 @@ Route::get('/post/{slug}', [PublicPostController::class, 'show'])->name('public.
 
 // Post Interactions (authenticated)
 Route::middleware(['auth'])->group(function () {
-    Route::post('/post/{post}/like', [PublicPostController::class, 'toggleLike'])->name('public.posts.like');
-    Route::post('/post/{post}/bookmark', [PublicPostController::class, 'toggleBookmark'])->name('public.posts.bookmark');
-    Route::post('/post/{post}/comments', [PublicPostController::class, 'storeComment'])->name('public.posts.comment');
+    Route::post('/post/{post:id}/like', [PublicPostController::class, 'toggleLike'])->name('public.posts.like');
+    Route::post('/post/{post:id}/bookmark', [PublicPostController::class, 'toggleBookmark'])->name('public.posts.bookmark');
+    Route::post('/post/{post:id}/comments', [PublicPostController::class, 'storeComment'])->name('public.posts.comment');
 });
 Route::get('/category/{slug}', [PublicPostController::class, 'category'])->name('public.category.show');
 
@@ -51,6 +52,7 @@ Route::get('/category/{slug}', [PublicPostController::class, 'category'])->name(
 Route::get('/authors', [PublicAuthorController::class, 'index'])->name('public.authors.index');
 Route::get('/author/{slug}', [PublicAuthorController::class, 'show'])->name('public.authors.show');
 Route::get('/@{username}', [PublicAuthorController::class, 'userProfile'])->name('public.users.profile');
+Route::get('/user/{user}', [PublicAuthorController::class, 'userProfileById'])->name('public.users.profile.id');
 
 // Shop Routes
 Route::get('/shop', [ShopController::class, 'index'])->name('public.shop.index');
@@ -93,6 +95,8 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
     Route::get('posts/{post}/edit', [PostController::class, 'edit'])->name('posts.edit');
     Route::put('posts/{post}', [PostController::class, 'update'])->name('posts.update');
     Route::delete('posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
+    Route::post('posts/{id}/restore', [PostController::class, 'restore'])->name('posts.restore');
+    Route::delete('posts/{id}/force-delete', [PostController::class, 'forceDelete'])->name('posts.forceDelete');
 
     // Post Pages (multi-page support)
     Route::post('posts/{post}/pages', [PostPageController::class, 'store'])->name('posts.pages.store');
@@ -115,9 +119,13 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
 
     // Wishlist
     Route::get('wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
-    Route::post('wishlist/{product}/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
-    Route::delete('wishlist/{product}', [WishlistController::class, 'remove'])->name('wishlist.remove');
-    Route::get('wishlist/{product}/check', [WishlistController::class, 'check'])->name('wishlist.check');
+    Route::post('wishlist/{product:id}/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+    Route::delete('wishlist/{product:id}', [WishlistController::class, 'remove'])->name('wishlist.remove');
+    Route::get('wishlist/{product:id}/check', [WishlistController::class, 'check'])->name('wishlist.check');
+
+    // Bookmarks
+    Route::get('bookmarks', [BookmarkController::class, 'index'])->name('bookmarks.index');
+    Route::delete('bookmarks/{bookmark}', [BookmarkController::class, 'destroy'])->name('bookmarks.destroy');
 
     // Likes
     Route::get('likes', [LikeController::class, 'index'])->name('likes.index');

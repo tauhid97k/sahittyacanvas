@@ -192,8 +192,95 @@ class AuthorController extends Controller
             'products' => $products,
             'stats' => $stats,
             'breadcrumb' => [
-                ['title' => 'হোম', 'href' => '/'],
-                ['title' => $user->name, 'href' => "/@{$user->username}"],
+                ['title' => 'Home', 'href' => '/'],
+                ['title' => $user->name, 'href' => "/user/{$user->id}"],
+            ],
+        ]);
+    }
+
+    public function userProfileById(User $user): Response
+    {
+        // Get user's posts
+        $posts = Post::query()
+            ->published()
+            ->where('user_id', $user->id)
+            ->with(['categories', 'media'])
+            ->withTotalVisitCount()
+            ->latest('published_at')
+            ->take(8)
+            ->get()
+            ->map(fn ($post) => [
+                'id' => $post->id,
+                'title' => $post->title,
+                'slug' => $post->slug,
+                'excerpt' => $post->excerpt,
+                'featured_image' => $post->getFirstMediaUrl('featured', 'medium') ?: null,
+                'category' => $post->categories->first() ? [
+                    'name' => $post->categories->first()->name_bn,
+                    'slug' => $post->categories->first()->slug,
+                ] : null,
+                'views_count' => $post->visit_count_total ?? 0,
+                'likes_count' => $post->likes_count,
+                'published_at' => $post->published_at?->toISOString(),
+            ]);
+
+        // Get user's products if they are a seller
+        $products = [];
+        if ($user->hasRole('seller')) {
+            $products = Product::query()
+                ->approved()
+                ->where('user_id', $user->id)
+                ->with(['media', 'categories'])
+                ->orderByDesc('sales_count')
+                ->take(8)
+                ->get()
+                ->map(fn ($product) => [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'slug' => $product->slug,
+                    'price' => $product->price,
+                    'discount_price' => $product->discount_price,
+                    'image' => $product->getFirstMediaUrl('images', 'medium') ?: null,
+                    'categories' => $product->categories->map(fn ($cat) => [
+                        'id' => $cat->id,
+                        'name' => $cat->name_bn,
+                        'slug' => $cat->slug,
+                    ]),
+                    'rating' => (float) ($product->reviews()->avg('rating') ?? 0),
+                    'reviews_count' => $product->reviews()->count(),
+                ]);
+        }
+
+        // Stats
+        $stats = [
+            'posts_count' => Post::where('user_id', $user->id)->published()->count(),
+            'total_views' => Post::where('user_id', $user->id)->published()->sum('visit_count_total') ?? 0,
+            'total_likes' => Post::where('user_id', $user->id)->published()->sum('likes_count'),
+            'followers_count' => $user->followers()->count(),
+        ];
+
+        if ($user->hasRole('seller')) {
+            $stats['products_count'] = Product::where('user_id', $user->id)->approved()->count();
+            $stats['total_sales'] = Product::where('user_id', $user->id)->approved()->sum('sales_count');
+        }
+
+        return Inertia::render('public/users/profile', [
+            'profile' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'username' => $user->username,
+                'bio' => $user->bio,
+                'avatar' => $user->avatar,
+                'banner' => $user->getFirstMediaUrl('banner', 'large') ?: null,
+                'is_seller' => $user->hasRole('seller'),
+                'joined_at' => $user->created_at->format('M Y'),
+            ],
+            'posts' => $posts,
+            'products' => $products,
+            'stats' => $stats,
+            'breadcrumb' => [
+                ['title' => 'Home', 'href' => '/'],
+                ['title' => $user->name, 'href' => "/user/{$user->id}"],
             ],
         ]);
     }

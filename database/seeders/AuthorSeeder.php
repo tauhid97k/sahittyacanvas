@@ -22,7 +22,6 @@ class AuthorSeeder extends Seeder
                 'death_date' => '1941-08-07',
                 'nationality' => 'ভারতীয়',
                 'is_active' => true,
-                'avatar_url' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face',
             ],
             [
                 'name_bn' => 'কাজী নজরুল ইসলাম',
@@ -32,7 +31,6 @@ class AuthorSeeder extends Seeder
                 'death_date' => '1976-08-29',
                 'nationality' => 'বাংলাদেশী',
                 'is_active' => true,
-                'avatar_url' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=face',
             ],
             [
                 'name_bn' => 'জীবনানন্দ দাশ',
@@ -42,7 +40,6 @@ class AuthorSeeder extends Seeder
                 'death_date' => '1954-10-22',
                 'nationality' => 'ভারতীয়',
                 'is_active' => true,
-                'avatar_url' => 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face',
             ],
             [
                 'name_bn' => 'শরৎচন্দ্র চট্টোপাধ্যায়',
@@ -52,7 +49,6 @@ class AuthorSeeder extends Seeder
                 'death_date' => '1938-01-16',
                 'nationality' => 'ভারতীয়',
                 'is_active' => true,
-                'avatar_url' => 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop&crop=face',
             ],
             [
                 'name_bn' => 'বঙ্কিমচন্দ্র চট্টোপাধ্যায়',
@@ -62,7 +58,6 @@ class AuthorSeeder extends Seeder
                 'death_date' => '1894-04-08',
                 'nationality' => 'ভারতীয়',
                 'is_active' => true,
-                'avatar_url' => 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=200&h=200&fit=crop&crop=face',
             ],
             [
                 'name_bn' => 'মাইকেল মধুসূদন দত্ত',
@@ -72,14 +67,10 @@ class AuthorSeeder extends Seeder
                 'death_date' => '1873-06-29',
                 'nationality' => 'ভারতীয়',
                 'is_active' => true,
-                'avatar_url' => 'https://images.unsplash.com/photo-1463453091185-61582044d556?w=200&h=200&fit=crop&crop=face',
             ],
         ];
 
-        foreach ($authors as $authorData) {
-            $avatarUrl = $authorData['avatar_url'] ?? null;
-            unset($authorData['avatar_url']);
-
+        foreach ($authors as $index => $authorData) {
             $author = Author::updateOrCreate(
                 ['slug' => Str::slug($authorData['name_en'])],
                 [
@@ -88,12 +79,14 @@ class AuthorSeeder extends Seeder
                 ]
             );
 
-            // Add avatar from URL using Spatie MediaLibrary
-            if ($avatarUrl && $author->getMedia('avatar')->isEmpty()) {
+            // Add avatar from picsum.photos (reliable placeholder service)
+            // Using seed parameter for consistent but random images
+            if ($author->getMedia('avatar')->isEmpty()) {
+                $avatarUrl = "https://picsum.photos/seed/author{$index}/200/200";
                 try {
                     $author->addMediaFromUrl($avatarUrl)->toMediaCollection('avatar');
                 } catch (\Exception $e) {
-                    $this->command->warn("Could not add avatar for author: {$author->name_bn}");
+                    $this->command->warn("Could not add avatar for author: {$author->name_bn} - {$e->getMessage()}");
                 }
             }
         }

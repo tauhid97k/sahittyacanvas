@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Link, router, usePage } from '@inertiajs/react';
 import { ChevronRight, Heart, Minus, Plus, ShoppingBag, ShoppingCart, Star } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface Image {
     id: number;
@@ -90,11 +91,11 @@ interface Props {
 }
 
 function formatPrice(paisa: number): string {
-    return `৳${(paisa / 100).toLocaleString('bn-BD')}`;
+    return `৳${(paisa / 100).toLocaleString('en-US')}`;
 }
 
 function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('bn-BD', {
+    return new Date(dateString).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -125,6 +126,7 @@ export default function ProductShow({
         setProcessing(true);
         router.post('/cart', { product_id: product.id, quantity }, {
             preserveScroll: true,
+            onSuccess: () => toast.success('Added to cart'),
             onFinish: () => setProcessing(false),
         });
     };
@@ -138,12 +140,19 @@ export default function ProductShow({
         });
     };
 
+    const [localIsInWishlist, setLocalIsInWishlist] = useState(isInWishlist);
+
     const handleWishlistToggle = () => {
         if (!auth?.user) {
             setShowLoginModal(true);
             return;
         }
-        router.post(`/dashboard/wishlist/${product.id}/toggle`, {}, { preserveScroll: true });
+        const newState = !localIsInWishlist;
+        setLocalIsInWishlist(newState);
+        router.post(`/dashboard/wishlist/${product.id}/toggle`, {}, { 
+            preserveScroll: true,
+            onSuccess: () => toast.success(newState ? 'Added to wishlist' : 'Removed from wishlist'),
+        });
     };
 
     return (
@@ -210,45 +219,42 @@ export default function ProductShow({
 
                     {/* Info */}
                     <div>
+                        {/* Seller - First */}
+                        <Link
+                            href={`/user/${product.seller.id}`}
+                            className="mb-4 flex items-center gap-2 hover:opacity-80"
+                        >
+                            <Avatar className="h-8 w-8">
+                                <AvatarImage
+                                    src={product.seller.avatar || undefined}
+                                />
+                                <AvatarFallback>
+                                    {product.seller.name.charAt(0)}
+                                </AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">
+                                {product.seller.name}
+                            </span>
+                        </Link>
+
                         {/* Categories */}
-                        <div className="mb-2 flex flex-wrap gap-2">
+                        <div className="mb-3 flex flex-wrap items-center gap-2">
                             {product.categories.map((cat) => (
                                 <Link
                                     key={cat.id}
                                     href={`/product-category/${cat.slug}`}
-                                    className="text-sm text-muted-foreground hover:text-primary"
                                 >
-                                    {cat.name_bn}
+                                    <Badge variant="secondary" className="hover:bg-secondary/80">
+                                        {cat.name_bn}
+                                    </Badge>
                                 </Link>
                             ))}
                         </div>
 
+                        {/* Product Title */}
                         <h1 className="text-2xl font-bold sm:text-3xl">
                             {product.name}
                         </h1>
-
-                        {/* Rating */}
-                        {product.reviews_count > 0 &&
-                            product.rating != null && (
-                                <div className="mt-2 flex items-center gap-2">
-                                    <div className="flex items-center gap-1">
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <Star
-                                                key={star}
-                                                className={`h-5 w-5 ${
-                                                    star <=
-                                                    Number(product.rating)
-                                                        ? 'fill-yellow-400 text-yellow-400'
-                                                        : 'text-muted-foreground'
-                                                }`}
-                                            />
-                                        ))}
-                                    </div>
-                                    <span className="text-sm text-muted-foreground">
-                                        ({product.reviews_count} রিভিউ)
-                                    </span>
-                                </div>
-                            )}
 
                         {/* Price */}
                         <div className="mt-4 flex items-center gap-3">
@@ -267,6 +273,15 @@ export default function ProductShow({
                             )}
                         </div>
 
+                        {/* Rating */}
+                        {product.reviews_count > 0 && product.rating != null && (
+                            <div className="mt-3 flex items-center gap-1">
+                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                <span className="text-sm font-medium">{Number(product.rating).toFixed(1)}</span>
+                                <span className="text-sm text-muted-foreground">({product.reviews_count} reviews)</span>
+                            </div>
+                        )}
+
                         {/* Stock */}
                         <div className="mt-4">
                             {inStock ? (
@@ -274,119 +289,96 @@ export default function ProductShow({
                                     variant="outline"
                                     className="text-green-600"
                                 >
-                                    স্টকে আছে ({product.stock} টি)
+                                    In Stock ({product.stock} available)
                                 </Badge>
                             ) : (
-                                <Badge variant="destructive">স্টক নেই</Badge>
+                                <Badge variant="destructive">Out of Stock</Badge>
                             )}
-                        </div>
-
-                        <Separator className="my-6" />
-
-                        {/* Quantity & Add to Cart */}
-                        {inStock && (
-                            <div className="flex flex-wrap items-center gap-4">
-                                <div className="flex items-center rounded-md border">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() =>
-                                            setQuantity(
-                                                Math.max(1, quantity - 1),
-                                            )
-                                        }
-                                        disabled={quantity <= 1}
-                                    >
-                                        <Minus className="h-4 w-4" />
-                                    </Button>
-                                    <span className="w-12 text-center">
-                                        {quantity}
-                                    </span>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() =>
-                                            setQuantity(
-                                                Math.min(
-                                                    product.stock,
-                                                    quantity + 1,
-                                                ),
-                                            )
-                                        }
-                                        disabled={quantity >= product.stock}
-                                    >
-                                        <Plus className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                                <Button
-                                    size="lg"
-                                    variant="outline"
-                                    className="gap-2"
-                                    onClick={handleAddToCart}
-                                    disabled={processing}
-                                >
-                                    <ShoppingCart className="h-5 w-5" />
-                                    কার্টে যোগ করুন
-                                </Button>
-                                <Button
-                                    size="lg"
-                                    className="gap-2"
-                                    onClick={handleBuyNow}
-                                    disabled={processing}
-                                >
-                                    <ShoppingBag className="h-5 w-5" />
-                                    এখনই কিনুন
-                                </Button>
-                                <Button
-                                    size="lg"
-                                    variant={isInWishlist ? 'default' : 'outline'}
-                                    className="gap-2"
-                                    onClick={handleWishlistToggle}
-                                >
-                                    <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-current' : ''}`} />
-                                    {isInWishlist ? 'পছন্দে আছে' : 'পছন্দে যোগ করুন'}
-                                </Button>
-                            </div>
-                        )}
-
-                        <Separator className="my-6" />
-
-                        {/* Seller */}
-                        <div className="flex items-center gap-3">
-                            <Avatar>
-                                <AvatarImage
-                                    src={product.seller.avatar || undefined}
-                                />
-                                <AvatarFallback>
-                                    {product.seller.name.charAt(0)}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <p className="text-sm text-muted-foreground">
-                                    বিক্রেতা
-                                </p>
-                                <Link
-                                    href={`/@${product.seller.username}`}
-                                    className="font-medium hover:text-primary"
-                                >
-                                    {product.seller.name}
-                                </Link>
-                            </div>
                         </div>
 
                         {/* SKU */}
                         {product.sku && (
-                            <p className="mt-4 text-sm text-muted-foreground">
+                            <p className="mt-2 text-sm text-muted-foreground">
                                 SKU: {product.sku}
                             </p>
                         )}
+
+                        <Separator className="my-6" />
+
+                        {/* Quantity & Add to Cart */}
+                        <div className="flex flex-wrap items-center gap-4">
+                            {inStock && (
+                                <>
+                                    <div className="flex items-center rounded-md border">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() =>
+                                                setQuantity(
+                                                    Math.max(1, quantity - 1),
+                                                )
+                                            }
+                                            disabled={quantity <= 1}
+                                        >
+                                            <Minus className="h-4 w-4" />
+                                        </Button>
+                                        <span className="w-12 text-center">
+                                            {quantity}
+                                        </span>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() =>
+                                                setQuantity(
+                                                    Math.min(
+                                                        product.stock,
+                                                        quantity + 1,
+                                                    ),
+                                                )
+                                            }
+                                            disabled={quantity >= product.stock}
+                                        >
+                                            <Plus className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <Button
+                                        size="lg"
+                                        variant="outline"
+                                        className="gap-2"
+                                        onClick={handleAddToCart}
+                                        disabled={processing}
+                                    >
+                                        <ShoppingCart className="h-5 w-5" />
+                                        Add to Cart
+                                    </Button>
+                                    <Button
+                                        size="lg"
+                                        className="gap-2"
+                                        onClick={handleBuyNow}
+                                        disabled={processing}
+                                    >
+                                        <ShoppingBag className="h-5 w-5" />
+                                        Buy Now
+                                    </Button>
+                                </>
+                            )}
+                            <Button
+                                size="lg"
+                                variant={localIsInWishlist ? 'default' : 'outline'}
+                                className="gap-2"
+                                onClick={handleWishlistToggle}
+                            >
+                                <Heart className={`h-5 w-5 ${localIsInWishlist ? 'fill-current' : ''}`} />
+                                {localIsInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
                 {/* Description */}
                 {product.description && (
                     <div className="mt-12">
-                        <h2 className="mb-4 text-xl font-bold">বিবরণ</h2>
+                        <h2 className="mb-4 text-xl font-bold">Description</h2>
                         <div
                             className="prose dark:prose-invert max-w-none"
                             dangerouslySetInnerHTML={{
@@ -399,7 +391,7 @@ export default function ProductShow({
                 {/* Reviews */}
                 <div className="mt-12">
                     <h2 className="mb-6 text-xl font-bold">
-                        রিভিউ ({product.reviews_count})
+                        Reviews ({product.reviews_count})
                     </h2>
 
                     {product.reviews.length > 0 ? (
@@ -410,7 +402,7 @@ export default function ProductShow({
                         </div>
                     ) : (
                         <p className="text-muted-foreground">
-                            এখনো কোনো রিভিউ নেই
+                            No reviews yet
                         </p>
                     )}
                 </div>
@@ -419,7 +411,7 @@ export default function ProductShow({
                 {relatedProducts.length > 0 && (
                     <div className="mt-12">
                         <h2 className="mb-6 text-xl font-bold">
-                            সম্পর্কিত পণ্য
+                            Related Products
                         </h2>
                         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                             {relatedProducts.map((p) => (
@@ -466,7 +458,7 @@ function ReviewCard({ review }: { review: Review }) {
                                 </span>
                                 {review.is_verified && (
                                     <Badge variant="secondary" className="ml-2">
-                                        যাচাইকৃত ক্রেতা
+                                        Verified Buyer
                                     </Badge>
                                 )}
                             </div>

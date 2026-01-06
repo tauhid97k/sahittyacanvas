@@ -95,6 +95,10 @@ class Post extends Model implements HasMedia, CanVisit
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
 
         $this->addMediaCollection('attachments');
+
+        // Editor images from rich text content
+        $this->addMediaCollection('editor_images')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
     }
 
     /**

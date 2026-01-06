@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Bookmark;
 use App\Models\Category;
 use App\Models\ProductCategory;
 use App\Models\Wishlist;
@@ -58,6 +59,7 @@ class HandleInertiaRequests extends Middleware
             'wishlistIds' => fn () => $this->getWishlistIds($request),
             'wishlistCount' => fn () => $this->getWishlistCount($request),
             'wishlistItems' => fn () => $this->getWishlistItems($request),
+            'bookmarkedPostIds' => fn () => $this->getBookmarkedPostIds($request),
         ];
     }
 
@@ -224,6 +226,20 @@ class HandleInertiaRequests extends Middleware
             ])
             ->filter(fn ($item) => $item['product'] !== null)
             ->values()
+            ->toArray();
+    }
+
+    /**
+     * Get bookmarked post IDs for the current user.
+     */
+    protected function getBookmarkedPostIds(Request $request): array
+    {
+        if (! $request->user()) {
+            return [];
+        }
+
+        return Bookmark::where('user_id', $request->user()->id)
+            ->pluck('post_id')
             ->toArray();
     }
 

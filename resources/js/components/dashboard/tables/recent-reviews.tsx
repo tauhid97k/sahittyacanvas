@@ -60,45 +60,40 @@ export function RecentReviews({ reviews }: RecentReviewsProps) {
                 <CardDescription>Latest product reviews</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-3">
                     {reviews.map((review) => (
                         <Link
                             key={review.id}
                             href={`/dashboard/products/${review.product_slug}`}
                             className="block rounded-lg border p-3 transition-colors hover:bg-muted"
                         >
-                            <div className="flex items-start justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex size-10 items-center justify-center rounded-full bg-muted">
-                                        {review.user_avatar ? (
-                                            <img
-                                                src={review.user_avatar}
-                                                alt={review.user}
-                                                className="size-full rounded-full object-cover"
-                                            />
-                                        ) : (
-                                            <User className="size-5 text-muted-foreground" />
-                                        )}
-                                    </div>
-                                    <div>
-                                        <p className="font-medium">
+                            <div className="flex items-start gap-3">
+                                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted">
+                                    {review.user_avatar ? (
+                                        <img
+                                            src={review.user_avatar}
+                                            alt={review.user}
+                                            className="size-full rounded-full object-cover"
+                                        />
+                                    ) : (
+                                        <User className="size-4 text-muted-foreground" />
+                                    )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <p className="truncate text-sm font-medium">
                                             {review.user}
                                         </p>
-                                        <StarRating rating={review.rating} />
+                                        <span className="shrink-0 text-xs text-muted-foreground">
+                                            {review.created_at}
+                                        </span>
                                     </div>
+                                    <StarRating rating={review.rating} />
+                                    <p className="mt-1 truncate text-xs text-primary">
+                                        {review.product}
+                                    </p>
                                 </div>
-                                <span className="text-xs text-muted-foreground">
-                                    {review.created_at}
-                                </span>
                             </div>
-                            {review.comment && (
-                                <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-                                    {review.comment}
-                                </p>
-                            )}
-                            <p className="mt-1 text-xs text-primary">
-                                {review.product}
-                            </p>
                         </Link>
                     ))}
                 </div>

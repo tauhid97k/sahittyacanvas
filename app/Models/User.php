@@ -115,17 +115,17 @@ class User extends Authenticatable implements HasMedia
     }
 
     /**
-     * Get roles
+     * Get role names (for serialization)
      */
-    public function getRolesAttribute()
+    public function getRoleNamesAttribute()
     {
         return $this->roles()->pluck('name');
     }
 
     /**
-     * Get permissions via roles
+     * Get permission names (for serialization)
      */
-    public function getPermissionsAttribute()
+    public function getPermissionNamesAttribute()
     {
         return $this->getPermissionsViaRoles()->pluck('name');
     }

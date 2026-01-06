@@ -8,6 +8,7 @@ import {
 import {
     Sheet,
     SheetContent,
+    SheetDescription,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
@@ -50,6 +51,9 @@ export default function MobileMenu({
                     <SheetTitle className="flex items-center gap-3">
                         <AppLogo />
                     </SheetTitle>
+                    <SheetDescription className="sr-only">
+                        Site navigation menu
+                    </SheetDescription>
                 </SheetHeader>
 
                 {/* Navigation */}

@@ -42,10 +42,13 @@ import {
     Eye,
     FileText,
     Heart,
+    LayoutList,
     MoreVertical,
     Pencil,
     Plus,
+    RotateCcw,
     Trash,
+    Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -58,6 +61,7 @@ interface Props {
         search: string;
         status: string;
         category: string;
+        trashed: boolean;
     };
 }
 
@@ -79,8 +83,11 @@ const statusColors: Record<
 export default function PostsIndex({ posts, categories, filters }: Props) {
     const [search, setSearch] = useState(filters.search);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+    const [openRestoreDialog, setOpenRestoreDialog] = useState(false);
+    const [openForceDeleteDialog, setOpenForceDeleteDialog] = useState(false);
     const [selectedPost, setSelectedPost] = useState<Post | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isRestoring, setIsRestoring] = useState(false);
 
     // Category options for AdvancedSelect
     const categoryOptions = [
@@ -124,14 +131,14 @@ export default function PostsIndex({ posts, categories, filters }: Props) {
         setOpenDeleteDialog(true);
     };
 
-    // Handle Delete
+    // Handle Delete (soft delete)
     const handleDelete = () => {
         if (!selectedPost) return;
 
         setIsDeleting(true);
         router.delete(`/dashboard/posts/${selectedPost.slug}`, {
             onSuccess: () => {
-                toast.success('Post deleted successfully');
+                toast.success('Post moved to recycle bin');
                 setOpenDeleteDialog(false);
                 setSelectedPost(null);
             },
@@ -142,6 +149,55 @@ export default function PostsIndex({ posts, categories, filters }: Props) {
                 setIsDeleting(false);
             },
         });
+    };
+
+    // Handle Restore
+    const handleRestore = () => {
+        if (!selectedPost) return;
+
+        setIsRestoring(true);
+        router.post(`/dashboard/posts/${selectedPost.id}/restore`, {}, {
+            onSuccess: () => {
+                toast.success('Post restored successfully');
+                setOpenRestoreDialog(false);
+                setSelectedPost(null);
+            },
+            onError: () => {
+                toast.error('Failed to restore post');
+            },
+            onFinish: () => {
+                setIsRestoring(false);
+            },
+        });
+    };
+
+    // Handle Force Delete (permanent)
+    const handleForceDelete = () => {
+        if (!selectedPost) return;
+
+        setIsDeleting(true);
+        router.delete(`/dashboard/posts/${selectedPost.id}/force-delete`, {
+            onSuccess: () => {
+                toast.success('Post permanently deleted');
+                setOpenForceDeleteDialog(false);
+                setSelectedPost(null);
+            },
+            onError: () => {
+                toast.error('Failed to delete post');
+            },
+            onFinish: () => {
+                setIsDeleting(false);
+            },
+        });
+    };
+
+    // Toggle trash view
+    const toggleTrashView = () => {
+        router.get(
+            '/dashboard/posts',
+            { trashed: !filters.trashed ? '1' : undefined },
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
     };
 
     // Table columns
@@ -266,29 +322,55 @@ export default function PostsIndex({ posts, categories, filters }: Props) {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                            <Link
-                                href={`/dashboard/posts/${row.original.slug}`}
-                            >
-                                <Eye />
-                                View
-                            </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <Link
-                                href={`/dashboard/posts/${row.original.slug}/edit`}
-                            >
-                                <Pencil />
-                                Edit
-                            </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => openDelete(row.original)}
-                        >
-                            <Trash />
-                            Delete
-                        </DropdownMenuItem>
+                        {filters.trashed ? (
+                            <>
+                                <DropdownMenuItem
+                                    onClick={() => {
+                                        setSelectedPost(row.original);
+                                        setOpenRestoreDialog(true);
+                                    }}
+                                >
+                                    <RotateCcw />
+                                    Restore
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    variant="destructive"
+                                    onClick={() => {
+                                        setSelectedPost(row.original);
+                                        setOpenForceDeleteDialog(true);
+                                    }}
+                                >
+                                    <Trash2 />
+                                    Delete Permanently
+                                </DropdownMenuItem>
+                            </>
+                        ) : (
+                            <>
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href={`/dashboard/posts/${row.original.slug}`}
+                                    >
+                                        <Eye />
+                                        View
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href={`/dashboard/posts/${row.original.slug}/edit`}
+                                    >
+                                        <Pencil />
+                                        Edit
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    variant="destructive"
+                                    onClick={() => openDelete(row.original)}
+                                >
+                                    <Trash />
+                                    Delete
+                                </DropdownMenuItem>
+                            </>
+                        )}
                     </DropdownMenuContent>
                 </DropdownMenu>
             ),
@@ -303,22 +385,37 @@ export default function PostsIndex({ posts, categories, filters }: Props) {
                 {/* Header */}
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
                     <Button variant="outline" size="icon" asChild>
-                        <Link href="/dashboard">
+                        <Link href={filters.trashed ? '/dashboard/posts' : '/dashboard'}>
                             <ArrowLeft />
                         </Link>
                     </Button>
                     <div className="flex-1">
-                        <h1 className="text-2xl font-semibold">Posts</h1>
+                        <h1 className="text-2xl font-semibold">
+                            {filters.trashed ? 'Recycle Bin' : 'Posts'}
+                        </h1>
                         <p className="text-sm text-muted-foreground">
-                            Manage your blog posts
+                            {filters.trashed
+                                ? 'Restore or permanently delete posts'
+                                : 'Manage your blog posts'}
                         </p>
                     </div>
-                    <Button asChild>
-                        <Link href="/dashboard/posts/create">
-                            <Plus />
-                            Add Post
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant={filters.trashed ? 'default' : 'outline'}
+                            onClick={toggleTrashView}
+                        >
+                            {filters.trashed ? <LayoutList /> : <Trash2 />}
+                            {filters.trashed ? 'All Posts' : 'Recycle Bin'}
+                        </Button>
+                        {!filters.trashed && (
+                            <Button asChild>
+                                <Link href="/dashboard/posts/create">
+                                    <Plus />
+                                    Add Post
+                                </Link>
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Card Wrapper */}
@@ -387,7 +484,7 @@ export default function PostsIndex({ posts, categories, filters }: Props) {
                 </Card>
             </div>
 
-            {/* Delete Dialog */}
+            {/* Delete Dialog (soft delete) */}
             <AlertDialog
                 open={openDeleteDialog}
                 onOpenChange={setOpenDeleteDialog}
@@ -396,9 +493,8 @@ export default function PostsIndex({ posts, categories, filters }: Props) {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Delete Post</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete "
-                            {selectedPost?.title_bn}"? This action cannot be
-                            undone.
+                            Are you sure you want to move "{selectedPost?.title_bn}" to the recycle bin?
+                            You can restore it later.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -413,6 +509,62 @@ export default function PostsIndex({ posts, categories, filters }: Props) {
                             )}
                         >
                             Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Restore Dialog */}
+            <AlertDialog
+                open={openRestoreDialog}
+                onOpenChange={setOpenRestoreDialog}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Restore Post</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to restore "{selectedPost?.title_bn}"?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isRestoring}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleRestore}
+                            isLoading={isRestoring}
+                        >
+                            Restore
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Force Delete Dialog (permanent) */}
+            <AlertDialog
+                open={openForceDeleteDialog}
+                onOpenChange={setOpenForceDeleteDialog}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Permanently</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to permanently delete "{selectedPost?.title_bn}"?
+                            This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleForceDelete}
+                            isLoading={isDeleting}
+                            className={cn(
+                                buttonVariants({ variant: 'destructive' }),
+                            )}
+                        >
+                            Delete Permanently
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Notifications\NewPostPublished;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -25,12 +26,15 @@ class PostController extends Controller
      */
     public function index(Request $request): Response
     {
+        $trashed = $request->boolean('trashed');
+        
         $posts = Post::query()
             ->select([
                 'id', 'user_id', 'author_id', 'title_bn', 'title_en', 'slug', 
-                'excerpt', 'status', 'published_at', 'created_at',
+                'excerpt', 'status', 'published_at', 'created_at', 'deleted_at',
                 'likes_count', 'comments_count', 'bookmarks_count'
             ])
+            ->when($trashed, fn ($q) => $q->onlyTrashed())
             ->with([
                 'user:id,name',
                 'author:id,name_bn,name_en,slug',
@@ -80,6 +84,7 @@ class PostController extends Controller
                 'search' => $request->get('search', ''),
                 'status' => $request->get('status', ''),
                 'category' => $request->get('category', ''),
+                'trashed' => $trashed,
             ],
         ]);
     }
@@ -223,40 +228,51 @@ class PostController extends Controller
             }
         }
 
-        $post = Post::create($validated);
+        $createPage = $request->boolean('_create_page');
 
-        // Auto-assign AUTHOR role on first post creation
-        $user = $request->user();
-        if (!$user->hasRole(Role::AUTHOR->value)) {
-            $user->assignRole(Role::AUTHOR->value);
-        }
+        $post = DB::transaction(function () use ($validated, $image, $categoryIds, $request, $createPage) {
+            $post = Post::create($validated);
 
-        // Sync categories
-        if (!empty($categoryIds)) {
-            $post->categories()->sync($categoryIds);
-        }
+            // Link any EditorMedia images from content to this post
+            $this->linkEditorImagesToPost($post, $validated['content'] ?? '');
 
-        // Handle featured image upload
-        if ($image) {
-            $post->addMedia($image)->toMediaCollection('featured');
-        }
+            // Auto-assign AUTHOR role on first post creation
+            $user = $request->user();
+            if (!$user->hasRole('AUTHOR')) {
+                $user->assignRole('AUTHOR');
+            }
+
+            // Sync categories
+            if (!empty($categoryIds)) {
+                $post->categories()->sync($categoryIds);
+            }
+
+            // Handle featured image upload
+            if ($image) {
+                $post->addMedia($image)->toMediaCollection('featured');
+            }
+
+            // Check if user wants to create a new page immediately
+            if ($createPage) {
+                $post->pages()->create([
+                    'content' => null,
+                    'order' => 2,
+                ]);
+                $post->increment('pages_count');
+            }
+
+            return $post;
+        });
 
         // Notify all users (except author) when post is published and approved
+        // This is outside the transaction as it's not critical
         if ($validated['status'] === 'published' && $post->moderation_status !== 'pending') {
             $author = $request->user();
             $usersToNotify = User::where('id', '!=', $author->id)->get();
             Notification::send($usersToNotify, new NewPostPublished($post, $author));
         }
 
-        // Check if user wants to create a new page immediately
-        if ($request->boolean('_create_page')) {
-            // Create page 2
-            $post->pages()->create([
-                'content' => null,
-                'order' => 2,
-            ]);
-            $post->increment('pages_count');
-
+        if ($createPage) {
             return redirect()
                 ->route('posts.edit', ['post' => $post->slug, 'page' => 2])
                 ->with('success', 'Post created. Add content for page 2.');
@@ -318,35 +334,158 @@ class PostController extends Controller
             }
         }
 
-        $post->update($validated);
+        DB::transaction(function () use ($post, $validated, $categoryIds, $image, $removeImage) {
+            $post->update($validated);
+
+            // Sync categories
+            $post->categories()->sync($categoryIds);
+
+            // Handle featured image: upload new or remove existing
+            if ($image) {
+                $post->addMedia($image)->toMediaCollection('featured');
+            } elseif ($removeImage) {
+                $post->clearMediaCollection('featured');
+            }
+        });
 
         // Notify users when post is published for the first time and approved
+        // This is outside the transaction as it's not critical
         if ($isNewlyPublished && $post->moderation_status !== 'pending') {
             $author = $request->user();
             $usersToNotify = User::where('id', '!=', $author->id)->get();
             Notification::send($usersToNotify, new NewPostPublished($post, $author));
         }
 
-        // Sync categories
-        $post->categories()->sync($categoryIds);
-
-        // Handle featured image: upload new or remove existing
-        if ($image) {
-            $post->addMedia($image)->toMediaCollection('featured');
-        } elseif ($removeImage) {
-            $post->clearMediaCollection('featured');
-        }
-
         return back()->with('success', 'Post updated successfully.');
     }
 
     /**
-     * Remove the specified post.
+     * Remove the specified post (soft delete).
      */
     public function destroy(Post $post): RedirectResponse
     {
         $post->delete();
 
-        return back()->with('success', 'Post deleted successfully.');
+        return back()->with('success', 'পোস্ট রিসাইকেল বিনে সরানো হয়েছে।');
+    }
+
+    /**
+     * Restore a soft-deleted post.
+     */
+    public function restore(int $id): RedirectResponse
+    {
+        $post = Post::withTrashed()->findOrFail($id);
+        $post->restore();
+
+        return back()->with('success', 'পোস্ট পুনরুদ্ধার করা হয়েছে।');
+    }
+
+    /**
+     * Permanently delete a post.
+     */
+    public function forceDelete(int $id): RedirectResponse
+    {
+        $post = Post::withTrashed()->with('pages')->findOrFail($id);
+        
+        DB::transaction(function () use ($post) {
+            // Clear all media collections
+            $post->clearMediaCollection('featured');
+            $post->clearMediaCollection('editor_images');
+            $post->clearMediaCollection('gallery');
+            $post->clearMediaCollection('attachments');
+            
+            // Also clean up any legacy EditorMedia images that might be in the content
+            $this->cleanupLegacyEditorImages($post);
+            
+            $post->forceDelete();
+        });
+
+        return back()->with('success', 'Post permanently deleted.');
+    }
+
+    /**
+     * Clean up legacy EditorMedia images that were uploaded before linking to posts.
+     */
+    private function cleanupLegacyEditorImages(Post $post): void
+    {
+        // Collect all content to search for editor images
+        $allContent = $post->content ?? '';
+        foreach ($post->pages as $page) {
+            $allContent .= ' ' . ($page->content ?? '');
+        }
+        
+        // Match all image URLs from the content
+        preg_match_all('/src=["\']([^"\']+)["\']/', $allContent, $matches);
+        
+        if (empty($matches[1])) {
+            return;
+        }
+
+        $urls = array_unique($matches[1]);
+        
+        foreach ($urls as $url) {
+            // Find media by URL (only for EditorMedia - legacy images)
+            $media = \Spatie\MediaLibrary\MediaCollections\Models\Media::where('model_type', \App\Models\EditorMedia::class)
+                ->get()
+                ->first(function ($media) use ($url) {
+                    return $media->getUrl() === $url ||
+                           str_contains($url, $media->file_name);
+                });
+
+            if ($media) {
+                $editorMedia = \App\Models\EditorMedia::find($media->model_id);
+                $media->delete();
+                
+                // Delete the EditorMedia record if it has no more media
+                if ($editorMedia && $editorMedia->media()->count() === 0) {
+                    $editorMedia->delete();
+                }
+            }
+        }
+    }
+
+    /**
+     * Link EditorMedia images from content to a post.
+     * This moves images from EditorMedia to the Post's editor_images collection.
+     */
+    private function linkEditorImagesToPost(Post $post, string $content): void
+    {
+        if (empty($content)) {
+            return;
+        }
+
+        // Match all image URLs from the content
+        preg_match_all('/src=["\']([^"\']+)["\']/', $content, $matches);
+        
+        if (empty($matches[1])) {
+            return;
+        }
+
+        $urls = array_unique($matches[1]);
+        
+        foreach ($urls as $url) {
+            // Find media in EditorMedia
+            $media = \Spatie\MediaLibrary\MediaCollections\Models\Media::where('model_type', \App\Models\EditorMedia::class)
+                ->get()
+                ->first(function ($media) use ($url) {
+                    return $media->getUrl() === $url ||
+                           str_contains($url, $media->file_name);
+                });
+
+            if ($media) {
+                $editorMedia = \App\Models\EditorMedia::find($media->model_id);
+                
+                // Move media to the post
+                $media->model_type = Post::class;
+                $media->model_id = $post->id;
+                $media->collection_name = 'editor_images';
+                $media->save();
+                
+                // Delete the EditorMedia record if it has no more media
+                if ($editorMedia && $editorMedia->media()->count() === 0) {
+                    $editorMedia->delete();
+                }
+            }
+        }
     }
 }

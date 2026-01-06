@@ -32,21 +32,6 @@ class PostSeeder extends Seeder
             return;
         }
 
-        // Unsplash images for posts
-        $postImages = [
-            'https://images.unsplash.com/photo-1473186505569-9c61870c11f9?w=800&h=500&fit=crop',
-            'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&h=500&fit=crop',
-            'https://images.unsplash.com/photo-1476275466078-4007374efbbe?w=800&h=500&fit=crop',
-            'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800&h=500&fit=crop',
-            'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=800&h=500&fit=crop',
-            'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=800&h=500&fit=crop',
-            'https://images.unsplash.com/photo-1524578271613-d550eacf6090?w=800&h=500&fit=crop',
-            'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&h=500&fit=crop',
-            'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800&h=500&fit=crop',
-            'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=800&h=500&fit=crop',
-            'https://images.unsplash.com/photo-1589998059171-988d887df646?w=800&h=500&fit=crop',
-            'https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&h=500&fit=crop',
-        ];
 
         $posts = [
             [
@@ -198,12 +183,13 @@ class PostSeeder extends Seeder
                 'published_at' => $postData['status'] === 'published' ? now()->subDays(rand(1, 30)) : null,
             ]);
 
-            // Add featured image from URL using Spatie MediaLibrary
-            $imageUrl = $postImages[$index % count($postImages)];
+            // Add featured image from picsum.photos (reliable placeholder service)
+            // Using seed parameter for consistent but random images
+            $imageUrl = "https://picsum.photos/seed/post{$index}/800/500";
             try {
                 $post->addMediaFromUrl($imageUrl)->toMediaCollection('featured');
             } catch (\Exception $e) {
-                $this->command->warn("Could not add image for post: {$post->title_bn}");
+                $this->command->warn("Could not add image for post: {$post->title_bn} - {$e->getMessage()}");
             }
 
             // Attach categories

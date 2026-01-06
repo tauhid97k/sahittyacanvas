@@ -209,6 +209,7 @@ interface RichTextEditorProps {
     disabled?: boolean;
     error?: string;
     uploadContext?: string;
+    postId?: number | null;
 }
 
 export function RichTextEditor({
@@ -220,6 +221,7 @@ export function RichTextEditor({
     disabled = false,
     error,
     uploadContext = 'general',
+    postId = null,
 }: RichTextEditorProps) {
     const [isUploading, setIsUploading] = React.useState(false);
     const [showImageMenu, setShowImageMenu] = React.useState(false);
@@ -385,6 +387,9 @@ export function RichTextEditor({
                 const formData = new FormData();
                 formData.append('image', file);
                 formData.append('context', uploadContext);
+                if (postId) {
+                    formData.append('post_id', postId.toString());
+                }
 
                 const csrfToken = document
                     .querySelector('meta[name="csrf-token"]')
@@ -447,7 +452,7 @@ export function RichTextEditor({
             // Reset input so the same file can be selected again
             event.target.value = '';
         },
-        [editor, uploadContext],
+        [editor, uploadContext, postId],
     );
 
     const addYoutubeVideo = React.useCallback(() => {

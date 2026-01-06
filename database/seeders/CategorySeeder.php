@@ -16,70 +16,61 @@ class CategorySeeder extends Seeder
         // Clear existing categories
         Category::query()->delete();
 
-        // Main categories (parent categories) with Unsplash images
+        // Main categories (parent categories)
         $mainCategories = [
             [
                 'name_bn' => 'কবিতা',
                 'name_en' => 'Poetry',
                 'description' => 'বাংলা ও বিশ্ব সাহিত্যের কবিতা সংকলন',
                 'is_active' => true,
-                'image_url' => 'https://images.unsplash.com/photo-1473186505569-9c61870c11f9?w=400&h=400&fit=crop',
             ],
             [
                 'name_bn' => 'গল্প',
                 'name_en' => 'Short Stories',
                 'description' => 'ছোটগল্প ও উপন্যাসিকা',
                 'is_active' => true,
-                'image_url' => 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400&h=400&fit=crop',
             ],
             [
                 'name_bn' => 'উপন্যাস',
                 'name_en' => 'Novels',
                 'description' => 'বাংলা ও অনূদিত উপন্যাস',
                 'is_active' => true,
-                'image_url' => 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop',
             ],
             [
                 'name_bn' => 'প্রবন্ধ',
                 'name_en' => 'Essays',
                 'description' => 'সাহিত্য ও সমাজ বিষয়ক প্রবন্ধ',
                 'is_active' => true,
-                'image_url' => 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400&h=400&fit=crop',
             ],
             [
                 'name_bn' => 'নাটক',
                 'name_en' => 'Drama',
                 'description' => 'মঞ্চ নাটক ও নাট্য সাহিত্য',
                 'is_active' => true,
-                'image_url' => 'https://images.unsplash.com/photo-1503095396549-807759245b35?w=400&h=400&fit=crop',
             ],
             [
                 'name_bn' => 'ছড়া',
                 'name_en' => 'Rhymes',
                 'description' => 'শিশুতোষ ছড়া ও কিশোর সাহিত্য',
                 'is_active' => true,
-                'image_url' => 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&h=400&fit=crop',
             ],
         ];
 
         $createdParents = [];
 
-        foreach ($mainCategories as $categoryData) {
-            $imageUrl = $categoryData['image_url'] ?? null;
-            unset($categoryData['image_url']);
-
+        foreach ($mainCategories as $index => $categoryData) {
             $category = Category::create([
                 ...$categoryData,
                 'slug' => Str::slug($categoryData['name_en']),
             ]);
 
-            // Add image using Spatie MediaLibrary
-            if ($imageUrl) {
-                try {
-                    $category->addMediaFromUrl($imageUrl)->toMediaCollection('image');
-                } catch (\Exception $e) {
-                    $this->command->warn("Could not add image for category: {$category->name_bn}");
-                }
+            // Add image from picsum.photos (reliable placeholder service)
+            // Using seed parameter for consistent but random images
+            $imageUrl = "https://picsum.photos/seed/category{$index}/400/400";
+            try {
+                $category->addMediaFromUrl($imageUrl)->toMediaCollection('image');
+            } catch (\Exception $e) {
+                $this->command->warn("Could not add image for category: {$category->name_bn} - {$e->getMessage()}");
             }
 
             $createdParents[$categoryData['name_en']] = $category;

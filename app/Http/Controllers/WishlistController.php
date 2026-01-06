@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Wishlist;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -40,7 +40,7 @@ class WishlistController extends Controller
         ]);
     }
 
-    public function toggle(Request $request, Product $product): JsonResponse
+    public function toggle(Request $request, Product $product): RedirectResponse
     {
         $userId = $request->user()->id;
 
@@ -50,10 +50,7 @@ class WishlistController extends Controller
 
         if ($existing) {
             $existing->delete();
-            return response()->json([
-                'added' => false,
-                'message' => 'Product removed from wishlist.',
-            ]);
+            return back()->with('success', 'পছন্দ তালিকা থেকে সরানো হয়েছে');
         }
 
         Wishlist::create([
@@ -61,31 +58,24 @@ class WishlistController extends Controller
             'product_id' => $product->id,
         ]);
 
-        return response()->json([
-            'added' => true,
-            'message' => 'Product added to wishlist.',
-        ]);
+        return back()->with('success', 'পছন্দ তালিকায় যোগ করা হয়েছে');
     }
 
-    public function remove(Request $request, Product $product): JsonResponse
+    public function remove(Request $request, Product $product): RedirectResponse
     {
         Wishlist::where('user_id', $request->user()->id)
             ->where('product_id', $product->id)
             ->delete();
 
-        return response()->json([
-            'message' => 'Product removed from wishlist.',
-        ]);
+        return back()->with('success', 'পছন্দ তালিকা থেকে সরানো হয়েছে');
     }
 
-    public function check(Request $request, Product $product): JsonResponse
+    public function check(Request $request, Product $product): RedirectResponse
     {
         $inWishlist = Wishlist::where('user_id', $request->user()->id)
             ->where('product_id', $product->id)
             ->exists();
 
-        return response()->json([
-            'in_wishlist' => $inWishlist,
-        ]);
+        return back()->with('in_wishlist', $inWishlist);
     }
 }

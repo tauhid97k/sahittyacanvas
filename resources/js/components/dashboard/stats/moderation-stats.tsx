@@ -67,7 +67,7 @@ export function ModerationStats({ stats }: ModerationStatsProps) {
                                 <p className="text-2xl font-bold">
                                     {item.value}
                                 </p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-sm text-muted-foreground">
                                     {item.title}
                                 </p>
                             </div>

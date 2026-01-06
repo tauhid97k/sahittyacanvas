@@ -473,6 +473,7 @@ export default function EditPost({
                                                               .content
                                                 }
                                                 uploadContext="post"
+                                                postId={post.id}
                                             />
                                             <FieldError>
                                                 {isEditingMainPost

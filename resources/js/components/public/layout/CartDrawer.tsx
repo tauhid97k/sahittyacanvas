@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import {
     Sheet,
     SheetContent,
+    SheetDescription,
     SheetFooter,
     SheetHeader,
     SheetTitle,
@@ -91,8 +92,11 @@ export default function CartDrawer({
                 <SheetHeader>
                     <SheetTitle className="flex items-center gap-2">
                         <ShoppingBag className="h-5 w-5" />
-                        কার্ট ({cartItems.items.length} পণ্য)
+                        Cart ({cartItems.items.length} items)
                     </SheetTitle>
+                    <SheetDescription>
+                        Review and manage your shopping cart
+                    </SheetDescription>
                 </SheetHeader>
 
                 {isEmpty ? (

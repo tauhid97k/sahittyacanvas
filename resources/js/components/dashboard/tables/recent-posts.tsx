@@ -53,38 +53,36 @@ export function RecentPosts({ posts }: RecentPostsProps) {
                 <CardDescription>Latest blog posts</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-3">
                     {posts.map((post) => (
                         <Link
                             key={post.id}
                             href={`/dashboard/posts/${post.slug}`}
-                            className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted"
+                            className="flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted"
                         >
-                            <div className="flex items-center gap-3">
-                                <div className="flex size-10 items-center justify-center rounded-full bg-muted">
-                                    {post.author_avatar ? (
-                                        <img
-                                            src={post.author_avatar}
-                                            alt={post.author}
-                                            className="size-full rounded-full object-cover"
-                                        />
-                                    ) : (
-                                        <User className="size-5 text-muted-foreground" />
-                                    )}
-                                </div>
-                                <div className="max-w-[200px]">
-                                    <p className="truncate font-medium">
-                                        {post.title}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {post.author}
-                                    </p>
-                                </div>
+                            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted">
+                                {post.author_avatar ? (
+                                    <img
+                                        src={post.author_avatar}
+                                        alt={post.author}
+                                        className="size-full rounded-full object-cover"
+                                    />
+                                ) : (
+                                    <User className="size-4 text-muted-foreground" />
+                                )}
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium">
+                                    {post.title}
+                                </p>
+                                <p className="truncate text-xs text-muted-foreground">
+                                    {post.author}
+                                </p>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-2">
                                 <div className="flex items-center gap-1 text-muted-foreground">
-                                    <Eye className="size-4" />
-                                    <span className="text-sm">
+                                    <Eye className="size-3" />
+                                    <span className="text-xs">
                                         {post.views.toLocaleString()}
                                     </span>
                                 </div>
@@ -92,6 +90,7 @@ export function RecentPosts({ posts }: RecentPostsProps) {
                                     variant={
                                         statusColors[post.status] || 'default'
                                     }
+                                    className="text-xs"
                                 >
                                     {post.status}
                                 </Badge>

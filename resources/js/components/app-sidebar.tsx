@@ -85,6 +85,11 @@ export function AppSidebar() {
                 icon: Heart,
             },
             {
+                title: 'Bookmarks',
+                href: '/dashboard/bookmarks',
+                icon: BookOpen,
+            },
+            {
                 title: 'Wishlist',
                 href: '/dashboard/wishlist',
                 icon: Bookmark,

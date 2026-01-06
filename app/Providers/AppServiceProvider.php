@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Enums\Role;
+use App\Http\Responses\LoginResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -13,7 +15,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Custom login response to handle modal login (stay on same page)
+        $this->app->singleton(LoginResponseContract::class, LoginResponse::class);
     }
 
     /**

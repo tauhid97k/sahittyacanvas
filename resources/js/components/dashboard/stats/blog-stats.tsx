@@ -47,11 +47,11 @@ export function BlogStats({ stats }: BlogStatsProps) {
                         <CardTitle className="text-sm font-medium">
                             {item.title}
                         </CardTitle>
-                        <item.icon className="size-4 text-muted-foreground" />
+                        <item.icon className="size-5 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{item.value}</div>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                             {item.description}
                         </p>
                     </CardContent>

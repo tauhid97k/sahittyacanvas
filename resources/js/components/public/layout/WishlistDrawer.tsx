@@ -2,12 +2,14 @@ import { Button } from '@/components/ui/button';
 import {
     Sheet,
     SheetContent,
+    SheetDescription,
     SheetFooter,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
 import { Link, router } from '@inertiajs/react';
 import { Heart, Package, ShoppingCart, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface WishlistItem {
     id: number;
@@ -32,7 +34,7 @@ interface WishlistDrawerProps {
 function formatPrice(priceInCents: number): string {
     return (
         '৳' +
-        (priceInCents / 100).toLocaleString('bn-BD', {
+        (priceInCents / 100).toLocaleString('en-US', {
             minimumFractionDigits: 0,
         })
     );
@@ -44,10 +46,14 @@ export default function WishlistDrawer({
     wishlistItems,
 }: WishlistDrawerProps) {
     const handleRemoveItem = (productId: number) => {
-        router.post(
-            `/wishlist/${productId}/toggle`,
-            {},
-            { preserveScroll: true }
+        router.delete(
+            `/dashboard/wishlist/${productId}`,
+            { 
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success('Removed from wishlist');
+                },
+            }
         );
     };
 
@@ -55,19 +61,33 @@ export default function WishlistDrawer({
         router.post(
             '/cart',
             { product_id: productId, quantity: 1 },
-            { preserveScroll: true }
+            { 
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success('Added to cart');
+                },
+            }
         );
     };
 
     const handleAddAllToCart = () => {
-        wishlistItems.forEach((item) => {
-            if (item.product?.in_stock) {
-                router.post(
-                    '/cart',
-                    { product_id: item.product_id, quantity: 1 },
-                    { preserveScroll: true }
-                );
-            }
+        const inStockItems = wishlistItems.filter((item) => item.product?.in_stock);
+        let addedCount = 0;
+        
+        inStockItems.forEach((item) => {
+            router.post(
+                '/cart',
+                { product_id: item.product_id, quantity: 1 },
+                { 
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        addedCount++;
+                        if (addedCount === inStockItems.length) {
+                            toast.success(`${addedCount} product(s) added to cart`);
+                        }
+                    },
+                }
+            );
         });
     };
 
@@ -83,8 +103,11 @@ export default function WishlistDrawer({
                 <SheetHeader>
                     <SheetTitle className="flex items-center gap-2">
                         <Heart className="h-5 w-5" />
-                        উইশলিস্ট ({wishlistItems.length} পণ্য)
+                        Wishlist ({wishlistItems.length} items)
                     </SheetTitle>
+                    <SheetDescription>
+                        Your saved products for later
+                    </SheetDescription>
                 </SheetHeader>
 
                 {isEmpty ? (
@@ -92,19 +115,19 @@ export default function WishlistDrawer({
                         <Heart className="h-16 w-16 text-muted-foreground/50" />
                         <div>
                             <p className="text-lg font-medium">
-                                আপনার উইশলিস্ট খালি
+                                Your wishlist is empty
                             </p>
                             <p className="text-sm text-muted-foreground">
-                                পছন্দের পণ্য যোগ করতে শপ দেখুন
+                                Add products you like to your wishlist
                             </p>
                         </div>
                         <Button asChild onClick={onClose}>
-                            <Link href="/shop">শপে যান</Link>
+                            <Link href="/shop">Go to Shop</Link>
                         </Button>
                     </div>
                 ) : (
                     <>
-                        <div className="flex-1 overflow-y-auto py-4">
+                        <div className="flex-1 overflow-y-auto px-4 py-4">
                             <div className="space-y-3">
                                 {wishlistItems.map((item) => (
                                     <div
@@ -157,7 +180,7 @@ export default function WishlistDrawer({
                                             </div>
                                             {!item.product?.in_stock && (
                                                 <span className="mt-1 text-xs text-destructive">
-                                                    স্টকে নেই
+                                                    Out of stock
                                                 </span>
                                             )}
                                         </div>
@@ -167,7 +190,7 @@ export default function WishlistDrawer({
                                             <button
                                                 onClick={() => handleRemoveItem(item.product_id)}
                                                 className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                                                title="উইশলিস্ট থেকে সরান"
+                                                title="Remove from wishlist"
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </button>
@@ -175,7 +198,7 @@ export default function WishlistDrawer({
                                                 <button
                                                     onClick={() => handleAddToCart(item.product_id)}
                                                     className="rounded p-1.5 text-primary hover:bg-primary/10"
-                                                    title="কার্টে যোগ করুন"
+                                                    title="Add to cart"
                                                 >
                                                     <ShoppingCart className="h-4 w-4" />
                                                 </button>
@@ -186,14 +209,14 @@ export default function WishlistDrawer({
                             </div>
                         </div>
 
-                        <SheetFooter className="flex-col gap-3 border-t pt-4">
+                        <SheetFooter className="flex-col gap-3 border-t px-4 pt-4">
                             {hasInStockItems && (
                                 <Button
                                     onClick={handleAddAllToCart}
                                     className="w-full gap-2"
                                 >
                                     <ShoppingCart className="h-4 w-4" />
-                                    সব কার্টে যোগ করুন
+                                    Add All to Cart
                                 </Button>
                             )}
                             <Button
@@ -202,7 +225,7 @@ export default function WishlistDrawer({
                                 className="w-full"
                                 onClick={onClose}
                             >
-                                <Link href="/shop">শপিং চালিয়ে যান</Link>
+                                <Link href="/shop">Continue Shopping</Link>
                             </Button>
                         </SheetFooter>
                     </>

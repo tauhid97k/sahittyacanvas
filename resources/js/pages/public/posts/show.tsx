@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { Bookmark, ChevronRight, Eye, Heart, MessageCircle, Share2 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface Author {
     id: number;
@@ -122,9 +123,15 @@ export default function PostShow({ post, relatedPosts }: Props) {
             return;
         }
         // Optimistic update
-        setIsLiked(!isLiked);
+        const newLikedState = !isLiked;
+        setIsLiked(newLikedState);
         setLikesCount(isLiked ? likesCount - 1 : likesCount + 1);
-        router.post(`/post/${post.id}/like`, {}, { preserveScroll: true });
+        router.post(`/post/${post.id}/like`, {}, { 
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(newLikedState ? 'Added to likes' : 'Removed from likes');
+            },
+        });
     };
 
     const handleBookmark = () => {
@@ -133,8 +140,14 @@ export default function PostShow({ post, relatedPosts }: Props) {
             return;
         }
         // Optimistic update
-        setIsBookmarked(!isBookmarked);
-        router.post(`/post/${post.id}/bookmark`, {}, { preserveScroll: true });
+        const newBookmarkState = !isBookmarked;
+        setIsBookmarked(newBookmarkState);
+        router.post(`/post/${post.id}/bookmark`, {}, { 
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(newBookmarkState ? 'Added to bookmarks' : 'Removed from bookmarks');
+            },
+        });
     };
 
     const handleShare = async () => {
@@ -152,7 +165,7 @@ export default function PostShow({ post, relatedPosts }: Props) {
         } else {
             // Fallback: copy to clipboard
             await navigator.clipboard.writeText(url);
-            alert('লিংক কপি করা হয়েছে!');
+            toast.success('Link copied to clipboard');
         }
     };
 

@@ -61,6 +61,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         : 0;
     const rating = Number(product.rating) || 0;
     const isInWishlist = wishlistIds.includes(product.id);
+    const [localIsInWishlist, setLocalIsInWishlist] = useState(isInWishlist);
     const inStock = product.in_stock !== false;
 
     const handleWishlistToggle = (e: React.MouseEvent) => {
@@ -70,6 +71,8 @@ export default function ProductCard({ product }: ProductCardProps) {
             setShowLoginModal(true);
             return;
         }
+        // Optimistic update
+        setLocalIsInWishlist(!localIsInWishlist);
         router.post(
             `/dashboard/wishlist/${product.id}/toggle`,
             {},
@@ -130,14 +133,14 @@ export default function ProductCard({ product }: ProductCardProps) {
                     {/* Wishlist Button - Top Right */}
                     <button
                         className={`absolute top-2 right-2 flex size-8 items-center justify-center rounded-full shadow-md transition-all ${
-                            isInWishlist
-                                ? 'bg-red-500 text-white hover:bg-red-600'
+                            localIsInWishlist
+                                ? 'bg-primary hover:bg-primary/90'
                                 : 'bg-white/90 text-gray-600 hover:bg-white hover:text-red-500 dark:bg-gray-800/90 dark:text-gray-300 dark:hover:bg-gray-800'
                         }`}
                         onClick={handleWishlistToggle}
                     >
                         <Heart
-                            className={`size-4 ${isInWishlist ? 'fill-current' : ''}`}
+                            className={`size-4 ${localIsInWishlist ? 'fill-red-500 text-red-500' : ''}`}
                         />
                     </button>
                     {/* Discount Badge on Image */}
