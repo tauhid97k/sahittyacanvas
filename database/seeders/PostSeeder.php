@@ -156,6 +156,22 @@ class PostSeeder extends Seeder
             ],
         ];
 
+        // Unsplash images for posts (literature/writing themed)
+        $postImages = [
+            'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=800&h=500&fit=crop', // Old books
+            'https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=800&h=500&fit=crop', // Library
+            'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&h=500&fit=crop', // Books on shelf
+            'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&h=500&fit=crop', // Open book
+            'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=800&h=500&fit=crop', // Stacked books
+            'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=800&h=500&fit=crop', // Book pile
+            'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&h=500&fit=crop', // Books with apple
+            'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=800&h=500&fit=crop', // Bookshelf
+            'https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=800&h=500&fit=crop', // Library interior
+            'https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=800&h=500&fit=crop', // Reading
+            'https://images.unsplash.com/photo-1476275466078-4007374efbbe?w=800&h=500&fit=crop', // Typewriter
+            'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&h=500&fit=crop', // Writing
+        ];
+
         foreach ($posts as $index => $postData) {
             // Find related models
             $author = $postData['author_name'] 
@@ -183,9 +199,8 @@ class PostSeeder extends Seeder
                 'published_at' => $postData['status'] === 'published' ? now()->subDays(rand(1, 30)) : null,
             ]);
 
-            // Add featured image from picsum.photos (reliable placeholder service)
-            // Using seed parameter for consistent but random images
-            $imageUrl = "https://picsum.photos/seed/post{$index}/800/500";
+            // Add featured image from Unsplash
+            $imageUrl = $postImages[$index % count($postImages)];
             try {
                 $post->addMediaFromUrl($imageUrl)->toMediaCollection('featured');
             } catch (\Exception $e) {

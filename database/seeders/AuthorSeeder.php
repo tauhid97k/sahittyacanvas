@@ -70,6 +70,16 @@ class AuthorSeeder extends Seeder
             ],
         ];
 
+        // Unsplash portrait images for authors (professional headshots)
+        $authorAvatars = [
+            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face', // Male portrait 1
+            'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face', // Male portrait 2
+            'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=face', // Male portrait 3
+            'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop&crop=face', // Male portrait 4
+            'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=200&h=200&fit=crop&crop=face', // Male portrait 5
+            'https://images.unsplash.com/photo-1463453091185-61582044d556?w=200&h=200&fit=crop&crop=face', // Male portrait 6
+        ];
+
         foreach ($authors as $index => $authorData) {
             $author = Author::updateOrCreate(
                 ['slug' => Str::slug($authorData['name_en'])],
@@ -79,10 +89,9 @@ class AuthorSeeder extends Seeder
                 ]
             );
 
-            // Add avatar from picsum.photos (reliable placeholder service)
-            // Using seed parameter for consistent but random images
+            // Add avatar from Unsplash
             if ($author->getMedia('avatar')->isEmpty()) {
-                $avatarUrl = "https://picsum.photos/seed/author{$index}/200/200";
+                $avatarUrl = $authorAvatars[$index] ?? $authorAvatars[0];
                 try {
                     $author->addMediaFromUrl($avatarUrl)->toMediaCollection('avatar');
                 } catch (\Exception $e) {

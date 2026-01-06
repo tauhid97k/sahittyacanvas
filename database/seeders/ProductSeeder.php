@@ -133,6 +133,18 @@ class ProductSeeder extends Seeder
             ],
         ];
 
+        // Unsplash images for products (books themed)
+        $productImages = [
+            'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop', // Book with glasses
+            'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=400&h=400&fit=crop', // Stack of books
+            'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&h=400&fit=crop', // Book pile
+            'https://images.unsplash.com/photo-1589998059171-988d887df646?w=400&h=400&fit=crop', // Open book
+            'https://images.unsplash.com/photo-1476275466078-4007374efbbe?w=400&h=400&fit=crop', // Vintage typewriter
+            'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=400&h=400&fit=crop', // Books stacked
+            'https://images.unsplash.com/photo-1524578271613-d550eacf6090?w=400&h=400&fit=crop', // Reading book
+            'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=400&fit=crop', // Library books
+        ];
+
         foreach ($products as $index => $productData) {
             $seller = $sellers->random();
             $category = $categories->random();
@@ -166,9 +178,8 @@ class ProductSeeder extends Seeder
                 'views_count' => rand(50, 500),
             ]);
 
-            // Add product image from picsum.photos (reliable placeholder service)
-            // Using seed parameter for consistent but random images
-            $imageUrl = "https://picsum.photos/seed/product{$index}/400/400";
+            // Add product image from Unsplash
+            $imageUrl = $productImages[$index % count($productImages)];
             try {
                 $product->addMediaFromUrl($imageUrl)->toMediaCollection('images');
             } catch (\Exception $e) {

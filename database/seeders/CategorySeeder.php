@@ -56,6 +56,16 @@ class CategorySeeder extends Seeder
             ],
         ];
 
+        // Unsplash image IDs for each category (reliable, high-quality images)
+        $categoryImages = [
+            'Poetry' => 'https://images.unsplash.com/photo-1474932430478-367dbb6832c1?w=400&h=400&fit=crop', // Writing/poetry
+            'Short Stories' => 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400&h=400&fit=crop', // Books
+            'Novels' => 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&h=400&fit=crop', // Stack of books
+            'Essays' => 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400&h=400&fit=crop', // Writing desk
+            'Drama' => 'https://images.unsplash.com/photo-1503095396549-807759245b35?w=400&h=400&fit=crop', // Theater
+            'Rhymes' => 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=400&fit=crop', // Children reading
+        ];
+
         $createdParents = [];
 
         foreach ($mainCategories as $index => $categoryData) {
@@ -64,9 +74,8 @@ class CategorySeeder extends Seeder
                 'slug' => Str::slug($categoryData['name_en']),
             ]);
 
-            // Add image from picsum.photos (reliable placeholder service)
-            // Using seed parameter for consistent but random images
-            $imageUrl = "https://picsum.photos/seed/category{$index}/400/400";
+            // Add image from Unsplash
+            $imageUrl = $categoryImages[$categoryData['name_en']] ?? "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=400&fit=crop";
             try {
                 $category->addMediaFromUrl($imageUrl)->toMediaCollection('image');
             } catch (\Exception $e) {
