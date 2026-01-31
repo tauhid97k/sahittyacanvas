@@ -221,19 +221,27 @@ class RolesPermissionsSeeder extends Seeder
             PermissionEnum::VIEW_ACTIVITY->value,
         ]);
 
-        // USER permissions - basic access
+        // USER permissions - basic access and own orders
         $userRole->givePermissionTo([
             PermissionEnum::VIEW_DASHBOARD->value,
+            PermissionEnum::LIST_ORDER->value, // Users can view their own orders
         ]);
 
         // AUTHOR permissions - can manage own posts
         $authorRole->givePermissionTo([
             PermissionEnum::VIEW_DASHBOARD->value,
+            // Categories (needed to see categories for post creation)
+            PermissionEnum::LIST_CATEGORY->value,
+            // Authors (needed to see authors list)
+            PermissionEnum::LIST_AUTHOR->value,
+            // Posts
             PermissionEnum::LIST_POST->value,
             PermissionEnum::VIEW_POST->value,
             PermissionEnum::CREATE_POST->value,
             PermissionEnum::EDIT_POST->value,
             PermissionEnum::DELETE_POST->value,
+            // Comments (needed to see comments on own posts)
+            PermissionEnum::LIST_COMMENT->value,
         ]);
 
         // EDITOR permissions - can manage posts and categories
@@ -243,10 +251,12 @@ class RolesPermissionsSeeder extends Seeder
             PermissionEnum::LIST_CATEGORY->value,
             PermissionEnum::CREATE_CATEGORY->value,
             PermissionEnum::EDIT_CATEGORY->value,
+            PermissionEnum::DELETE_CATEGORY->value,
             // Authors
             PermissionEnum::LIST_AUTHOR->value,
             PermissionEnum::CREATE_AUTHOR->value,
             PermissionEnum::EDIT_AUTHOR->value,
+            PermissionEnum::DELETE_AUTHOR->value,
             // Posts
             PermissionEnum::LIST_POST->value,
             PermissionEnum::VIEW_POST->value,
@@ -254,6 +264,8 @@ class RolesPermissionsSeeder extends Seeder
             PermissionEnum::EDIT_POST->value,
             PermissionEnum::DELETE_POST->value,
             PermissionEnum::RESTORE_POST->value,
+            // Comments
+            PermissionEnum::LIST_COMMENT->value,
         ]);
 
         // MODERATOR permissions - can moderate content
@@ -284,12 +296,16 @@ class RolesPermissionsSeeder extends Seeder
         // SELLER permissions - can manage own products and orders
         $sellerRole->givePermissionTo([
             PermissionEnum::VIEW_DASHBOARD->value,
+            // Product Categories (needed to see categories for product creation)
+            PermissionEnum::LIST_PRODUCT_CATEGORY->value,
             // Products
             PermissionEnum::LIST_PRODUCT->value,
             PermissionEnum::VIEW_PRODUCT->value,
             PermissionEnum::CREATE_PRODUCT->value,
             PermissionEnum::EDIT_PRODUCT->value,
             PermissionEnum::DELETE_PRODUCT->value,
+            // Product Reviews (needed to see reviews on own products)
+            PermissionEnum::LIST_PRODUCT_REVIEW->value,
             // Orders
             PermissionEnum::LIST_ORDER->value,
             PermissionEnum::VIEW_ORDER->value,

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Enums\Role;
 use App\Http\Requests\Post\StorePostRequest;
 use App\Http\Requests\Post\UpdatePostRequest;
@@ -26,7 +27,17 @@ class PostController extends Controller
      */
     public function index(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::LIST_POST->value)) {
+            abort(403);
+        }
+
+        $user = $request->user();
         $trashed = $request->boolean('trashed');
+        $scope = $request->get('scope', 'all');
+        
+        // Check if user can view all posts (Super Admin or Admin)
+        $canViewAll = $user->hasRole(Role::SUPER->value) || $user->hasRole(Role::ADMIN->value);
         
         $posts = Post::query()
             ->select([
@@ -43,6 +54,10 @@ class PostController extends Controller
             ])
             ->withTotalVisitCount()
             ->withCount('pages')
+            // Ownership filtering: Regular users see only their own, Super/Admin see all or filter
+            ->when(!$canViewAll || $scope === 'mine', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->get('search');
                 $query->where(function ($q) use ($search) {
@@ -77,14 +92,30 @@ class PostController extends Controller
             ->ordered()
             ->get();
 
+        $authors = Author::query()
+            ->select('id', 'name_bn', 'name_en')
+            ->active()
+            ->orderBy('name_bn')
+            ->get();
+
         return Inertia::render('dashboard/posts/index', [
             'posts' => $posts,
             'categories' => $categories,
+            'authors' => $authors,
             'filters' => [
                 'search' => $request->get('search', ''),
                 'status' => $request->get('status', ''),
                 'category' => $request->get('category', ''),
+                'scope' => $scope,
                 'trashed' => $trashed,
+            ],
+            'canViewAll' => $canViewAll,
+            'can' => [
+                'create_post' => $request->user()->can(Permission::CREATE_POST->value),
+                'edit_post' => $request->user()->can(Permission::EDIT_POST->value),
+                'delete_post' => $request->user()->can(Permission::DELETE_POST->value),
+                'restore_post' => $request->user()->can(Permission::RESTORE_POST->value),
+                'force_delete_post' => $request->user()->can(Permission::FORCE_DELETE_POST->value),
             ],
         ]);
     }
@@ -92,8 +123,13 @@ class PostController extends Controller
     /**
      * Show the form for creating a new post.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::CREATE_POST->value)) {
+            abort(403);
+        }
+
         $categories = Category::query()
             ->select('id', 'name_bn', 'name_en')
             ->active()
@@ -118,6 +154,11 @@ class PostController extends Controller
      */
     public function show(Request $request, Post $post): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::VIEW_POST->value)) {
+            abort(403);
+        }
+
         $post->load(['media', 'pages', 'categories', 'author', 'user']);
         $post->featured_image_url = $post->getFirstMediaUrl('featured') ?: null;
 
@@ -194,6 +235,11 @@ class PostController extends Controller
      */
     public function store(StorePostRequest $request): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::CREATE_POST->value)) {
+            abort(403);
+        }
+
         $validated = $request->validated();
 
         // Remove fields handled separately
@@ -286,6 +332,11 @@ class PostController extends Controller
      */
     public function update(UpdatePostRequest $request, Post $post): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::EDIT_POST->value)) {
+            abort(403);
+        }
+
         $validated = $request->validated();
 
         // Remove fields handled separately
@@ -362,8 +413,13 @@ class PostController extends Controller
     /**
      * Remove the specified post (soft delete).
      */
-    public function destroy(Post $post): RedirectResponse
+    public function destroy(Request $request, Post $post): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::DELETE_POST->value)) {
+            abort(403);
+        }
+
         $post->delete();
 
         return back()->with('success', 'পোস্ট রিসাইকেল বিনে সরানো হয়েছে।');
@@ -372,9 +428,14 @@ class PostController extends Controller
     /**
      * Restore a soft-deleted post.
      */
-    public function restore(int $id): RedirectResponse
+    public function restore(Request $request, string $id): RedirectResponse
     {
-        $post = Post::withTrashed()->findOrFail($id);
+        // Check permission
+        if ($request->user()->cannot(Permission::RESTORE_POST->value)) {
+            abort(403);
+        }
+
+        $post = Post::onlyTrashed()->findOrFail($id);
         $post->restore();
 
         return back()->with('success', 'পোস্ট পুনরুদ্ধার করা হয়েছে।');

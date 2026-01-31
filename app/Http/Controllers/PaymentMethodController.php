@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Models\PaymentMethod;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,11 @@ class PaymentMethodController extends Controller
      */
     public function index(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::LIST_PAYMENT_METHOD->value)) {
+            abort(403);
+        }
+
         $paymentMethods = PaymentMethod::query()
             ->with('media')
             ->when($request->filled('search'), function ($query) use ($request) {
@@ -47,6 +53,11 @@ class PaymentMethodController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::CREATE_PAYMENT_METHOD->value)) {
+            abort(403);
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:payment_methods,name'],
             'type' => ['required', 'string', 'in:mobile_banking,bank,cod'],
@@ -91,6 +102,11 @@ class PaymentMethodController extends Controller
      */
     public function update(Request $request, PaymentMethod $paymentMethod): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::EDIT_PAYMENT_METHOD->value)) {
+            abort(403);
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('payment_methods', 'name')->ignore($paymentMethod->id)],
             'type' => ['required', 'string', 'in:mobile_banking,bank,cod'],
@@ -141,8 +157,13 @@ class PaymentMethodController extends Controller
     /**
      * Remove the specified payment method.
      */
-    public function destroy(PaymentMethod $paymentMethod): RedirectResponse
+    public function destroy(Request $request, PaymentMethod $paymentMethod): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::DELETE_PAYMENT_METHOD->value)) {
+            abort(403);
+        }
+
         // Check if payment method has transactions
         if ($paymentMethod->transactions()->exists()) {
             return back()->with('error', 'এই পেমেন্ট মেথড মুছে ফেলা যাবে না কারণ এটি লেনদেনে ব্যবহৃত হয়েছে।');

@@ -18,7 +18,8 @@ class ProfileUpdateRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-
+            'username' => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique(User::class)->ignore($this->user()->id)],
+            'bio' => ['nullable', 'string', 'max:500'],
             'email' => [
                 'required',
                 'string',
@@ -28,5 +29,18 @@ class ProfileUpdateRequest extends FormRequest
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
         ];
+    }
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        // Strip all HTML tags from bio to prevent HTML injection
+        if ($this->has('bio') && !is_null($this->bio)) {
+            $this->merge([
+                'bio' => strip_tags($this->bio),
+            ]);
+        }
     }
 }

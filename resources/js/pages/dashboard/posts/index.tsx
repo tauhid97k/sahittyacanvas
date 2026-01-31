@@ -61,7 +61,16 @@ interface Props {
         search: string;
         status: string;
         category: string;
+        scope: string;
         trashed: boolean;
+    };
+    canViewAll: boolean;
+    can: {
+        create_post: boolean;
+        edit_post: boolean;
+        delete_post: boolean;
+        restore_post: boolean;
+        force_delete_post: boolean;
     };
 }
 
@@ -80,7 +89,7 @@ const statusColors: Record<
     archived: 'destructive',
 };
 
-export default function PostsIndex({ posts, categories, filters }: Props) {
+export default function PostsIndex({ posts, categories, filters, canViewAll, can }: Props) {
     const [search, setSearch] = useState(filters.search);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [openRestoreDialog, setOpenRestoreDialog] = useState(false);
@@ -324,25 +333,29 @@ export default function PostsIndex({ posts, categories, filters }: Props) {
                     <DropdownMenuContent align="end">
                         {filters.trashed ? (
                             <>
-                                <DropdownMenuItem
-                                    onClick={() => {
-                                        setSelectedPost(row.original);
-                                        setOpenRestoreDialog(true);
-                                    }}
-                                >
-                                    <RotateCcw />
-                                    Restore
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    variant="destructive"
-                                    onClick={() => {
-                                        setSelectedPost(row.original);
-                                        setOpenForceDeleteDialog(true);
-                                    }}
-                                >
-                                    <Trash2 />
-                                    Delete Permanently
-                                </DropdownMenuItem>
+                                {can.restore_post && (
+                                    <DropdownMenuItem
+                                        onClick={() => {
+                                            setSelectedPost(row.original);
+                                            setOpenRestoreDialog(true);
+                                        }}
+                                    >
+                                        <RotateCcw />
+                                        Restore
+                                    </DropdownMenuItem>
+                                )}
+                                {can.force_delete_post && (
+                                    <DropdownMenuItem
+                                        variant="destructive"
+                                        onClick={() => {
+                                            setSelectedPost(row.original);
+                                            setOpenForceDeleteDialog(true);
+                                        }}
+                                    >
+                                        <Trash2 />
+                                        Delete Permanently
+                                    </DropdownMenuItem>
+                                )}
                             </>
                         ) : (
                             <>
@@ -354,21 +367,25 @@ export default function PostsIndex({ posts, categories, filters }: Props) {
                                         View
                                     </Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                    <Link
-                                        href={`/dashboard/posts/${row.original.slug}/edit`}
+                                {can.edit_post && (
+                                    <DropdownMenuItem asChild>
+                                        <Link
+                                            href={`/dashboard/posts/${row.original.slug}/edit`}
+                                        >
+                                            <Pencil />
+                                            Edit
+                                        </Link>
+                                    </DropdownMenuItem>
+                                )}
+                                {can.delete_post && (
+                                    <DropdownMenuItem
+                                        variant="destructive"
+                                        onClick={() => openDelete(row.original)}
                                     >
-                                        <Pencil />
-                                        Edit
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    variant="destructive"
-                                    onClick={() => openDelete(row.original)}
-                                >
-                                    <Trash />
-                                    Delete
-                                </DropdownMenuItem>
+                                        <Trash />
+                                        Delete
+                                    </DropdownMenuItem>
+                                )}
                             </>
                         )}
                     </DropdownMenuContent>
@@ -408,12 +425,36 @@ export default function PostsIndex({ posts, categories, filters }: Props) {
                             {filters.trashed ? 'All Posts' : 'Recycle Bin'}
                         </Button>
                         {!filters.trashed && (
-                            <Button asChild>
-                                <Link href="/dashboard/posts/create">
-                                    <Plus />
-                                    Add Post
-                                </Link>
-                            </Button>
+                            <>
+                                {canViewAll && (
+                                    <Select
+                                        value={filters.scope || 'all'}
+                                        onValueChange={(value) => {
+                                            router.get(
+                                                '/dashboard/posts',
+                                                { ...filters, scope: value, page: 1 },
+                                                { preserveState: true },
+                                            );
+                                        }}
+                                    >
+                                        <SelectTrigger className="w-[180px]">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Posts</SelectItem>
+                                            <SelectItem value="mine">My Posts</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                                {can.create_post && (
+                                    <Button asChild>
+                                        <Link href="/dashboard/posts/create">
+                                            <Plus />
+                                            Create Post
+                                        </Link>
+                                    </Button>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>

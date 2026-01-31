@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Models\Comment;
 use App\Models\ModerationSetting;
 use App\Models\Post;
@@ -18,6 +19,11 @@ class ModerationController extends Controller
      */
     public function index(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::LIST_MODERATION->value)) {
+            abort(403);
+        }
+
         $tab = $request->get('tab', 'posts');
 
         // Pending posts (moderation_status = pending)
@@ -119,6 +125,11 @@ class ModerationController extends Controller
      */
     public function approvePost(Request $request, Post $post): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::APPROVE_POST->value)) {
+            abort(403);
+        }
+
         $post->update([
             'moderation_status' => 'approved',
             'moderated_at' => now(),
@@ -133,6 +144,11 @@ class ModerationController extends Controller
      */
     public function rejectPost(Request $request, Post $post): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::REJECT_POST->value)) {
+            abort(403);
+        }
+
         $post->update([
             'moderation_status' => 'rejected',
             'moderated_at' => now(),
@@ -147,6 +163,11 @@ class ModerationController extends Controller
      */
     public function approveComment(Request $request, Comment $comment): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::APPROVE_COMMENT->value)) {
+            abort(403);
+        }
+
         $comment->update([
             'moderation_status' => 'approved',
             'moderated_at' => now(),
@@ -161,6 +182,11 @@ class ModerationController extends Controller
      */
     public function rejectComment(Request $request, Comment $comment): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::REJECT_COMMENT->value)) {
+            abort(403);
+        }
+
         $comment->update([
             'moderation_status' => 'rejected',
             'moderated_at' => now(),
@@ -175,6 +201,11 @@ class ModerationController extends Controller
      */
     public function approveProduct(Request $request, Product $product): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::APPROVE_PRODUCT->value)) {
+            abort(403);
+        }
+
         $product->update([
             'moderation_status' => 'approved',
             'moderated_at' => now(),
@@ -189,6 +220,11 @@ class ModerationController extends Controller
      */
     public function rejectProduct(Request $request, Product $product): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::REJECT_PRODUCT->value)) {
+            abort(403);
+        }
+
         $product->update([
             'moderation_status' => 'rejected',
             'moderated_at' => now(),
@@ -203,6 +239,11 @@ class ModerationController extends Controller
      */
     public function updateSettings(Request $request): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::MANAGE_MODERATION_SETTINGS->value)) {
+            abort(403);
+        }
+
         $request->validate([
             'key' => 'required|string|in:posts_require_approval,comments_require_approval,products_require_approval',
             'value' => 'required|boolean',

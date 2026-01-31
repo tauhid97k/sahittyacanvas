@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Models\Comment;
 use App\Models\ModerationSetting;
 use App\Models\Post;
@@ -17,6 +18,11 @@ class CommentController extends Controller
      */
     public function index(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::LIST_COMMENT->value)) {
+            abort(403);
+        }
+
         $comments = Comment::query()
             ->with([
                 'user:id,name,email,avatar',
@@ -55,6 +61,11 @@ class CommentController extends Controller
                 'status' => $request->get('status', ''),
             ],
             'commentModerationEnabled' => ModerationSetting::commentsRequireApproval(),
+            'can' => [
+                'approve_comment' => $request->user()->can(Permission::APPROVE_COMMENT->value),
+                'reject_comment' => $request->user()->can(Permission::REJECT_COMMENT->value),
+                'delete_comment' => $request->user()->can(Permission::DELETE_COMMENT->value),
+            ],
         ]);
     }
 
@@ -63,6 +74,11 @@ class CommentController extends Controller
      */
     public function approve(Request $request, Comment $comment): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::APPROVE_COMMENT->value)) {
+            abort(403);
+        }
+
         $comment->update([
             'moderation_status' => 'approved',
             'moderated_at' => now(),
@@ -77,6 +93,11 @@ class CommentController extends Controller
      */
     public function reject(Request $request, Comment $comment): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::REJECT_COMMENT->value)) {
+            abort(403);
+        }
+
         $comment->update([
             'moderation_status' => 'rejected',
             'moderated_at' => now(),
@@ -89,8 +110,13 @@ class CommentController extends Controller
     /**
      * Remove the specified comment.
      */
-    public function destroy(Comment $comment): RedirectResponse
+    public function destroy(Request $request, Comment $comment): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::DELETE_COMMENT->value)) {
+            abort(403);
+        }
+
         $comment->delete();
 
         return back()->with('success', 'Comment deleted successfully.');

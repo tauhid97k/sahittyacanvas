@@ -36,6 +36,12 @@ interface Props {
     categories: PaginatedData<ProductCategory>;
     filters: {
         search: string;
+        status: string;
+    };
+    can: {
+        create_product_category: boolean;
+        edit_product_category: boolean;
+        delete_product_category: boolean;
     };
 }
 
@@ -44,7 +50,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Product Categories', href: '/dashboard/product-categories' },
 ];
 
-export default function ProductCategoriesIndex({ categories, filters }: Props) {
+export default function ProductCategoriesIndex({ categories, filters, can }: Props) {
     const [search, setSearch] = useState(filters.search);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [selectedCategory, setSelectedCategory] =
@@ -172,21 +178,25 @@ export default function ProductCategoriesIndex({ categories, filters }: Props) {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                            <Link
-                                href={`/dashboard/product-categories/${row.original.slug}/edit`}
+                        {can.edit_product_category && (
+                            <DropdownMenuItem asChild>
+                                <Link
+                                    href={`/dashboard/product-categories/${row.original.slug}/edit`}
+                                >
+                                    <Pencil />
+                                    Edit
+                                </Link>
+                            </DropdownMenuItem>
+                        )}
+                        {can.delete_product_category && (
+                            <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() => openDelete(row.original)}
                             >
-                                <Pencil />
-                                Edit
-                            </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => openDelete(row.original)}
-                        >
-                            <Trash />
-                            Delete
-                        </DropdownMenuItem>
+                                <Trash />
+                                Delete
+                            </DropdownMenuItem>
+                        )}
                     </DropdownMenuContent>
                 </DropdownMenu>
             ),

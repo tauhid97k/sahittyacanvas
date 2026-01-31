@@ -55,6 +55,15 @@ interface Props {
         search: string;
         status: string;
         moderation: string;
+        scope: string;
+    };
+    canViewAll: boolean;
+    can: {
+        create_product: boolean;
+        edit_product: boolean;
+        delete_product: boolean;
+        approve_product: boolean;
+        reject_product: boolean;
     };
 }
 
@@ -76,7 +85,7 @@ const moderationColors: Record<string, string> = {
     rejected: 'destructive',
 };
 
-export default function ProductsIndex({ products, filters }: Props) {
+export default function ProductsIndex({ products, filters, canViewAll, can }: Props) {
     const [search, setSearch] = useState(filters.search);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(
@@ -369,21 +378,25 @@ export default function ProductsIndex({ products, filters }: Props) {
                                 </Link>
                             </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem asChild>
-                            <Link
-                                href={`/dashboard/products/${row.original.slug}/edit`}
+                        {can.edit_product && (
+                            <DropdownMenuItem asChild>
+                                <Link
+                                    href={`/dashboard/products/${row.original.slug}/edit`}
+                                >
+                                    <Pencil />
+                                    Edit
+                                </Link>
+                            </DropdownMenuItem>
+                        )}
+                        {can.delete_product && (
+                            <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() => openDelete(row.original)}
                             >
-                                <Pencil />
-                                Edit
-                            </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => openDelete(row.original)}
-                        >
-                            <Trash />
-                            Delete
-                        </DropdownMenuItem>
+                                <Trash />
+                                Delete
+                            </DropdownMenuItem>
+                        )}
                     </DropdownMenuContent>
                 </DropdownMenu>
             ),
@@ -408,12 +421,36 @@ export default function ProductsIndex({ products, filters }: Props) {
                             Manage your products
                         </p>
                     </div>
-                    <Button asChild>
-                        <Link href="/dashboard/products/create">
-                            <Plus />
-                            Add Product
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        {canViewAll && (
+                            <Select
+                                value={filters.scope || 'all'}
+                                onValueChange={(value) => {
+                                    router.get(
+                                        '/dashboard/products',
+                                        { ...filters, scope: value, page: 1 },
+                                        { preserveState: true },
+                                    );
+                                }}
+                            >
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Products</SelectItem>
+                                    <SelectItem value="mine">My Products</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        )}
+                        {can.create_product && (
+                            <Button asChild>
+                                <Link href="/dashboard/products/create">
+                                    <Plus />
+                                    Create Product
+                                </Link>
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Card Wrapper */}

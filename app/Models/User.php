@@ -75,6 +75,48 @@ class User extends Authenticatable implements HasMedia
     }
 
     /**
+     * Boot the model
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($user) {
+            if (empty($user->username)) {
+                $user->username = self::generateUniqueUsername($user->name ?? $user->email);
+            }
+        });
+    }
+
+    /**
+     * Generate unique username from name or email
+     */
+    public static function generateUniqueUsername(string $base): string
+    {
+        // Clean the base string and create initial username
+        $username = \Illuminate\Support\Str::slug($base, '');
+        
+        // If empty after slugification, use email prefix or random string
+        if (empty($username)) {
+            $username = 'user' . uniqid();
+        }
+        
+        // Limit to 50 characters (leaving room for counter)
+        $username = substr($username, 0, 50);
+        
+        // Ensure uniqueness
+        $originalUsername = $username;
+        $counter = 1;
+        
+        while (self::where('username', $username)->exists()) {
+            $username = $originalUsername . $counter;
+            $counter++;
+        }
+        
+        return $username;
+    }
+
+    /**
      * Activity log options
      */
     public function getActivitylogOptions(): LogOptions
@@ -242,6 +284,30 @@ class User extends Authenticatable implements HasMedia
     public function cart(): HasOne
     {
         return $this->hasOne(Cart::class);
+    }
+
+    /**
+     * Get user's wishlist items
+     */
+    public function wishlists(): HasMany
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    /**
+     * Get transactions where user is the payer (buyer)
+     */
+    public function payerTransactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class, 'payer_id');
+    }
+
+    /**
+     * Get transactions where user is the payee (seller)
+     */
+    public function payeeTransactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class, 'payee_id');
     }
 
     // ==================== HELPER METHODS ====================

@@ -86,6 +86,11 @@ interface Props {
         status: string;
     };
     commentModerationEnabled: boolean;
+    can: {
+        approve_comment: boolean;
+        reject_comment: boolean;
+        delete_comment: boolean;
+    };
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -97,6 +102,7 @@ export default function CommentsIndex({
     comments,
     filters,
     commentModerationEnabled,
+    can,
 }: Props) {
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [selectedComment, setSelectedComment] = useState<Comment | null>(
@@ -284,7 +290,7 @@ export default function CommentsIndex({
                                 View Post
                             </Link>
                         </DropdownMenuItem>
-                        {row.original.moderation_status === 'pending' && (
+                        {can.approve_comment && row.original.moderation_status === 'pending' && (
                             <DropdownMenuItem
                                 onClick={() => handleApprove(row.original)}
                                 disabled={isApproving}
@@ -293,13 +299,15 @@ export default function CommentsIndex({
                                 Approve
                             </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => openDelete(row.original)}
-                        >
-                            <Trash />
-                            Delete
-                        </DropdownMenuItem>
+                        {can.delete_comment && (
+                            <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() => openDelete(row.original)}
+                            >
+                                <Trash />
+                                Delete
+                            </DropdownMenuItem>
+                        )}
                     </DropdownMenuContent>
                 </DropdownMenu>
             ),

@@ -98,6 +98,13 @@ interface Props {
         status: string;
         role: string;
     };
+    can: {
+        view_user: boolean;
+        create_user: boolean;
+        edit_user: boolean;
+        ban_user: boolean;
+        delete_user: boolean;
+    };
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -105,7 +112,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Users', href: '/dashboard/users' },
 ];
 
-export default function UsersIndex({ users, roles, filters }: Props) {
+export default function UsersIndex({ users, roles, filters, can }: Props) {
     const [deleteDialog, setDeleteDialog] = useState(false);
     const [banDialog, setBanDialog] = useState(false);
     const [createDialog, setCreateDialog] = useState(false);
@@ -376,40 +383,48 @@ export default function UsersIndex({ users, roles, filters }: Props) {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                            <Link href={`/dashboard/users/${row.original.id}`}>
-                                <Eye />
-                                View
-                            </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={() => openEditDialog(row.original)}
-                        >
-                            <Edit />
-                            Edit
-                        </DropdownMenuItem>
-                        {row.original.banned_at ? (
-                            <DropdownMenuItem
-                                onClick={() => handleUnban(row.original)}
-                            >
-                                <ShieldOff />
-                                Unban
-                            </DropdownMenuItem>
-                        ) : (
-                            <DropdownMenuItem
-                                onClick={() => openBanDialog(row.original)}
-                            >
-                                <Ban />
-                                Ban
+                        {can.view_user && (
+                            <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/users/${row.original.id}`}>
+                                    <Eye />
+                                    View
+                                </Link>
                             </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => openDeleteDialog(row.original)}
-                        >
-                            <Trash />
-                            Delete
-                        </DropdownMenuItem>
+                        {can.edit_user && (
+                            <DropdownMenuItem
+                                onClick={() => openEditDialog(row.original)}
+                            >
+                                <Edit />
+                                Edit
+                            </DropdownMenuItem>
+                        )}
+                        {can.ban_user && (
+                            row.original.banned_at ? (
+                                <DropdownMenuItem
+                                    onClick={() => handleUnban(row.original)}
+                                >
+                                    <ShieldOff />
+                                    Unban
+                                </DropdownMenuItem>
+                            ) : (
+                                <DropdownMenuItem
+                                    onClick={() => openBanDialog(row.original)}
+                                >
+                                    <Ban />
+                                    Ban
+                                </DropdownMenuItem>
+                            )
+                        )}
+                        {can.delete_user && (
+                            <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() => openDeleteDialog(row.original)}
+                            >
+                                <Trash />
+                                Delete
+                            </DropdownMenuItem>
+                        )}
                     </DropdownMenuContent>
                 </DropdownMenu>
             ),
@@ -434,10 +449,12 @@ export default function UsersIndex({ users, roles, filters }: Props) {
                             Manage system users
                         </p>
                     </div>
-                    <Button onClick={openCreateDialog}>
-                        <Plus />
-                        Add User
-                    </Button>
+                    {can.create_user && (
+                        <Button onClick={openCreateDialog}>
+                            <Plus />
+                            Add User
+                        </Button>
+                    )}
                 </div>
 
                 {/* Card Wrapper */}

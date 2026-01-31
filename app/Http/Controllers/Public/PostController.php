@@ -11,6 +11,7 @@ use App\Models\Post;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -68,18 +69,21 @@ class PostController extends Controller
             'published_at' => $post->published_at?->toISOString(),
         ]);
 
-        $categories = Category::query()
-            ->active()
-            ->root()
-            ->withCount(['posts' => fn ($q) => $q->published()])
-            ->ordered()
-            ->get()
-            ->map(fn ($cat) => [
-                'id' => $cat->id,
-                'name_bn' => $cat->name_bn,
-                'slug' => $cat->slug,
-                'posts_count' => $cat->posts_count,
-            ]);
+        // Cache categories list (rarely changes)
+        $categories = Cache::tags(['categories'])->remember('post-categories', 3600, function () {
+            return Category::query()
+                ->active()
+                ->root()
+                ->withCount(['posts' => fn ($q) => $q->published()])
+                ->ordered()
+                ->get()
+                ->map(fn ($cat) => [
+                    'id' => $cat->id,
+                    'name_bn' => $cat->name_bn,
+                    'slug' => $cat->slug,
+                    'posts_count' => $cat->posts_count,
+                ]);
+        });
 
         return Inertia::render('public/posts/index', [
             'posts' => $posts,

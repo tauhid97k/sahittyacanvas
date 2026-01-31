@@ -21,7 +21,7 @@ class StorePostRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title_bn' => ['required', 'string', 'max:255', Rule::unique('posts', 'title_bn')],
+            'title_bn' => ['required', 'string', 'max:255'],
             'title_en' => ['required', 'string', 'max:255', Rule::unique('posts', 'title_en')],
             'excerpt' => ['required', 'string'],
             'meta_description' => ['nullable', 'string', 'max:160'],

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Product;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreProductRequest extends FormRequest
 {
@@ -22,13 +23,13 @@ class StoreProductRequest extends FormRequest
         $rules = [
             'name_bn' => ['required', 'string', 'max:255'],
             'name_en' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
+            'description' => ['required', 'string'],
             'price' => ['required', 'numeric', 'min:0.01', 'max:9999999.99'],
             'discount_type' => ['nullable', 'in:percentage,flat'],
             'discount_value' => ['nullable', 'numeric', 'min:0'],
             'stock_count' => ['required', 'integer', 'min:0', 'max:999999'],
             'stock_alert_threshold' => ['nullable', 'integer', 'min:0', 'max:999'],
-            'sku' => ['nullable', 'string', 'max:100'],
+            'sku' => ['nullable', 'string', 'max:100', Rule::unique('products', 'sku')],
             'status' => ['required', 'in:draft,published'],
             'category_ids' => ['nullable', 'array'],
             'category_ids.*' => ['exists:product_categories,id'],

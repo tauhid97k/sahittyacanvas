@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\Permission;
+use App\Enums\Role;
 use App\Http\Requests\Order\CheckoutRequest;
 use App\Http\Requests\Order\UpdateOrderStatusRequest;
 use App\Enums\TransactionStatus;
@@ -25,6 +27,11 @@ class OrderController extends Controller
      */
     public function index(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::LIST_ORDER->value)) {
+            abort(403);
+        }
+
         $user = $request->user();
 
         $orders = Order::query()
@@ -68,7 +75,16 @@ class OrderController extends Controller
      */
     public function sellerIndex(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::LIST_ORDER->value)) {
+            abort(403);
+        }
+
         $user = $request->user();
+        $scope = $request->get('scope', 'all');
+        
+        // Check if user can view all seller orders (Super Admin)
+        $canViewAll = $user->hasRole(Role::SUPER->value);
 
         $orders = Order::query()
             ->select([
@@ -77,7 +93,10 @@ class OrderController extends Controller
                 'shipping_city', 'tracking_number', 'created_at'
             ])
             ->with(['buyer:id,name,email', 'items:id,order_id,product_id,product_name,quantity,unit_price,total'])
-            ->where('seller_id', $user->id)
+            // Ownership filtering: Regular sellers see only their orders, Super Admin sees all or filter
+            ->when(!$canViewAll || $scope === 'mine', function ($query) use ($user) {
+                $query->where('seller_id', $user->id);
+            })
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->get('search');
                 $query->where(function ($q) use ($search) {
@@ -126,7 +145,9 @@ class OrderController extends Controller
                 'search' => $request->get('search', ''),
                 'status' => $request->get('status', ''),
                 'payment' => $request->get('payment', ''),
+                'scope' => $scope,
             ],
+            'canViewAll' => $canViewAll,
             'statuses' => collect(OrderStatus::cases())->map(fn($s) => [
                 'value' => $s->value,
                 'label' => $s->label(),
@@ -144,6 +165,11 @@ class OrderController extends Controller
      */
     public function show(Request $request, Order $order): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::VIEW_ORDER->value)) {
+            abort(403);
+        }
+
         // Ensure user is the seller
         if ($order->seller_id !== $request->user()->id) {
             abort(403);
@@ -191,6 +217,11 @@ class OrderController extends Controller
      */
     public function buyerShow(Request $request, Order $order): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::VIEW_ORDER->value)) {
+            abort(403);
+        }
+
         // Ensure user is the buyer
         if ($order->user_id !== $request->user()->id) {
             abort(403);
@@ -298,40 +329,25 @@ class OrderController extends Controller
     /**
      * Checkout - create orders from cart.
      */
-    public function checkout(Request $request): RedirectResponse
+    public function checkout(CheckoutRequest $request): RedirectResponse
     {
-        // Validate request
-        $rules = [
-            'shipping_name' => ['required', 'string', 'max:255'],
-            'shipping_phone' => ['required', 'string', 'max:20', 'regex:/^(\+88)?01[3-9]\d{8}$/'],
-            'shipping_email' => ['nullable', 'email', 'max:255'],
-            'shipping_address' => ['required', 'string', 'max:500'],
-            'shipping_city' => ['required', 'string', 'max:100'],
-            'shipping_area' => ['nullable', 'string', 'max:100'],
-            'shipping_postal_code' => ['nullable', 'string', 'max:10'],
-            'buyer_notes' => ['nullable', 'string', 'max:500'],
-            'payment_method' => ['required', 'string', 'in:cod,bkash,nagad,bank'],
-        ];
-
-        // Add guest registration rules if not authenticated
+        // Handle guest registration if not authenticated
+        $guestData = null;
         if (!$request->user()) {
-            $rules['email'] = ['required', 'email', 'max:255'];
-            $rules['password'] = ['required', 'string', 'min:8', 'confirmed'];
+            $request->validate([
+                'email' => ['required', 'email', 'max:255'],
+                'password' => ['required', 'string', 'min:8', 'confirmed'],
+            ], [
+                'email.required' => 'ইমেইল আবশ্যক।',
+                'email.email' => 'সঠিক ইমেইল দিন।',
+                'password.required' => 'পাসওয়ার্ড আবশ্যক।',
+                'password.min' => 'পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।',
+                'password.confirmed' => 'পাসওয়ার্ড মিলছে না।',
+            ]);
+            $guestData = $request->only(['email', 'password']);
         }
 
-        $validated = $request->validate($rules, [
-            'shipping_name.required' => 'নাম আবশ্যক।',
-            'shipping_phone.required' => 'ফোন নম্বর আবশ্যক।',
-            'shipping_phone.regex' => 'সঠিক বাংলাদেশি ফোন নম্বর দিন।',
-            'shipping_address.required' => 'ঠিকানা আবশ্যক।',
-            'shipping_city.required' => 'শহর আবশ্যক।',
-            'payment_method.required' => 'পেমেন্ট পদ্ধতি নির্বাচন করুন।',
-            'email.required' => 'ইমেইল আবশ্যক।',
-            'email.email' => 'সঠিক ইমেইল দিন।',
-            'password.required' => 'পাসওয়ার্ড আবশ্যক।',
-            'password.min' => 'পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।',
-            'password.confirmed' => 'পাসওয়ার্ড মিলছে না।',
-        ]);
+        $validated = $request->validated();
 
         $user = $request->user();
         $cart = $this->getCart($request);
@@ -361,18 +377,18 @@ class OrderController extends Controller
 
         try {
             // Handle guest registration
-            if (!$user) {
+            if (!$user && $guestData) {
                 // Check if email already exists
-                $existingUser = \App\Models\User::where('email', $validated['email'])->first();
+                $existingUser = \App\Models\User::where('email', $guestData['email'])->first();
                 if ($existingUser) {
                     return back()->with('error', 'এই ইমেইল দিয়ে ইতিমধ্যে অ্যাকাউন্ট আছে। অনুগ্রহ করে লগইন করুন।');
                 }
 
-                // Create new user
+                // Create new user (username will be auto-generated by boot method)
                 $user = \App\Models\User::create([
                     'name' => $validated['shipping_name'],
-                    'email' => $validated['email'],
-                    'password' => bcrypt($validated['password']),
+                    'email' => $guestData['email'],
+                    'password' => bcrypt($guestData['password']),
                 ]);
 
                 // Transfer guest cart to new user
@@ -385,8 +401,8 @@ class OrderController extends Controller
             $orderNumbers = [];
 
             foreach ($itemsBySeller as $sellerId => $items) {
-                // Calculate totals for this seller's items
-                $subtotal = $items->sum(fn($item) => $item->quantity * $item->product->price);
+                // Calculate totals for this seller's items using cart snapshot prices
+                $subtotal = $items->sum(fn($item) => $item->quantity * $item->unit_price);
                 $shippingCost = 0; // Can be calculated based on location/weight
                 $total = $subtotal + $shippingCost;
 
@@ -418,8 +434,8 @@ class OrderController extends Controller
                         'product_name' => $cartItem->product->name_bn,
                         'product_sku' => $cartItem->product->sku,
                         'quantity' => $cartItem->quantity,
-                        'unit_price' => $cartItem->product->price,
-                        'total' => $cartItem->quantity * $cartItem->product->price,
+                        'unit_price' => $cartItem->unit_price,
+                        'total' => $cartItem->quantity * $cartItem->unit_price,
                     ]);
 
                     // Decrement stock
@@ -469,6 +485,11 @@ class OrderController extends Controller
      */
     public function updateStatus(UpdateOrderStatusRequest $request, Order $order): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::UPDATE_ORDER_STATUS->value)) {
+            abort(403);
+        }
+
         // Ensure user is the seller
         if ($order->seller_id !== $request->user()->id) {
             abort(403);
@@ -516,7 +537,12 @@ class OrderController extends Controller
      */
     public function markPaid(Request $request, Order $order): RedirectResponse
     {
-        // Ensure user is the seller
+        // Check permission
+        if ($request->user()->cannot(Permission::MARK_ORDER_PAID->value)) {
+            abort(403);
+        }
+
+        // Only seller can mark order as paid
         if ($order->seller_id !== $request->user()->id) {
             abort(403);
         }
@@ -535,6 +561,11 @@ class OrderController extends Controller
      */
     public function cancel(Request $request, Order $order): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::CANCEL_ORDER->value)) {
+            abort(403);
+        }
+
         // Ensure user is the buyer
         if ($order->user_id !== $request->user()->id) {
             abort(403);

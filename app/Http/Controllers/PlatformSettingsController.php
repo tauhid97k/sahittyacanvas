@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Enums\Role;
 use App\Models\PlatformSetting;
 use App\Models\User;
 use App\Notifications\CommissionPercentageChanged;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -19,6 +22,11 @@ class PlatformSettingsController extends Controller
      */
     public function index(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::LIST_PLATFORM_SETTINGS->value)) {
+            abort(403);
+        }
+
         $tab = $request->get('tab', 'platform');
 
         return Inertia::render('dashboard/settings/index', [
@@ -40,6 +48,11 @@ class PlatformSettingsController extends Controller
      */
     public function updateCommission(Request $request): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::EDIT_PLATFORM_SETTINGS->value)) {
+            abort(403);
+        }
+
         $request->validate([
             'percentage' => ['required', 'numeric', 'min:0', 'max:100'],
         ]);

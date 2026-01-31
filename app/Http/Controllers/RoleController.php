@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission as PermissionEnum;
 use App\Enums\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,11 @@ class RoleController extends Controller
      */
     public function index(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(PermissionEnum::LIST_ROLE->value)) {
+            abort(403);
+        }
+
         $roles = SpatieRole::query()
             ->withCount('permissions')
             ->when($request->filled('search'), function ($query) use ($request) {
@@ -31,14 +37,26 @@ class RoleController extends Controller
             'filters' => [
                 'search' => $request->get('search', ''),
             ],
+            'can' => [
+                'create_role' => $request->user()->can(PermissionEnum::CREATE_ROLE->value),
+                'edit_role' => $request->user()->can(PermissionEnum::EDIT_ROLE->value),
+                'delete_role' => $request->user()->can(PermissionEnum::DELETE_ROLE->value),
+                'view_role' => $request->user()->can(PermissionEnum::VIEW_ROLE->value),
+                'manage_permissions' => $request->user()->can(PermissionEnum::MANAGE_ROLE_PERMISSIONS->value),
+            ],
         ]);
     }
 
     /**
      * Show the form for creating a new role.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(PermissionEnum::CREATE_ROLE->value)) {
+            abort(403);
+        }
+
         $permissions = Permission::query()
             ->select('id', 'name', 'group')
             ->orderBy('group')
@@ -56,6 +74,11 @@ class RoleController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(PermissionEnum::CREATE_ROLE->value)) {
+            abort(403);
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:roles,name'],
             'permissions' => ['nullable', 'array'],
@@ -74,8 +97,13 @@ class RoleController extends Controller
     /**
      * Display the specified role with its permissions.
      */
-    public function show(SpatieRole $role): Response
+    public function show(Request $request, SpatieRole $role): Response
     {
+        // Check permission
+        if ($request->user()->cannot(PermissionEnum::VIEW_ROLE->value)) {
+            abort(403);
+        }
+
         $role->load('permissions:id,name,group');
 
         $permissionsByGroup = $role->permissions->groupBy('group');
@@ -89,8 +117,13 @@ class RoleController extends Controller
     /**
      * Show the form for editing the specified role.
      */
-    public function edit(SpatieRole $role): Response
+    public function edit(Request $request, SpatieRole $role): Response
     {
+        // Check permission
+        if ($request->user()->cannot(PermissionEnum::EDIT_ROLE->value)) {
+            abort(403);
+        }
+
         $role->load('permissions:id,name');
 
         $permissions = Permission::query()
@@ -114,6 +147,11 @@ class RoleController extends Controller
      */
     public function update(Request $request, SpatieRole $role): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(PermissionEnum::EDIT_ROLE->value)) {
+            abort(403);
+        }
+
         // Prevent editing SUPER role
         if ($role->name === Role::SUPER->value) {
             return back()->with('error', 'Cannot edit super admin role.');
@@ -134,8 +172,13 @@ class RoleController extends Controller
     /**
      * Remove the specified role.
      */
-    public function destroy(SpatieRole $role): RedirectResponse
+    public function destroy(Request $request, SpatieRole $role): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(PermissionEnum::DELETE_ROLE->value)) {
+            abort(403);
+        }
+
         // Prevent deleting system roles
         $systemRoles = [Role::SUPER->value, Role::USER->value, Role::AUTHOR->value, Role::SELLER->value];
         if (in_array($role->name, $systemRoles)) {
@@ -150,8 +193,13 @@ class RoleController extends Controller
     /**
      * Show permissions for a role (modal view).
      */
-    public function permissions(SpatieRole $role): Response
+    public function permissions(Request $request, SpatieRole $role): Response
     {
+        // Check permission
+        if ($request->user()->cannot(PermissionEnum::MANAGE_ROLE_PERMISSIONS->value)) {
+            abort(403);
+        }
+
         $role->load('permissions:id,name,group');
 
         $allPermissions = Permission::query()
@@ -175,6 +223,11 @@ class RoleController extends Controller
      */
     public function updatePermissions(Request $request, SpatieRole $role): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(PermissionEnum::MANAGE_ROLE_PERMISSIONS->value)) {
+            abort(403);
+        }
+
         // Prevent editing SUPER role permissions
         if ($role->name === Role::SUPER->value) {
             return back()->with('error', 'Cannot edit super admin permissions.');

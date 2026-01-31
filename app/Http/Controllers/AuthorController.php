@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Http\Requests\Author\StoreAuthorRequest;
 use App\Http\Requests\Author\UpdateAuthorRequest;
 use App\Models\Author;
@@ -18,6 +19,11 @@ class AuthorController extends Controller
      */
     public function index(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::LIST_AUTHOR->value)) {
+            abort(403);
+        }
+
         $authors = Author::query()
             ->select(['id', 'name_bn', 'name_en', 'slug', 'nationality', 'is_active', 'created_at'])
             ->with('media')
@@ -49,14 +55,24 @@ class AuthorController extends Controller
                 'search' => $request->get('search', ''),
                 'status' => $request->get('status', ''),
             ],
+            'can' => [
+                'create_author' => $request->user()->can(Permission::CREATE_AUTHOR->value),
+                'edit_author' => $request->user()->can(Permission::EDIT_AUTHOR->value),
+                'delete_author' => $request->user()->can(Permission::DELETE_AUTHOR->value),
+            ],
         ]);
     }
 
     /**
      * Show the form for creating a new author.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::CREATE_AUTHOR->value)) {
+            abort(403);
+        }
+
         return Inertia::render('dashboard/authors/create');
     }
 
@@ -78,6 +94,11 @@ class AuthorController extends Controller
      */
     public function store(StoreAuthorRequest $request): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::CREATE_AUTHOR->value)) {
+            abort(403);
+        }
+
         $validated = $request->validated();
 
         // Remove avatar from validated data (handled separately)
@@ -109,6 +130,11 @@ class AuthorController extends Controller
      */
     public function update(UpdateAuthorRequest $request, Author $author): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::EDIT_AUTHOR->value)) {
+            abort(403);
+        }
+
         $validated = $request->validated();
 
         // Remove avatar fields from validated data (handled separately)
@@ -143,8 +169,13 @@ class AuthorController extends Controller
     /**
      * Remove the specified author.
      */
-    public function destroy(Author $author): RedirectResponse
+    public function destroy(Request $request, Author $author): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::DELETE_AUTHOR->value)) {
+            abort(403);
+        }
+
         // Check if author has posts
         if ($author->posts()->exists()) {
             return back()->withErrors(['delete' => 'Cannot delete author with posts.']);

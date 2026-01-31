@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -14,6 +15,11 @@ class ActivityController extends Controller
      */
     public function index(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::LIST_ACTIVITY->value)) {
+            abort(403);
+        }
+
         $activities = Activity::query()
             ->with(['causer', 'subject'])
             ->when($request->filled('search'), function ($query) use ($request) {
@@ -65,8 +71,13 @@ class ActivityController extends Controller
     /**
      * Display the specified activity.
      */
-    public function show(Activity $activity): Response
+    public function show(Request $request, Activity $activity): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::VIEW_ACTIVITY->value)) {
+            abort(403);
+        }
+
         $activity->load(['causer', 'subject']);
         $activity->subject_type_label = $activity->subject_type 
             ? class_basename($activity->subject_type) 

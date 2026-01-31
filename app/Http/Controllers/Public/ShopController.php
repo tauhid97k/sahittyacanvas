@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -71,18 +72,21 @@ class ShopController extends Controller
             'in_stock' => $product->stock > 0,
         ]);
 
-        $categories = ProductCategory::query()
-            ->active()
-            ->root()
-            ->withCount(['products' => fn ($q) => $q->approved()->whereNotNull('published_at')])
-            ->ordered()
-            ->get()
-            ->map(fn ($cat) => [
-                'id' => $cat->id,
-                'name_bn' => $cat->name_bn,
-                'slug' => $cat->slug,
-                'products_count' => $cat->products_count,
-            ]);
+        // Cache product categories list (rarely changes)
+        $categories = Cache::tags(['product-categories'])->remember('product-categories-list', 3600, function () {
+            return ProductCategory::query()
+                ->active()
+                ->root()
+                ->withCount(['products' => fn ($q) => $q->approved()->whereNotNull('published_at')])
+                ->ordered()
+                ->get()
+                ->map(fn ($cat) => [
+                    'id' => $cat->id,
+                    'name_bn' => $cat->name_bn,
+                    'slug' => $cat->slug,
+                    'products_count' => $cat->products_count,
+                ]);
+        });
 
         return Inertia::render('public/shop/index', [
             'products' => $products,

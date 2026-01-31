@@ -38,6 +38,11 @@ interface Props {
         search: string;
         status: string;
     };
+    can: {
+        create_category: boolean;
+        edit_category: boolean;
+        delete_category: boolean;
+    };
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -45,7 +50,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Categories', href: '/dashboard/categories' },
 ];
 
-export default function CategoriesIndex({ categories, filters }: Props) {
+export default function CategoriesIndex({ categories, filters, can }: Props) {
     const [search, setSearch] = useState(filters.search);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<Category | null>(
@@ -168,21 +173,25 @@ export default function CategoriesIndex({ categories, filters }: Props) {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                            <Link
-                                href={`/dashboard/categories/${row.original.slug}/edit`}
+                        {can.edit_category && (
+                            <DropdownMenuItem asChild>
+                                <Link
+                                    href={`/dashboard/categories/${row.original.slug}/edit`}
+                                >
+                                    <Pencil />
+                                    Edit
+                                </Link>
+                            </DropdownMenuItem>
+                        )}
+                        {can.delete_category && (
+                            <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() => openDelete(row.original)}
                             >
-                                <Pencil />
-                                Edit
-                            </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => openDelete(row.original)}
-                        >
-                            <Trash />
-                            Delete
-                        </DropdownMenuItem>
+                                <Trash />
+                                Delete
+                            </DropdownMenuItem>
+                        )}
                     </DropdownMenuContent>
                 </DropdownMenu>
             ),
@@ -207,12 +216,14 @@ export default function CategoriesIndex({ categories, filters }: Props) {
                             Manage your content categories
                         </p>
                     </div>
-                    <Button asChild>
-                        <Link href="/dashboard/categories/create">
-                            <Plus />
-                            Add Category
-                        </Link>
-                    </Button>
+                    {can.create_category && (
+                        <Button asChild>
+                            <Link href="/dashboard/categories/create">
+                                <Plus />
+                                Create Category
+                            </Link>
+                        </Button>
+                    )}
                 </div>
 
                 {/* Card Wrapper */}

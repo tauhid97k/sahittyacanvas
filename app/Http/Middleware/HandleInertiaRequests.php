@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\Permission;
 use App\Models\Bookmark;
 use App\Models\Category;
 use App\Models\ProductCategory;
@@ -48,7 +49,14 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user() ? array_merge(
+                    $request->user()->toArray(),
+                    [
+                        'permissions' => $request->user()->hasRole('SUPER') 
+                            ? array_map(fn($p) => $p->value, Permission::cases()) // SUPER gets all permissions
+                            : $request->user()->getAllPermissions()->pluck('name')->toArray()
+                    ]
+                ) : null,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'headerNotifications' => fn () => $this->getNotifications($request),

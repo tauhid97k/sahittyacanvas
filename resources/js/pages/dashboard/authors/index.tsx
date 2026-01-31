@@ -38,6 +38,11 @@ interface Props {
         search: string;
         status: string;
     };
+    can: {
+        create_author: boolean;
+        edit_author: boolean;
+        delete_author: boolean;
+    };
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -45,7 +50,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Authors', href: '/dashboard/authors' },
 ];
 
-export default function AuthorsIndex({ authors, filters }: Props) {
+export default function AuthorsIndex({ authors, filters, can }: Props) {
     const [search, setSearch] = useState(filters.search);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [selectedAuthor, setSelectedAuthor] = useState<Author | null>(null);
@@ -166,21 +171,25 @@ export default function AuthorsIndex({ authors, filters }: Props) {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                            <Link
-                                href={`/dashboard/authors/${row.original.slug}/edit`}
+                        {can.edit_author && (
+                            <DropdownMenuItem asChild>
+                                <Link
+                                    href={`/dashboard/authors/${row.original.slug}/edit`}
+                                >
+                                    <Pencil />
+                                    Edit
+                                </Link>
+                            </DropdownMenuItem>
+                        )}
+                        {can.delete_author && (
+                            <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() => openDelete(row.original)}
                             >
-                                <Pencil />
-                                Edit
-                            </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => openDelete(row.original)}
-                        >
-                            <Trash />
-                            Delete
-                        </DropdownMenuItem>
+                                <Trash />
+                                Delete
+                            </DropdownMenuItem>
+                        )}
                     </DropdownMenuContent>
                 </DropdownMenu>
             ),
@@ -205,12 +214,14 @@ export default function AuthorsIndex({ authors, filters }: Props) {
                             Manage famous writers and authors
                         </p>
                     </div>
-                    <Button asChild>
-                        <Link href="/dashboard/authors/create">
-                            <Plus />
-                            Add Author
-                        </Link>
-                    </Button>
+                    {can.create_author && (
+                        <Button asChild>
+                            <Link href="/dashboard/authors/create">
+                                <Plus />
+                                Add Author
+                            </Link>
+                        </Button>
+                    )}
                 </div>
 
                 {/* Card Wrapper */}

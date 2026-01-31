@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -19,6 +20,11 @@ class UserController extends Controller
      */
     public function index(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::LIST_USER->value)) {
+            abort(403);
+        }
+
         $users = User::query()
             ->with('roles:id,name')
             ->withCount(['posts', 'followers'])
@@ -63,6 +69,13 @@ class UserController extends Controller
                 'status' => $request->get('status', ''),
                 'role' => $request->get('role', ''),
             ],
+            'can' => [
+                'create_user' => $request->user()->can(Permission::CREATE_USER->value),
+                'edit_user' => $request->user()->can(Permission::EDIT_USER->value),
+                'delete_user' => $request->user()->can(Permission::DELETE_USER->value),
+                'ban_user' => $request->user()->can(Permission::BAN_USER->value),
+                'view_user' => $request->user()->can(Permission::VIEW_USER->value),
+            ],
         ]);
     }
 
@@ -71,6 +84,11 @@ class UserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::CREATE_USER->value)) {
+            abort(403);
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
@@ -95,6 +113,11 @@ class UserController extends Controller
      */
     public function show(Request $request, User $user): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::VIEW_USER->value)) {
+            abort(403);
+        }
+
         $user->load('roles:id,name');
         $user->loadCount(['posts', 'followers', 'following']);
 
@@ -163,6 +186,11 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::EDIT_USER->value)) {
+            abort(403);
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
@@ -188,8 +216,13 @@ class UserController extends Controller
     /**
      * Remove the specified user.
      */
-    public function destroy(User $user): RedirectResponse
+    public function destroy(Request $request, User $user): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::DELETE_USER->value)) {
+            abort(403);
+        }
+
         // Prevent deleting super admin
         if ($user->hasRole(Role::SUPER->value)) {
             return back()->with('error', 'Cannot delete super admin.');
@@ -205,6 +238,11 @@ class UserController extends Controller
      */
     public function ban(Request $request, User $user): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::BAN_USER->value)) {
+            abort(403);
+        }
+
         // Prevent banning super admin
         if ($user->hasRole(Role::SUPER->value)) {
             return back()->with('error', 'Cannot ban super admin.');
@@ -225,8 +263,13 @@ class UserController extends Controller
     /**
      * Unban a user.
      */
-    public function unban(User $user): RedirectResponse
+    public function unban(Request $request, User $user): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::BAN_USER->value)) {
+            abort(403);
+        }
+
         $user->update([
             'banned_at' => null,
             'ban_reason' => null,

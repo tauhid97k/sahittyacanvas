@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Http\Requests\Category\StoreCategoryRequest;
 use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Models\Category;
@@ -18,6 +19,11 @@ class CategoryController extends Controller
      */
     public function index(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::LIST_CATEGORY->value)) {
+            abort(403);
+        }
+
         $categories = Category::query()
             ->select(['id', 'name_bn', 'name_en', 'slug', 'description', 'parent_id', 'is_active', 'created_at'])
             ->with(['parent:id,name_bn,name_en,slug', 'media'])
@@ -49,14 +55,24 @@ class CategoryController extends Controller
                 'search' => $request->get('search', ''),
                 'status' => $request->get('status', ''),
             ],
+            'can' => [
+                'create_category' => $request->user()->can(Permission::CREATE_CATEGORY->value),
+                'edit_category' => $request->user()->can(Permission::EDIT_CATEGORY->value),
+                'delete_category' => $request->user()->can(Permission::DELETE_CATEGORY->value),
+            ],
         ]);
     }
 
     /**
      * Show the form for creating a new category.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::CREATE_CATEGORY->value)) {
+            abort(403);
+        }
+
         $categories = Category::query()
             ->select('id', 'name_bn', 'name_en')
             ->ordered()
@@ -92,6 +108,11 @@ class CategoryController extends Controller
      */
     public function store(StoreCategoryRequest $request): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::CREATE_CATEGORY->value)) {
+            abort(403);
+        }
+
         $validated = $request->validated();
 
         // Remove image from validated data (handled separately)
@@ -123,6 +144,11 @@ class CategoryController extends Controller
      */
     public function update(UpdateCategoryRequest $request, Category $category): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::EDIT_CATEGORY->value)) {
+            abort(403);
+        }
+
         $validated = $request->validated();
 
         // Remove image fields from validated data (handled separately)
@@ -157,8 +183,13 @@ class CategoryController extends Controller
     /**
      * Remove the specified category.
      */
-    public function destroy(Category $category): RedirectResponse
+    public function destroy(Request $request, Category $category): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::DELETE_CATEGORY->value)) {
+            abort(403);
+        }
+
         // Check if category has posts
         if ($category->posts()->exists()) {
             return back()->withErrors(['delete' => 'Cannot delete category with posts.']);

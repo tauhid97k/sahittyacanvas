@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('author_id')->nullable()->constrained('authors')->nullOnDelete();
-            $table->string('title_bn')->unique();
-            $table->string('title_en')->unique();
+            $table->string('title_bn'); // Can be duplicate for series posts
+            $table->string('title_en')->unique(); // Must be unique for clean SEO slugs
             $table->string('slug')->unique();
             $table->text('excerpt');
             $table->longText('content'); // Page 1 content (main content)

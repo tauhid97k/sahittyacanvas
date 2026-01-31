@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
 use Illuminate\Http\RedirectResponse;
@@ -16,6 +17,11 @@ class TransactionController extends Controller
      */
     public function index(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::LIST_TRANSACTION->value)) {
+            abort(403);
+        }
+
         $user = $request->user();
 
         $transactions = Transaction::query()
@@ -102,7 +108,12 @@ class TransactionController extends Controller
      */
     public function show(Request $request, Transaction $transaction): Response
     {
-        // Ensure user is the payee (seller)
+        // Check permission
+        if ($request->user()->cannot(Permission::VIEW_TRANSACTION->value)) {
+            abort(403);
+        }
+
+        // Authorization: Ensure user is the payee (seller)
         if ($transaction->payee_id !== $request->user()->id) {
             abort(403);
         }
@@ -135,7 +146,12 @@ class TransactionController extends Controller
      */
     public function markPaid(Request $request, Transaction $transaction): RedirectResponse
     {
-        // Ensure user is the payee (seller)
+        // Check permission
+        if ($request->user()->cannot(Permission::MARK_TRANSACTION_PAID->value)) {
+            abort(403);
+        }
+
+        // Authorization: Only seller can mark as paid
         if ($transaction->payee_id !== $request->user()->id) {
             abort(403);
         }
@@ -170,7 +186,12 @@ class TransactionController extends Controller
      */
     public function refund(Request $request, Transaction $transaction): RedirectResponse
     {
-        // Ensure user is the payee (seller)
+        // Check permission
+        if ($request->user()->cannot(Permission::REFUND_TRANSACTION->value)) {
+            abort(403);
+        }
+
+        // Authorization: Only seller can process refund
         if ($transaction->payee_id !== $request->user()->id) {
             abort(403);
         }

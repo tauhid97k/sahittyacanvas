@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Models\ProductReview;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,6 +16,11 @@ class ProductReviewController extends Controller
      */
     public function index(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::LIST_PRODUCT_REVIEW->value)) {
+            abort(403);
+        }
+
         $reviews = ProductReview::query()
             ->with([
                 'user:id,name,username,avatar',
@@ -39,9 +45,14 @@ class ProductReviewController extends Controller
     /**
      * Remove the specified review.
      */
-    public function destroy(ProductReview $productReview): RedirectResponse
+    public function destroy(Request $request, ProductReview $review): RedirectResponse
     {
-        $productReview->delete();
+        // Check permission
+        if ($request->user()->cannot(Permission::DELETE_PRODUCT_REVIEW->value)) {
+            abort(403);
+        }
+
+        $review->delete();
 
         return redirect()
             ->route('product-reviews.index')

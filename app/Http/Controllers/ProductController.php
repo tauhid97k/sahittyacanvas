@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
+use App\Enums\Role;
 use App\Http\Requests\Product\StoreProductRequest;
 use App\Http\Requests\Product\UpdateProductRequest;
 use App\Models\ModerationSetting;
@@ -20,7 +22,16 @@ class ProductController extends Controller
      */
     public function index(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::LIST_PRODUCT->value)) {
+            abort(403);
+        }
+
         $user = $request->user();
+        $scope = $request->get('scope', 'all');
+        
+        // Check if user can view all products (Super Admin)
+        $canViewAll = $user->hasRole(Role::SUPER->value);
 
         $products = Product::query()
             ->select([
@@ -29,7 +40,10 @@ class ProductController extends Controller
                 'views_count', 'created_at'
             ])
             ->with(['media', 'categories:id,name_bn,name_en,slug', 'seller:id,name'])
-            ->where('user_id', $user->id)
+            // Ownership filtering: Regular sellers see only their own, Super Admin sees all or filter
+            ->when(!$canViewAll || $scope === 'mine', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->get('search');
                 $query->where(function ($q) use ($search) {
@@ -88,6 +102,15 @@ class ProductController extends Controller
                 'moderation' => $request->get('moderation', ''),
                 'category' => $request->get('category', ''),
                 'stock' => $request->get('stock', ''),
+                'scope' => $scope,
+            ],
+            'canViewAll' => $canViewAll,
+            'can' => [
+                'create_product' => $request->user()->can(Permission::CREATE_PRODUCT->value),
+                'edit_product' => $request->user()->can(Permission::EDIT_PRODUCT->value),
+                'delete_product' => $request->user()->can(Permission::DELETE_PRODUCT->value),
+                'approve_product' => $request->user()->can(Permission::APPROVE_PRODUCT->value),
+                'reject_product' => $request->user()->can(Permission::REJECT_PRODUCT->value),
             ],
         ]);
     }
@@ -95,8 +118,13 @@ class ProductController extends Controller
     /**
      * Show the form for creating a new product.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::CREATE_PRODUCT->value)) {
+            abort(403);
+        }
+
         $categories = ProductCategory::query()
             ->select('id', 'name_bn', 'name_en', 'parent_id')
             ->active()
@@ -113,6 +141,11 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::CREATE_PRODUCT->value)) {
+            abort(403);
+        }
+
         $validated = $request->validated();
         $user = $request->user();
 
@@ -187,6 +220,11 @@ class ProductController extends Controller
      */
     public function show(Request $request, Product $product): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::VIEW_PRODUCT->value)) {
+            abort(403);
+        }
+
         // Ensure user owns this product
         if ($product->user_id !== $request->user()->id) {
             abort(403);
@@ -229,6 +267,11 @@ class ProductController extends Controller
      */
     public function edit(Request $request, Product $product): Response
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::EDIT_PRODUCT->value)) {
+            abort(403);
+        }
+
         // Ensure user owns this product
         if ($product->user_id !== $request->user()->id) {
             abort(403);
@@ -266,6 +309,11 @@ class ProductController extends Controller
      */
     public function update(UpdateProductRequest $request, Product $product): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::EDIT_PRODUCT->value)) {
+            abort(403);
+        }
+
         // Ensure user owns this product
         if ($product->user_id !== $request->user()->id) {
             abort(403);
@@ -372,6 +420,11 @@ class ProductController extends Controller
      */
     public function destroy(Request $request, Product $product): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::DELETE_PRODUCT->value)) {
+            abort(403);
+        }
+
         // Ensure user owns this product
         if ($product->user_id !== $request->user()->id) {
             abort(403);

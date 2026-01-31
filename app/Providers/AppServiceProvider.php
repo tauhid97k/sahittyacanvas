@@ -4,6 +4,14 @@ namespace App\Providers;
 
 use App\Enums\Role;
 use App\Http\Responses\LoginResponse;
+use App\Models\Category;
+use App\Models\Post;
+use App\Models\Product;
+use App\Models\ProductCategory;
+use App\Observers\CategoryObserver;
+use App\Observers\PostObserver;
+use App\Observers\ProductCategoryObserver;
+use App\Observers\ProductObserver;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
@@ -31,5 +39,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(function ($user) {
             return $user->hasRole(Role::SUPER) ? true : null;
         });
+
+        // Register model observers for cache invalidation
+        Post::observe(PostObserver::class);
+        Product::observe(ProductObserver::class);
+        Category::observe(CategoryObserver::class);
+        ProductCategory::observe(ProductCategoryObserver::class);
     }
 }
