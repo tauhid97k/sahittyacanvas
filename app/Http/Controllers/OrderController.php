@@ -86,8 +86,8 @@ class OrderController extends Controller
         $user = $request->user();
         $scope = $request->get('scope', 'all');
         
-        // Check if user can view all seller orders (Super Admin)
-        $canViewAll = $user->hasRole(Role::SUPER->value);
+        // Check if user can view all seller orders (Super Admin / Admin)
+        $canViewAll = $user->hasRole([Role::SUPER->value, Role::ADMIN->value]);
 
         $orders = Order::query()
             ->select([
@@ -131,14 +131,18 @@ class OrderController extends Controller
         });
 
         // Get counts for tabs
+        $baseQuery = $canViewAll && $scope !== 'mine'
+            ? Order::query()
+            : Order::where('seller_id', $user->id);
+
         $counts = [
-            'all' => Order::where('seller_id', $user->id)->count(),
-            'pending' => Order::where('seller_id', $user->id)->pending()->count(),
-            'confirmed' => Order::where('seller_id', $user->id)->confirmed()->count(),
-            'processing' => Order::where('seller_id', $user->id)->processing()->count(),
-            'shipped' => Order::where('seller_id', $user->id)->shipped()->count(),
-            'delivered' => Order::where('seller_id', $user->id)->delivered()->count(),
-            'cancelled' => Order::where('seller_id', $user->id)->cancelled()->count(),
+            'all' => (clone $baseQuery)->count(),
+            'pending' => (clone $baseQuery)->pending()->count(),
+            'confirmed' => (clone $baseQuery)->confirmed()->count(),
+            'processing' => (clone $baseQuery)->processing()->count(),
+            'shipped' => (clone $baseQuery)->shipped()->count(),
+            'delivered' => (clone $baseQuery)->delivered()->count(),
+            'cancelled' => (clone $baseQuery)->cancelled()->count(),
         ];
 
         return Inertia::render('dashboard/orders/index', [

@@ -30,8 +30,8 @@ class ProductController extends Controller
         $user = $request->user();
         $scope = $request->get('scope', 'all');
         
-        // Check if user can view all products (Super Admin)
-        $canViewAll = $user->hasRole(Role::SUPER->value);
+        // Check if user can view all products (Super Admin / Admin)
+        $canViewAll = $user->hasRole([Role::SUPER->value, Role::ADMIN->value]);
 
         $products = Product::query()
             ->select([

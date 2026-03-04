@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Role;
 use App\Models\Bookmark;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

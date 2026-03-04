@@ -57,6 +57,11 @@ export function AppSidebar() {
             return user.permissions.includes(permission);
         };
 
+        // Helper to check if user has any of the given permissions
+        const canAny = (...permissions: string[]): boolean => {
+            return permissions.some((p) => can(p));
+        };
+
         const items: NavItem[] = [
             {
                 title: 'Dashboard',
@@ -65,7 +70,9 @@ export function AppSidebar() {
             },
         ];
 
-        // User Management
+        // ===== ADMIN SECTION =====
+
+        // User Management (ADMIN/SUPER only)
         if (can('LIST_USER')) {
             items.push({
                 title: 'Users',
@@ -74,7 +81,7 @@ export function AppSidebar() {
             });
         }
 
-        // Role Management
+        // Role Management (ADMIN/SUPER only)
         if (can('LIST_ROLE')) {
             items.push({
                 title: 'Roles',
@@ -83,7 +90,8 @@ export function AppSidebar() {
             });
         }
 
-        // Content Management
+        // ===== CONTENT MANAGEMENT SECTION =====
+
         if (can('LIST_CATEGORY')) {
             items.push({
                 title: 'Categories',
@@ -108,25 +116,6 @@ export function AppSidebar() {
             });
         }
 
-        // User's own content (always visible)
-        items.push(
-            {
-                title: 'Likes',
-                href: '/dashboard/likes',
-                icon: Heart,
-            },
-            {
-                title: 'Bookmarks',
-                href: '/dashboard/bookmarks',
-                icon: BookOpen,
-            },
-            {
-                title: 'Wishlist',
-                href: '/dashboard/wishlist',
-                icon: Bookmark,
-            },
-        );
-
         if (can('LIST_COMMENT')) {
             items.push({
                 title: 'Comments',
@@ -143,23 +132,8 @@ export function AppSidebar() {
             });
         }
 
-        if (can('LIST_ACTIVITY')) {
-            items.push({
-                title: 'Activities',
-                href: '/dashboard/activities',
-                icon: Activity,
-            });
-        }
+        // ===== ECOMMERCE SECTION =====
 
-        // Notifications (always visible)
-        items.push({
-            title: 'Notifications',
-            href: '/dashboard/notifications',
-            icon: Bell,
-            badge: unreadCount > 0 ? unreadCount : null,
-        });
-
-        // Ecommerce
         if (can('LIST_PRODUCT_CATEGORY')) {
             items.push({
                 title: 'Product Categories',
@@ -184,12 +158,22 @@ export function AppSidebar() {
             });
         }
 
-        // Orders - always visible (users can view their own orders)
-        items.push({
-            title: 'Orders',
-            href: '/dashboard/orders',
-            icon: ShoppingCart,
-        });
+        // Orders
+        if (can('UPDATE_ORDER_STATUS')) {
+            // Seller/Admin: manage orders
+            items.push({
+                title: 'Orders',
+                href: '/dashboard/orders',
+                icon: ShoppingCart,
+            });
+        } else if (can('LIST_ORDER')) {
+            // Buyer: view own orders
+            items.push({
+                title: 'My Orders',
+                href: '/my-orders',
+                icon: ShoppingCart,
+            });
+        }
 
         if (can('LIST_TRANSACTION')) {
             items.push({
@@ -207,11 +191,48 @@ export function AppSidebar() {
             });
         }
 
-        // Settings (always visible - shows profile settings)
+        // ===== USER PERSONAL SECTION =====
+        // Only show personal content pages to roles that have content-related features
+        // or any authenticated user who can interact with posts/products
+
+        if (canAny('LIST_POST', 'LIST_PRODUCT', 'VIEW_DASHBOARD')) {
+            items.push({
+                title: 'Likes',
+                href: '/dashboard/likes',
+                icon: Heart,
+            });
+
+            items.push({
+                title: 'Bookmarks',
+                href: '/dashboard/bookmarks',
+                icon: BookOpen,
+            });
+        }
+
+        if (canAny('LIST_PRODUCT', 'VIEW_DASHBOARD')) {
+            items.push({
+                title: 'Wishlist',
+                href: '/dashboard/wishlist',
+                icon: Bookmark,
+            });
+        }
+
+        // ===== SYSTEM SECTION =====
+
+        if (can('LIST_ACTIVITY')) {
+            items.push({
+                title: 'Activities',
+                href: '/dashboard/activities',
+                icon: Activity,
+            });
+        }
+
+        // Notifications (visible to all authenticated users)
         items.push({
-            title: 'Rules',
-            href: '/dashboard/rules',
-            icon: BookOpen,
+            title: 'Notifications',
+            href: '/dashboard/notifications',
+            icon: Bell,
+            badge: unreadCount > 0 ? unreadCount : null,
         });
 
         if (can('LIST_PLATFORM_SETTINGS')) {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Permission;
+use App\Enums\Role;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductReview;
@@ -14,7 +15,9 @@ use Inertia\Response;
 class ProductReviewController extends Controller
 {
     /**
-     * Display a listing of product reviews for admin.
+     * Display a listing of product reviews.
+     * - SUPER/ADMIN/MODERATOR: see all reviews
+     * - SELLER: see only reviews on their own products
      */
     public function index(Request $request): Response
     {
@@ -23,12 +26,20 @@ class ProductReviewController extends Controller
             abort(403);
         }
 
+        $user = $request->user();
+        $isAdminOrSuper = $user->hasRole([Role::SUPER->value, Role::ADMIN->value]);
+        $isModerator = $user->hasRole(Role::MODERATOR->value);
+
         $reviews = ProductReview::query()
             ->with([
                 'user:id,name,username,avatar',
                 'user.roles:id,name',
-                'product:id,name_bn,name_en,slug',
+                'product:id,user_id,name_bn,name_en,slug',
             ])
+            ->when(!$isAdminOrSuper && !$isModerator, function ($query) use ($user) {
+                // SELLER: only reviews on their own products
+                $query->whereHas('product', fn($q) => $q->where('user_id', $user->id));
+            })
             ->when($request->filled('rating'), function ($query) use ($request) {
                 $query->where('rating', $request->get('rating'));
             })

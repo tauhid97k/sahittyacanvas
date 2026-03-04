@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Permission;
+use App\Enums\Role;
 use App\Models\Comment;
 use App\Models\ModerationSetting;
 use App\Models\Post;
@@ -15,6 +16,8 @@ class CommentController extends Controller
 {
     /**
      * Display a listing of comments.
+     * - SUPER/ADMIN/MODERATOR: see all comments
+     * - AUTHOR/EDITOR: see only comments on their own posts
      */
     public function index(Request $request): Response
     {
@@ -23,13 +26,21 @@ class CommentController extends Controller
             abort(403);
         }
 
+        $user = $request->user();
+        $isAdminOrSuper = $user->hasRole([Role::SUPER->value, Role::ADMIN->value]);
+        $isModerator = $user->hasRole(Role::MODERATOR->value);
+
         $comments = Comment::query()
             ->with([
                 'user:id,name,email,avatar',
-                'post:id,title_bn,title_en,slug',
+                'post:id,title_bn,title_en,slug,user_id',
                 'parent:id,content,user_id',
                 'parent.user:id,name',
             ])
+            ->when(!$isAdminOrSuper && !$isModerator, function ($query) use ($user) {
+                // AUTHOR/EDITOR: only comments on their own posts
+                $query->whereHas('post', fn($q) => $q->where('user_id', $user->id));
+            })
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->get('search');
                 $query->where(function ($q) use ($search) {

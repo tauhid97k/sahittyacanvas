@@ -138,12 +138,20 @@ class RolesPermissionsSeeder extends Seeder
         $moderatorRole = Role::create(['name' => RoleEnum::MODERATOR->value]);
         $sellerRole = Role::create(['name' => RoleEnum::SELLER->value]);
 
-        // Assign permissions to roles
-        // SUPER gets all permissions (handled by Gate::before in AuthServiceProvider)
+        // =====================================================
+        // PERMISSION MATRIX - carefully designed per role
+        // =====================================================
+        // SUPER: All permissions (handled by Gate::before bypass, no explicit assignment needed)
+        // ADMIN: Everything except platform settings
+        // USER: Dashboard + own orders + own likes/bookmarks/wishlist (no admin menus)
+        // AUTHOR: Own posts + categories (read) + authors (read) + own post comments
+        // EDITOR: Full posts/categories/authors management + own post comments
+        // MODERATOR: Approve/reject content + view posts/products/comments
+        // SELLER: Own products + own orders + own transactions + product reviews on own products
+        // =====================================================
 
         // ADMIN permissions - full access except platform settings
         $adminRole->givePermissionTo([
-            // Dashboard
             PermissionEnum::VIEW_DASHBOARD->value,
             // Users
             PermissionEnum::LIST_USER->value,
@@ -221,98 +229,90 @@ class RolesPermissionsSeeder extends Seeder
             PermissionEnum::VIEW_ACTIVITY->value,
         ]);
 
-        // USER permissions - basic access and own orders
+        // USER permissions - basic buyer access only
+        // Sidebar shows: Dashboard, My Orders, Likes, Bookmarks, Wishlist, Notifications
+        // Data scoping: all queries filter by user_id (own data only)
         $userRole->givePermissionTo([
             PermissionEnum::VIEW_DASHBOARD->value,
-            PermissionEnum::LIST_ORDER->value, // Users can view their own orders
+            PermissionEnum::LIST_ORDER->value,
             PermissionEnum::VIEW_ORDER->value,
             PermissionEnum::CANCEL_ORDER->value,
         ]);
 
         // AUTHOR permissions - can manage own posts
+        // Sidebar shows: Dashboard, Categories, Famous Writers, Posts, Comments, Likes, Bookmarks, Notifications
+        // Data scoping: posts/comments filtered by user_id
         $authorRole->givePermissionTo([
             PermissionEnum::VIEW_DASHBOARD->value,
-            // Categories (needed to see categories for post creation)
             PermissionEnum::LIST_CATEGORY->value,
-            // Authors (needed to see authors list)
             PermissionEnum::LIST_AUTHOR->value,
-            // Posts
             PermissionEnum::LIST_POST->value,
             PermissionEnum::VIEW_POST->value,
             PermissionEnum::CREATE_POST->value,
             PermissionEnum::EDIT_POST->value,
             PermissionEnum::DELETE_POST->value,
-            // Comments (needed to see comments on own posts)
             PermissionEnum::LIST_COMMENT->value,
         ]);
 
-        // EDITOR permissions - can manage posts and categories
+        // EDITOR permissions - can manage posts, categories, and authors
+        // Sidebar shows: Dashboard, Categories, Famous Writers, Posts, Comments, Likes, Bookmarks, Notifications
+        // Data scoping: sees all posts (editorial role), comments on own posts only
         $editorRole->givePermissionTo([
             PermissionEnum::VIEW_DASHBOARD->value,
-            // Categories
             PermissionEnum::LIST_CATEGORY->value,
             PermissionEnum::CREATE_CATEGORY->value,
             PermissionEnum::EDIT_CATEGORY->value,
             PermissionEnum::DELETE_CATEGORY->value,
-            // Authors
             PermissionEnum::LIST_AUTHOR->value,
             PermissionEnum::CREATE_AUTHOR->value,
             PermissionEnum::EDIT_AUTHOR->value,
             PermissionEnum::DELETE_AUTHOR->value,
-            // Posts
             PermissionEnum::LIST_POST->value,
             PermissionEnum::VIEW_POST->value,
             PermissionEnum::CREATE_POST->value,
             PermissionEnum::EDIT_POST->value,
             PermissionEnum::DELETE_POST->value,
             PermissionEnum::RESTORE_POST->value,
-            // Comments
             PermissionEnum::LIST_COMMENT->value,
         ]);
 
         // MODERATOR permissions - can moderate content
+        // Sidebar shows: Dashboard, Posts, Comments, Moderation, Products, Product Reviews, Notifications
+        // Data scoping: sees all content for moderation purposes
         $moderatorRole->givePermissionTo([
             PermissionEnum::VIEW_DASHBOARD->value,
-            // Posts
             PermissionEnum::LIST_POST->value,
             PermissionEnum::VIEW_POST->value,
-            // Comments
             PermissionEnum::LIST_COMMENT->value,
             PermissionEnum::APPROVE_COMMENT->value,
             PermissionEnum::REJECT_COMMENT->value,
             PermissionEnum::DELETE_COMMENT->value,
-            // Moderation
             PermissionEnum::LIST_MODERATION->value,
             PermissionEnum::APPROVE_POST->value,
             PermissionEnum::REJECT_POST->value,
-            // Products
             PermissionEnum::LIST_PRODUCT->value,
             PermissionEnum::VIEW_PRODUCT->value,
             PermissionEnum::APPROVE_PRODUCT->value,
             PermissionEnum::REJECT_PRODUCT->value,
-            // Product Reviews
             PermissionEnum::LIST_PRODUCT_REVIEW->value,
             PermissionEnum::DELETE_PRODUCT_REVIEW->value,
         ]);
 
         // SELLER permissions - can manage own products and orders
+        // Sidebar shows: Dashboard, Product Categories, Products, Product Reviews, Orders, Transactions, Likes, Wishlist, Notifications
+        // Data scoping: products/orders/transactions/reviews all filtered by user_id/seller_id
         $sellerRole->givePermissionTo([
             PermissionEnum::VIEW_DASHBOARD->value,
-            // Product Categories (needed to see categories for product creation)
             PermissionEnum::LIST_PRODUCT_CATEGORY->value,
-            // Products
             PermissionEnum::LIST_PRODUCT->value,
             PermissionEnum::VIEW_PRODUCT->value,
             PermissionEnum::CREATE_PRODUCT->value,
             PermissionEnum::EDIT_PRODUCT->value,
             PermissionEnum::DELETE_PRODUCT->value,
-            // Product Reviews (needed to see reviews on own products)
             PermissionEnum::LIST_PRODUCT_REVIEW->value,
-            // Orders
             PermissionEnum::LIST_ORDER->value,
             PermissionEnum::VIEW_ORDER->value,
             PermissionEnum::UPDATE_ORDER_STATUS->value,
-            // Transactions
             PermissionEnum::LIST_TRANSACTION->value,
             PermissionEnum::VIEW_TRANSACTION->value,
         ]);

@@ -296,7 +296,7 @@ class DashboardController extends Controller
     {
         $query = Order::query()
             ->with(['user:id,name,email,avatar'])
-            ->select(['id', 'order_number', 'user_id', 'total', 'status', 'payment_status', 'created_at']);
+            ->select(['id', 'order_number', 'user_id', 'seller_id', 'total', 'status', 'payment_status', 'created_at']);
 
         if ($userId) {
             $query->where('seller_id', $userId);
@@ -312,8 +312,8 @@ class DashboardController extends Controller
                 'customer' => $order->user?->name ?? 'Guest',
                 'customer_avatar' => $order->user?->avatar,
                 'total' => $order->formatted_total,
-                'status' => $order->status,
-                'payment_status' => $order->payment_status,
+                'status' => $order->status->value,
+                'payment_status' => $order->payment_status->value,
                 'created_at' => $order->created_at->diffForHumans(),
             ])
             ->toArray();
@@ -570,8 +570,8 @@ class DashboardController extends Controller
                 'order_number' => $order->order_number,
                 'seller' => $order->seller?->name ?? 'Unknown',
                 'total' => $order->formatted_total,
-                'status' => $order->status,
-                'payment_status' => $order->payment_status,
+                'status' => $order->status->value,
+                'payment_status' => $order->payment_status->value,
                 'created_at' => $order->created_at->diffForHumans(),
             ])
             ->toArray();
