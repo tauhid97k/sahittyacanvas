@@ -14,6 +14,9 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentMethod;
 use App\Models\Transaction;
+use App\Models\User;
+use App\Notifications\NewOrderForSeller;
+use App\Notifications\OrderPlaced;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -170,8 +173,9 @@ class OrderController extends Controller
             abort(403);
         }
 
-        // Ensure user is the seller
-        if ($order->seller_id !== $request->user()->id) {
+        // Ensure user is the seller (admin/super can view all)
+        $canViewAll = $request->user()->hasRole(Role::SUPER->value) || $request->user()->hasRole(Role::ADMIN->value);
+        if (!$canViewAll && $order->seller_id !== $request->user()->id) {
             abort(403);
         }
 
@@ -458,6 +462,15 @@ class OrderController extends Controller
                 ]);
 
                 $orderNumbers[] = $order->order_number;
+
+                // Notify the buyer
+                $user->notify(new OrderPlaced($order));
+
+                // Notify the seller
+                $seller = User::find($sellerId);
+                if ($seller) {
+                    $seller->notify(new NewOrderForSeller($order));
+                }
             }
 
             // Clear cart

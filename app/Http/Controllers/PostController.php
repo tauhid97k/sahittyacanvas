@@ -444,8 +444,13 @@ class PostController extends Controller
     /**
      * Permanently delete a post.
      */
-    public function forceDelete(int $id): RedirectResponse
+    public function forceDelete(Request $request, int $id): RedirectResponse
     {
+        // Check permission
+        if ($request->user()->cannot(Permission::FORCE_DELETE_POST->value)) {
+            abort(403);
+        }
+
         $post = Post::withTrashed()->with('pages')->findOrFail($id);
         
         DB::transaction(function () use ($post) {

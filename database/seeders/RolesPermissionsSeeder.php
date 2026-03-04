@@ -225,6 +225,8 @@ class RolesPermissionsSeeder extends Seeder
         $userRole->givePermissionTo([
             PermissionEnum::VIEW_DASHBOARD->value,
             PermissionEnum::LIST_ORDER->value, // Users can view their own orders
+            PermissionEnum::VIEW_ORDER->value,
+            PermissionEnum::CANCEL_ORDER->value,
         ]);
 
         // AUTHOR permissions - can manage own posts

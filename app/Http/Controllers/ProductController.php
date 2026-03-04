@@ -225,8 +225,9 @@ class ProductController extends Controller
             abort(403);
         }
 
-        // Ensure user owns this product
-        if ($product->user_id !== $request->user()->id) {
+        // Ensure user owns this product (admin/super can view all)
+        $canViewAll = $request->user()->hasRole(Role::SUPER->value) || $request->user()->hasRole(Role::ADMIN->value);
+        if (!$canViewAll && $product->user_id !== $request->user()->id) {
             abort(403);
         }
 
@@ -272,8 +273,9 @@ class ProductController extends Controller
             abort(403);
         }
 
-        // Ensure user owns this product
-        if ($product->user_id !== $request->user()->id) {
+        // Ensure user owns this product (admin/super can edit all)
+        $canEditAll = $request->user()->hasRole(Role::SUPER->value) || $request->user()->hasRole(Role::ADMIN->value);
+        if (!$canEditAll && $product->user_id !== $request->user()->id) {
             abort(403);
         }
 
@@ -314,8 +316,9 @@ class ProductController extends Controller
             abort(403);
         }
 
-        // Ensure user owns this product
-        if ($product->user_id !== $request->user()->id) {
+        // Ensure user owns this product (admin/super can update all)
+        $canEditAll = $request->user()->hasRole(Role::SUPER->value) || $request->user()->hasRole(Role::ADMIN->value);
+        if (!$canEditAll && $product->user_id !== $request->user()->id) {
             abort(403);
         }
 
@@ -425,8 +428,9 @@ class ProductController extends Controller
             abort(403);
         }
 
-        // Ensure user owns this product
-        if ($product->user_id !== $request->user()->id) {
+        // Ensure user owns this product (admin/super can delete all)
+        $canDeleteAll = $request->user()->hasRole(Role::SUPER->value) || $request->user()->hasRole(Role::ADMIN->value);
+        if (!$canDeleteAll && $product->user_id !== $request->user()->id) {
             abort(403);
         }
 

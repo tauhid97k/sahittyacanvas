@@ -13,30 +13,29 @@ import {
 } from '@/components/ui/chart';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
-interface PostViewsChartProps {
+interface UserGrowthChartProps {
     data: Array<{
         date: string;
-        posts: number;
+        users: number;
     }>;
 }
 
 const chartConfig = {
-    posts: {
-        label: 'Posts',
-        color: 'var(--chart-3)',
+    users: {
+        label: 'New Users',
+        color: 'var(--chart-4)',
     },
 } satisfies ChartConfig;
 
-export function PostViewsChart({ data }: PostViewsChartProps) {
-    const totalPosts = data.reduce((sum, item) => sum + item.posts, 0);
+export function UserGrowthChart({ data }: UserGrowthChartProps) {
+    const totalNewUsers = data.reduce((sum, item) => sum + item.users, 0);
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Posts Activity</CardTitle>
+                <CardTitle>User Growth</CardTitle>
                 <CardDescription>
-                    Published last 30 days - Total:{' '}
-                    {totalPosts.toLocaleString()} posts
+                    Last 30 days - {totalNewUsers.toLocaleString()} new users
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -50,7 +49,7 @@ export function PostViewsChart({ data }: PostViewsChartProps) {
                     >
                         <defs>
                             <linearGradient
-                                id="fillViews"
+                                id="fillUsers"
                                 x1="0"
                                 y1="0"
                                 x2="0"
@@ -58,12 +57,12 @@ export function PostViewsChart({ data }: PostViewsChartProps) {
                             >
                                 <stop
                                     offset="5%"
-                                    stopColor="var(--chart-3)"
+                                    stopColor="var(--chart-4)"
                                     stopOpacity={0.8}
                                 />
                                 <stop
                                     offset="95%"
-                                    stopColor="var(--chart-3)"
+                                    stopColor="var(--chart-4)"
                                     stopOpacity={0.1}
                                 />
                             </linearGradient>
@@ -84,9 +83,9 @@ export function PostViewsChart({ data }: PostViewsChartProps) {
                         <ChartTooltip content={<ChartTooltipContent />} />
                         <Area
                             type="monotone"
-                            dataKey="posts"
-                            stroke="var(--chart-3)"
-                            fill="url(#fillViews)"
+                            dataKey="users"
+                            stroke="var(--chart-4)"
+                            fill="url(#fillUsers)"
                             strokeWidth={2}
                         />
                     </AreaChart>

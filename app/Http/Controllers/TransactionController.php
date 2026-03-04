@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Permission;
+use App\Enums\Role;
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
 use Illuminate\Http\RedirectResponse;
@@ -23,19 +24,26 @@ class TransactionController extends Controller
         }
 
         $user = $request->user();
+        $scope = $request->get('scope', 'all');
+
+        // Check if user can view all transactions (Super Admin / Admin)
+        $canViewAll = $user->hasRole(Role::SUPER->value) || $user->hasRole(Role::ADMIN->value);
 
         $transactions = Transaction::query()
             ->select([
                 'id', 'transaction_number', 'transactionable_type', 'transactionable_id',
-                'payer_id', 'payment_method_id', 'amount', 'currency', 'status',
+                'payer_id', 'payee_id', 'payment_method_id', 'amount', 'currency', 'status',
                 'gateway_transaction_id', 'paid_at', 'created_at'
             ])
             ->with([
                 'payer:id,name,email',
+                'payee:id,name,email',
                 'paymentMethod:id,name,slug,icon',
                 'transactionable',
             ])
-            ->where('payee_id', $user->id)
+            ->when(!$canViewAll || $scope === 'mine', function ($query) use ($user) {
+                $query->where('payee_id', $user->id);
+            })
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->get('search');
                 $query->where(function ($q) use ($search) {
@@ -80,11 +88,15 @@ class TransactionController extends Controller
         });
 
         // Get counts for tabs
+        $baseQuery = $canViewAll && $scope !== 'mine'
+            ? Transaction::query()
+            : Transaction::where('payee_id', $user->id);
+
         $counts = [
-            'all' => Transaction::where('payee_id', $user->id)->count(),
-            'pending' => Transaction::where('payee_id', $user->id)->pending()->count(),
-            'paid' => Transaction::where('payee_id', $user->id)->paid()->count(),
-            'refunded' => Transaction::where('payee_id', $user->id)->refunded()->count(),
+            'all' => (clone $baseQuery)->count(),
+            'pending' => (clone $baseQuery)->pending()->count(),
+            'paid' => (clone $baseQuery)->paid()->count(),
+            'refunded' => (clone $baseQuery)->refunded()->count(),
         ];
 
         return Inertia::render('dashboard/transactions/index', [
@@ -94,7 +106,9 @@ class TransactionController extends Controller
                 'search' => $request->get('search', ''),
                 'status' => $request->get('status', ''),
                 'payment_method' => $request->get('payment_method', ''),
+                'scope' => $scope,
             ],
+            'canViewAll' => $canViewAll,
             'statuses' => collect(TransactionStatus::cases())->map(fn($s) => [
                 'value' => $s->value,
                 'label' => $s->label(),
@@ -113,8 +127,9 @@ class TransactionController extends Controller
             abort(403);
         }
 
-        // Authorization: Ensure user is the payee (seller)
-        if ($transaction->payee_id !== $request->user()->id) {
+        // Authorization: Ensure user is the payee (admin/super can view all)
+        $canViewAll = $request->user()->hasRole(Role::SUPER->value) || $request->user()->hasRole(Role::ADMIN->value);
+        if (!$canViewAll && $transaction->payee_id !== $request->user()->id) {
             abort(403);
         }
 

@@ -1,6 +1,9 @@
 import {
+    AuthorStats,
     BlogStats,
     EcommerceStats,
+    LowStockAlerts,
+    ModerationActivityChart,
     ModerationStats,
     OrdersChart,
     PlatformStats,
@@ -9,6 +12,11 @@ import {
     RecentPosts,
     RecentReviews,
     RevenueChart,
+    TopPosts,
+    TopProducts,
+    UserGrowthChart,
+    UserRecentOrders,
+    UserStats,
 } from '@/components/dashboard';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
@@ -21,7 +29,9 @@ interface DashboardProps {
     isAdmin: boolean;
     isSeller: boolean;
     isAuthor: boolean;
+    isEditor: boolean;
     isModerator: boolean;
+    isUser: boolean;
     platformStats?: {
         totalUsers: number;
         totalPosts: number;
@@ -53,9 +63,29 @@ interface DashboardProps {
         pendingComments: number;
         pendingProducts: number;
     };
+    authorStats?: {
+        followers: number;
+        newFollowersThisWeek: number;
+        totalLikes: number;
+        totalBookmarks: number;
+    };
+    userStats?: {
+        totalOrders: number;
+        pendingOrders: number;
+        deliveredOrders: number;
+        wishlistCount: number;
+        bookmarkCount: number;
+        followingCount: number;
+    };
     revenueChart?: Array<{ date: string; revenue: number }>;
     ordersChart?: Array<{ status: string; count: number }>;
     postViewsChart?: Array<{ date: string; posts: number }>;
+    userGrowthChart?: Array<{ date: string; users: number }>;
+    moderationActivityChart?: Array<{
+        date: string;
+        approved: number;
+        rejected: number;
+    }>;
     recentOrders?: Array<{
         id: number;
         order_number: string;
@@ -86,6 +116,42 @@ interface DashboardProps {
         product_slug: string;
         created_at: string;
     }>;
+    userRecentOrders?: Array<{
+        id: number;
+        order_number: string;
+        seller: string;
+        total: string;
+        status: string;
+        payment_status: string;
+        created_at: string;
+    }>;
+    topProducts?: Array<{
+        id: number;
+        name: string;
+        slug: string;
+        seller: string;
+        price: string;
+        sales: number;
+        views: number;
+    }>;
+    topPosts?: Array<{
+        id: number;
+        title: string;
+        slug: string;
+        author: string;
+        author_avatar: string | null;
+        views: number;
+        likes: number;
+        comments: number;
+    }>;
+    lowStockProducts?: Array<{
+        id: number;
+        name: string;
+        slug: string;
+        stock: number;
+        threshold: number;
+        isOutOfStock: boolean;
+    }>;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -100,38 +166,85 @@ export default function Dashboard({
     isAdmin,
     isSeller,
     isAuthor,
+    isEditor,
     isModerator,
+    isUser,
     platformStats,
     blogStats,
     ecommerceStats,
     moderationStats,
+    authorStats,
+    userStats,
     revenueChart,
     ordersChart,
     postViewsChart,
+    userGrowthChart,
+    moderationActivityChart,
     recentOrders,
     recentPosts,
     recentReviews,
+    userRecentOrders,
+    topProducts,
+    topPosts,
+    lowStockProducts,
 }: DashboardProps) {
     const showPlatformStats = (isSuper || isAdmin) && platformStats;
-    const showBlogStats = (isSuper || isAdmin || isAuthor) && blogStats;
+    const showBlogStats =
+        (isSuper || isAdmin || isAuthor || isEditor) && blogStats;
     const showEcommerceStats =
         (isSuper || isAdmin || isSeller) && ecommerceStats;
     const showModerationStats =
         (isSuper || isAdmin || isModerator) && moderationStats;
+    const showAuthorStats = (isAuthor || isEditor) && authorStats;
+    const showUserStats =
+        isUser &&
+        !isSuper &&
+        !isAdmin &&
+        !isSeller &&
+        !isAuthor &&
+        !isEditor &&
+        !isModerator &&
+        userStats;
     const showRevenueChart = (isSuper || isAdmin || isSeller) && revenueChart;
     const showOrdersChart = (isSuper || isAdmin || isSeller) && ordersChart;
     const showPostViewsChart =
-        (isSuper || isAdmin || isAuthor) && postViewsChart;
+        (isSuper || isAdmin || isAuthor || isEditor) && postViewsChart;
+    const showUserGrowthChart = (isSuper || isAdmin) && userGrowthChart;
+    const showModerationActivityChart =
+        (isSuper || isAdmin || isModerator) && moderationActivityChart;
     const showRecentOrders = (isSuper || isAdmin || isSeller) && recentOrders;
-    const showRecentPosts = (isSuper || isAdmin || isAuthor) && recentPosts;
+    const showRecentPosts =
+        (isSuper || isAdmin || isAuthor || isEditor) && recentPosts;
     const showRecentReviews = (isSuper || isAdmin || isSeller) && recentReviews;
+    const showUserRecentOrders = showUserStats && userRecentOrders;
+    const showTopProducts =
+        (isSuper || isAdmin || isSeller) &&
+        topProducts &&
+        topProducts.length > 0;
+    const showTopPosts =
+        (isSuper || isAdmin || isAuthor || isEditor) &&
+        topPosts &&
+        topPosts.length > 0;
+    const showLowStockAlerts =
+        (isSuper || isAdmin || isSeller) &&
+        lowStockProducts &&
+        lowStockProducts.length > 0;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
             <div className="flex flex-col gap-6 p-4">
+                {/* USER Dashboard - Stats + Recent Orders */}
+                {showUserStats && <UserStats stats={userStats} />}
+                {showUserRecentOrders && (
+                    <UserRecentOrders orders={userRecentOrders} />
+                )}
+
                 {/* Platform Stats - Admin Only */}
                 {showPlatformStats && <PlatformStats stats={platformStats} />}
+
+                {/* Author Stats - Author/Editor */}
+                {showAuthorStats && <AuthorStats stats={authorStats} />}
 
                 {/* Blog Stats */}
                 {showBlogStats && <BlogStats stats={blogStats} />}
@@ -146,6 +259,11 @@ export default function Dashboard({
                     <ModerationStats stats={moderationStats} />
                 )}
 
+                {/* Low Stock Alerts */}
+                {showLowStockAlerts && (
+                    <LowStockAlerts products={lowStockProducts} />
+                )}
+
                 {/* Charts Section */}
                 <div className="grid gap-6 lg:grid-cols-2">
                     {/* Revenue Chart */}
@@ -154,9 +272,21 @@ export default function Dashboard({
                     {/* Orders Chart */}
                     {showOrdersChart && <OrdersChart data={ordersChart} />}
 
-                    {/* Post Views Chart */}
+                    {/* Post Activity Chart */}
                     {showPostViewsChart && (
                         <PostViewsChart data={postViewsChart} />
+                    )}
+
+                    {/* User Growth Chart */}
+                    {showUserGrowthChart && (
+                        <UserGrowthChart data={userGrowthChart} />
+                    )}
+
+                    {/* Moderation Activity Chart */}
+                    {showModerationActivityChart && (
+                        <ModerationActivityChart
+                            data={moderationActivityChart}
+                        />
                     )}
                 </div>
 
@@ -172,6 +302,12 @@ export default function Dashboard({
                     {showRecentReviews && (
                         <RecentReviews reviews={recentReviews} />
                     )}
+
+                    {/* Top Products */}
+                    {showTopProducts && <TopProducts products={topProducts} />}
+
+                    {/* Top Posts */}
+                    {showTopPosts && <TopPosts posts={topPosts} />}
                 </div>
             </div>
         </AppLayout>

@@ -22,6 +22,7 @@ use App\Http\Controllers\Public\AuthorController as PublicAuthorController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Public\PostController as PublicPostController;
 use App\Http\Controllers\Public\PageController;
+use App\Http\Controllers\Public\SearchController;
 use App\Http\Controllers\Public\ShopController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RulesController;
@@ -58,6 +59,9 @@ Route::get('/user/{user}', [PublicAuthorController::class, 'userProfileById'])->
 Route::get('/shop', [ShopController::class, 'index'])->name('public.shop.index');
 Route::get('/product/{slug}', [ShopController::class, 'show'])->name('public.shop.show');
 Route::get('/product-category/{slug}', [ShopController::class, 'category'])->name('public.product-category.show');
+
+// Search
+Route::get('/search', [SearchController::class, 'index'])->name('public.search');
 
 // Static Pages
 Route::get('/about', [PageController::class, 'about'])->name('public.about');
@@ -235,6 +239,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('my-orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('my-orders/{order}', [OrderController::class, 'buyerShow'])->name('orders.show');
     Route::post('my-orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+
+    // Product Reviews (buyer submission)
+    Route::post('product-reviews', [ProductReviewController::class, 'store'])->name('product-reviews.store');
+
+    // Follow/Unfollow
+    Route::post('follow/{type}/{id}', [\App\Http\Controllers\FollowController::class, 'toggle'])->name('follow.toggle');
 });
 
 require __DIR__.'/settings.php';

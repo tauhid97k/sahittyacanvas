@@ -3,18 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Role;
+use App\Models\Bookmark;
 use App\Models\Comment;
+use App\Models\Follow;
 use App\Models\Order;
 use App\Models\Post;
 use App\Models\Product;
 use App\Models\ProductReview;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Models\Wishlist;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\Activitylog\Models\Activity;
 
 class DashboardController extends Controller
 {
@@ -27,7 +31,9 @@ class DashboardController extends Controller
         $isAdmin = in_array(Role::ADMIN->value, $roles);
         $isSeller = in_array(Role::SELLER->value, $roles);
         $isAuthor = in_array(Role::AUTHOR->value, $roles);
+        $isEditor = in_array(Role::EDITOR->value, $roles);
         $isModerator = in_array(Role::MODERATOR->value, $roles);
+        $isUser = in_array(Role::USER->value, $roles);
 
         $data = [
             'roles' => $roles,
@@ -35,27 +41,34 @@ class DashboardController extends Controller
             'isAdmin' => $isAdmin,
             'isSeller' => $isSeller,
             'isAuthor' => $isAuthor,
+            'isEditor' => $isEditor,
             'isModerator' => $isModerator,
+            'isUser' => $isUser,
         ];
 
         // Platform stats (SUPER/ADMIN only)
         if ($isSuper || $isAdmin) {
             $data['platformStats'] = $this->getPlatformStats();
+            $data['userGrowthChart'] = $this->getUserGrowthChartData();
         }
 
-        // Blog stats (SUPER/ADMIN see all, AUTHOR sees own)
-        if ($isSuper || $isAdmin || $isAuthor) {
+        // Blog stats (SUPER/ADMIN see all, AUTHOR/EDITOR sees own)
+        if ($isSuper || $isAdmin || $isAuthor || $isEditor) {
             $data['blogStats'] = $this->getBlogStats($isSuper || $isAdmin ? null : $user->id);
+            $data['topPosts'] = $this->getTopPosts($isSuper || $isAdmin ? null : $user->id);
         }
 
         // Ecommerce stats (SUPER/ADMIN see all, SELLER sees own)
         if ($isSuper || $isAdmin || $isSeller) {
             $data['ecommerceStats'] = $this->getEcommerceStats($isSuper || $isAdmin ? null : $user->id);
+            $data['topProducts'] = $this->getTopProducts($isSuper || $isAdmin ? null : $user->id);
+            $data['lowStockProducts'] = $this->getLowStockProducts($isSuper || $isAdmin ? null : $user->id);
         }
 
         // Moderation stats (SUPER/ADMIN/MODERATOR)
         if ($isSuper || $isAdmin || $isModerator) {
             $data['moderationStats'] = $this->getModerationStats();
+            $data['moderationActivityChart'] = $this->getModerationActivityChartData();
         }
 
         // Revenue chart data (SUPER/ADMIN see all, SELLER sees own)
@@ -68,8 +81,8 @@ class DashboardController extends Controller
             $data['ordersChart'] = $this->getOrdersChartData($isSuper || $isAdmin ? null : $user->id);
         }
 
-        // Post views chart data (SUPER/ADMIN see all, AUTHOR sees own)
-        if ($isSuper || $isAdmin || $isAuthor) {
+        // Post activity chart data (SUPER/ADMIN see all, AUTHOR/EDITOR sees own)
+        if ($isSuper || $isAdmin || $isAuthor || $isEditor) {
             $data['postViewsChart'] = $this->getPostViewsChartData($isSuper || $isAdmin ? null : $user->id);
         }
 
@@ -78,14 +91,25 @@ class DashboardController extends Controller
             $data['recentOrders'] = $this->getRecentOrders($isSuper || $isAdmin ? null : $user->id);
         }
 
-        // Recent posts (SUPER/ADMIN see all, AUTHOR sees own)
-        if ($isSuper || $isAdmin || $isAuthor) {
+        // Recent posts (SUPER/ADMIN see all, AUTHOR/EDITOR sees own)
+        if ($isSuper || $isAdmin || $isAuthor || $isEditor) {
             $data['recentPosts'] = $this->getRecentPosts($isSuper || $isAdmin ? null : $user->id);
         }
 
         // Recent reviews (SUPER/ADMIN see all, SELLER sees own)
         if ($isSuper || $isAdmin || $isSeller) {
             $data['recentReviews'] = $this->getRecentReviews($isSuper || $isAdmin ? null : $user->id);
+        }
+
+        // Author follower stats
+        if ($isAuthor || $isEditor) {
+            $data['authorStats'] = $this->getAuthorStats($user->id);
+        }
+
+        // USER dashboard (own orders, bookmarks, wishlist, etc.)
+        if ($isUser && !$isSuper && !$isAdmin && !$isSeller && !$isAuthor && !$isEditor && !$isModerator) {
+            $data['userStats'] = $this->getUserStats($user);
+            $data['userRecentOrders'] = $this->getUserRecentOrders($user->id);
         }
 
         return Inertia::render('dashboard/index', $data);
@@ -116,7 +140,7 @@ class DashboardController extends Controller
         $totalPosts = (clone $postsQuery)->count();
         $publishedPosts = (clone $postsQuery)->where('status', 'published')->count();
         $draftPosts = (clone $postsQuery)->where('status', 'draft')->count();
-        $totalViews = 0; // Views tracked by Laravisit package
+        $totalViews = (clone $postsQuery)->withTotalVisitCount()->get()->sum('visit_count_total');
         $totalComments = $commentsQuery->count();
 
         return [
@@ -141,7 +165,7 @@ class DashboardController extends Controller
         }
 
         $totalProducts = (clone $productsQuery)->count();
-        $activeProducts = (clone $productsQuery)->where('status', 'active')->count();
+        $activeProducts = (clone $productsQuery)->where('status', 'published')->count();
         $totalOrders = (clone $ordersQuery)->count();
         $pendingOrders = (clone $ordersQuery)->where('status', 'pending')->count();
         $completedOrders = (clone $ordersQuery)->where('status', 'delivered')->count();
@@ -240,8 +264,7 @@ class DashboardController extends Controller
 
     private function getPostViewsChartData(?int $userId): array
     {
-        // Posts don't have views_count column - views are tracked by Laravisit package
-        // Return posts created per day instead
+        // Get posts created per day for the last 30 days
         $query = Post::query()
             ->where('status', 'published')
             ->whereBetween('created_at', [Carbon::now()->subDays(30), Carbon::now()]);
@@ -300,6 +323,7 @@ class DashboardController extends Controller
     {
         $query = Post::query()
             ->with(['user:id,name,email,avatar'])
+            ->withTotalVisitCount()
             ->select(['id', 'user_id', 'title_bn', 'title_en', 'slug', 'status', 'created_at']);
 
         if ($userId) {
@@ -317,7 +341,7 @@ class DashboardController extends Controller
                 'author' => $post->user?->name ?? 'Unknown',
                 'author_avatar' => $post->user?->avatar,
                 'status' => $post->status,
-                'views' => 0, // Views tracked by Laravisit
+                'views' => (int) ($post->visit_count_total ?? 0),
                 'created_at' => $post->created_at->diffForHumans(),
             ])
             ->toArray();
@@ -345,6 +369,210 @@ class DashboardController extends Controller
                 'product' => $review->product?->name_en ?? $review->product?->name_bn,
                 'product_slug' => $review->product?->slug,
                 'created_at' => $review->created_at->diffForHumans(),
+            ])
+            ->toArray();
+    }
+
+    // ==================== NEW DASHBOARD METHODS ====================
+
+    private function getUserGrowthChartData(): array
+    {
+        $data = User::query()
+            ->whereBetween('created_at', [Carbon::now()->subDays(30), Carbon::now()])
+            ->select(DB::raw('DATE(created_at) as date'), DB::raw('COUNT(*) as count'))
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
+
+        $chartData = [];
+        for ($i = 29; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i)->format('Y-m-d');
+            $chartData[] = [
+                'date' => Carbon::parse($date)->format('M d'),
+                'users' => isset($data[$date]) ? (int) $data[$date]->count : 0,
+            ];
+        }
+
+        return $chartData;
+    }
+
+    private function getTopPosts(?int $userId, int $limit = 5): array
+    {
+        $query = Post::query()
+            ->with(['user:id,name,avatar'])
+            ->withTotalVisitCount()
+            ->where('status', 'published')
+            ->select(['id', 'user_id', 'title_bn', 'title_en', 'slug', 'likes_count', 'comments_count', 'created_at']);
+
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
+
+        return $query
+            ->orderByDesc('visit_count_total')
+            ->take($limit)
+            ->get()
+            ->map(fn($post) => [
+                'id' => $post->id,
+                'title' => $post->title_en ?? $post->title_bn,
+                'slug' => $post->slug,
+                'author' => $post->user?->name ?? 'Unknown',
+                'author_avatar' => $post->user?->avatar,
+                'views' => (int) ($post->visit_count_total ?? 0),
+                'likes' => $post->likes_count ?? 0,
+                'comments' => $post->comments_count ?? 0,
+            ])
+            ->toArray();
+    }
+
+    private function getTopProducts(?int $userId, int $limit = 5): array
+    {
+        $query = Product::query()
+            ->with(['seller:id,name'])
+            ->where('status', 'published')
+            ->select(['id', 'user_id', 'name_bn', 'name_en', 'slug', 'price', 'sales_count', 'views_count']);
+
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
+
+        return $query
+            ->orderByDesc('sales_count')
+            ->take($limit)
+            ->get()
+            ->map(fn($product) => [
+                'id' => $product->id,
+                'name' => $product->name_en ?? $product->name_bn,
+                'slug' => $product->slug,
+                'seller' => $product->seller?->name ?? 'Unknown',
+                'price' => $product->formatted_price,
+                'sales' => $product->sales_count,
+                'views' => $product->views_count,
+            ])
+            ->toArray();
+    }
+
+    private function getLowStockProducts(?int $userId, int $limit = 5): array
+    {
+        $query = Product::query()
+            ->where('status', 'published')
+            ->where('stock_count', '<=', DB::raw('stock_alert_threshold'))
+            ->select(['id', 'user_id', 'name_bn', 'name_en', 'slug', 'stock_count', 'stock_alert_threshold']);
+
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
+
+        return $query
+            ->orderBy('stock_count')
+            ->take($limit)
+            ->get()
+            ->map(fn($product) => [
+                'id' => $product->id,
+                'name' => $product->name_en ?? $product->name_bn,
+                'slug' => $product->slug,
+                'stock' => $product->stock_count,
+                'threshold' => $product->stock_alert_threshold,
+                'isOutOfStock' => $product->stock_count === 0,
+            ])
+            ->toArray();
+    }
+
+    private function getModerationActivityChartData(): array
+    {
+        // Count approved + rejected items per day over last 14 days
+        $days = 14;
+
+        $postsApproved = Post::query()
+            ->whereIn('moderation_status', ['approved'])
+            ->whereNotNull('moderated_at')
+            ->whereBetween('moderated_at', [Carbon::now()->subDays($days), Carbon::now()])
+            ->select(DB::raw('DATE(moderated_at) as date'), DB::raw('COUNT(*) as count'))
+            ->groupBy('date')
+            ->get()
+            ->keyBy('date');
+
+        $postsRejected = Post::query()
+            ->where('moderation_status', 'rejected')
+            ->whereNotNull('moderated_at')
+            ->whereBetween('moderated_at', [Carbon::now()->subDays($days), Carbon::now()])
+            ->select(DB::raw('DATE(moderated_at) as date'), DB::raw('COUNT(*) as count'))
+            ->groupBy('date')
+            ->get()
+            ->keyBy('date');
+
+        $chartData = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i)->format('Y-m-d');
+            $chartData[] = [
+                'date' => Carbon::parse($date)->format('M d'),
+                'approved' => isset($postsApproved[$date]) ? (int) $postsApproved[$date]->count : 0,
+                'rejected' => isset($postsRejected[$date]) ? (int) $postsRejected[$date]->count : 0,
+            ];
+        }
+
+        return $chartData;
+    }
+
+    private function getAuthorStats(int $userId): array
+    {
+        $followerCount = Follow::where('followable_type', User::class)
+            ->where('followable_id', $userId)
+            ->count();
+
+        $newFollowersThisWeek = Follow::where('followable_type', User::class)
+            ->where('followable_id', $userId)
+            ->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()])
+            ->count();
+
+        $totalLikes = Post::where('user_id', $userId)->sum('likes_count');
+        $totalBookmarks = Post::where('user_id', $userId)->sum('bookmarks_count');
+
+        return [
+            'followers' => $followerCount,
+            'newFollowersThisWeek' => $newFollowersThisWeek,
+            'totalLikes' => (int) $totalLikes,
+            'totalBookmarks' => (int) $totalBookmarks,
+        ];
+    }
+
+    private function getUserStats(User $user): array
+    {
+        $totalOrders = Order::where('user_id', $user->id)->count();
+        $pendingOrders = Order::where('user_id', $user->id)->where('status', 'pending')->count();
+        $deliveredOrders = Order::where('user_id', $user->id)->where('status', 'delivered')->count();
+        $wishlistCount = Wishlist::where('user_id', $user->id)->count();
+        $bookmarkCount = Bookmark::where('user_id', $user->id)->count();
+        $followingCount = Follow::where('follower_id', $user->id)->count();
+
+        return [
+            'totalOrders' => $totalOrders,
+            'pendingOrders' => $pendingOrders,
+            'deliveredOrders' => $deliveredOrders,
+            'wishlistCount' => $wishlistCount,
+            'bookmarkCount' => $bookmarkCount,
+            'followingCount' => $followingCount,
+        ];
+    }
+
+    private function getUserRecentOrders(int $userId, int $limit = 5): array
+    {
+        return Order::query()
+            ->with(['seller:id,name'])
+            ->select(['id', 'order_number', 'seller_id', 'total', 'status', 'payment_status', 'created_at'])
+            ->where('user_id', $userId)
+            ->latest()
+            ->take($limit)
+            ->get()
+            ->map(fn($order) => [
+                'id' => $order->id,
+                'order_number' => $order->order_number,
+                'seller' => $order->seller?->name ?? 'Unknown',
+                'total' => $order->formatted_total,
+                'status' => $order->status,
+                'payment_status' => $order->payment_status,
+                'created_at' => $order->created_at->diffForHumans(),
             ])
             ->toArray();
     }
