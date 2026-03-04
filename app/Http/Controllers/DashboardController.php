@@ -322,9 +322,9 @@ class DashboardController extends Controller
     private function getRecentPosts(?int $userId, int $limit = 5): array
     {
         $query = Post::query()
+            ->select(['id', 'user_id', 'title_bn', 'title_en', 'slug', 'status', 'created_at'])
             ->with(['user:id,name,email,avatar'])
-            ->withTotalVisitCount()
-            ->select(['id', 'user_id', 'title_bn', 'title_en', 'slug', 'status', 'created_at']);
+            ->withTotalVisitCount();
 
         if ($userId) {
             $query->where('user_id', $userId);
@@ -400,10 +400,10 @@ class DashboardController extends Controller
     private function getTopPosts(?int $userId, int $limit = 5): array
     {
         $query = Post::query()
+            ->select(['id', 'user_id', 'title_bn', 'title_en', 'slug', 'likes_count', 'comments_count', 'created_at'])
             ->with(['user:id,name,avatar'])
             ->withTotalVisitCount()
-            ->where('status', 'published')
-            ->select(['id', 'user_id', 'title_bn', 'title_en', 'slug', 'likes_count', 'comments_count', 'created_at']);
+            ->where('status', 'published');
 
         if ($userId) {
             $query->where('user_id', $userId);
